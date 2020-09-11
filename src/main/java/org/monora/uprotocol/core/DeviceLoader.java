@@ -41,7 +41,8 @@ public class DeviceLoader
      * @param hasPin              True will mean this device has a valid PIN and this will escalate the privileges it
      *                            will have. For instance, it will be unblocked if blocked and it will be flagged as
      *                            trusted.
-     * @throws JSONException If something goes wrong when inflating the JSON data.* @throws DeviceInsecureException
+     * @throws JSONException           If something goes wrong when inflating the JSON data.* @throws DeviceInsecureException
+     * @throws DeviceInsecureException If remote sends invalid credentials and has no valid PIN.
      */
     public static void loadAsServer(PersistenceProvider persistenceProvider, JSONObject object, Device device,
                                     boolean hasPin) throws JSONException, DeviceInsecureException

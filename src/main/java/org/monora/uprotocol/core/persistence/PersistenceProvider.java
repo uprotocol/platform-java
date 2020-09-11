@@ -29,7 +29,6 @@ public interface PersistenceProvider
      * <p>
      * If your implementation has a built-in support for notifying listeners, then you can skip using method
      * altogether.
-     * <p>
      */
     void broadcast();
 
@@ -66,6 +65,7 @@ public interface PersistenceProvider
      * @param name       Points to {@link TransferItem#name}.
      * @param mimeType   Points to {@link TransferItem#mimeType}.
      * @param size       Points to {@link TransferItem#size}.
+     * @param file       Points to {@link TransferItem#file}.
      * @param directory  Points to {@link TransferItem#directory}.
      * @param type       Points to {@link TransferItem#type}
      * @return The transfer item instance.

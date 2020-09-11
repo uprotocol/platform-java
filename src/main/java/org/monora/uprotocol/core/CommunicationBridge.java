@@ -395,7 +395,7 @@ public class CommunicationBridge implements Closeable
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
      * @throws CommunicationException When there is a communication error due to misconfiguration.
-     * @see #receiveSecure(ActiveConnection, Device).
+     * @see #receiveSecure(ActiveConnection, Device)
      * @see #sendError(ActiveConnection, String)
      */
     public JSONObject receiveSecure() throws IOException, JSONException, CommunicationException
