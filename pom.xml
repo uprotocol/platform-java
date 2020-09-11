@@ -105,9 +105,9 @@
             <url>https://jcenter.bintray.com/</url>
         </repository>
         <repository>
-            <id>coolsocket</id>
+            <id>github</id>
             <name>GitHub CoolSocket Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/libcoolsocket/java</url>
+            <url>https://maven.pkg.github.com/</url>
         </repository>
     </repositories>
     <dependencies>
