@@ -128,7 +128,6 @@
             <groupId>org.monora.coolsocket</groupId>
             <artifactId>core</artifactId>
             <version>2.0-rc01</version>
-            <ş-ld
         </dependency>
         <!-- https://mvnrepository.com/artifact/commons-codec/commons-codec -->
         <dependency>
