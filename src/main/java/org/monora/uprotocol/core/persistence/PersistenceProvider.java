@@ -222,6 +222,7 @@ public interface PersistenceProvider
                 .put(Keyword.DEVICE_BRAND, device.brand)
                 .put(Keyword.DEVICE_MODEL, device.model)
                 .put(Keyword.DEVICE_USERNAME, device.username)
+                .put(Keyword.DEVICE_CLIENT_TYPE, device.clientType)
                 .put(Keyword.DEVICE_VERSION_CODE, device.versionCode)
                 .put(Keyword.DEVICE_VERSION_NAME, device.versionName)
                 .put(Keyword.DEVICE_PROTOCOL_VERSION, device.protocolVersion)

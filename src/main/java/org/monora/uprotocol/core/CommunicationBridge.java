@@ -40,6 +40,9 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.List;
 
+import static org.monora.uprotocol.core.spec.alpha.Config.PORT_UPROTOCOL;
+import static org.monora.uprotocol.core.spec.alpha.Config.TIMEOUT_SOCKET_DEFAULT;
+
 /**
  * created by: Veli
  * date: 11.02.2018 15:07
@@ -48,12 +51,6 @@ import java.util.List;
 public class CommunicationBridge implements Closeable
 {
     public static final String TAG = CommunicationBridge.class.getSimpleName();
-
-    public static final int TIMEOUT_SOCKET_DEFAULT = 5000;
-
-    public static final int PORT_UPROTOCOL = 1128;
-
-    public static final int LENGTH_DEVICE_NAME = 32;
 
 
     private final PersistenceProvider persistenceProvider;
@@ -103,15 +100,15 @@ public class CommunicationBridge implements Closeable
             throws IOException, JSONException, CommunicationException
     {
         ActiveConnection activeConnection = connectionProvider.openConnection(deviceAddress.inetAddress);
-        String remoteDeviceId = activeConnection.receive().getAsString();
+        String remoteDeviceUid = activeConnection.receive().getAsString();
 
-        if (device != null && device.uid != null && !device.uid.equals(remoteDeviceId)) {
+        if (device != null && device.uid != null && !device.uid.equals(remoteDeviceUid)) {
             activeConnection.closeSafely();
-            throw new DifferentClientException(device, remoteDeviceId);
+            throw new DifferentClientException(device, remoteDeviceUid);
         }
 
         if (device == null)
-            device = persistenceProvider.createDeviceFor(remoteDeviceId);
+            device = persistenceProvider.createDeviceFor(remoteDeviceUid);
 
         try {
             persistenceProvider.sync(device);
@@ -160,12 +157,15 @@ public class CommunicationBridge implements Closeable
      * request in that timespan, this will invoke {@link TransportSeat#handleAcquaintanceRequest(Device, DeviceAddress)}
      * method on the remote and it will choose you.
      *
-     * @throws JSONException If something goes wrong when creating the JSON object.
-     * @throws IOException   If an IO error occurs.
+     * @return True if successful.
+     * @throws JSONException          If something goes wrong when creating JSON object.
+     * @throws IOException            If an IO error occurs.
+     * @throws CommunicationException When there is a communication error due to misconfiguration.
      */
-    public void requestAcquaintance() throws JSONException, IOException
+    public boolean requestAcquaintance() throws JSONException, IOException, CommunicationException
     {
         getActiveConnection().reply(new JSONObject().put(Keyword.REQUEST, Keyword.REQUEST_ACQUAINTANCE));
+        return receiveResult();
     }
 
     /**
@@ -178,48 +178,77 @@ public class CommunicationBridge implements Closeable
      *
      * @param transferId That ties a group of {@link TransferItem} as in {@link TransferItem#transferId}.
      * @param files      That has been generated using {@link PersistenceProvider#toJson(List)}.
-     * @throws JSONException If something goes wrong when creating the JSON object.
-     * @throws IOException   If an IO error occurs.
+     * @return True if successful.
+     * @throws JSONException          If something goes wrong when creating JSON object.
+     * @throws IOException            If an IO error occurs.
+     * @throws CommunicationException When there is a communication error due to misconfiguration.
      */
-    public void requestFileTransfer(long transferId, JSONArray files) throws JSONException, IOException
+    public boolean requestFileTransfer(long transferId, JSONArray files) throws JSONException, IOException,
+            CommunicationException
     {
         getActiveConnection().reply(new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER)
                 .put(Keyword.TRANSFER_ID, transferId)
                 .put(Keyword.INDEX, files));
+        return receiveResult();
     }
 
     /**
-     * Ask the remote to start the transfer job.
+     * Ask remote to start a transfer job.
      * <p>
-     * The transfer request has already been sent {@link #requestFileTransfer(long, JSONArray)}.
+     * The transfer request, in this case, has already been sent {@link #requestFileTransfer(long, JSONArray)}.
      *
      * @param transferId That ties a group of {@link TransferItem} as in {@link TransferItem#transferId}.
      * @param type       Of the transfer as in {@link TransferItem#type}.
-     * @throws JSONException If something goes wrong when creating the JSON object.
-     * @throws IOException   If an IO error occurs.
+     * @return True if successful.
+     * @throws JSONException          If something goes wrong when creating JSON object.
+     * @throws IOException            If an IO error occurs.
+     * @throws CommunicationException When there is a communication error due to misconfiguration.
      */
-    public void requestFileTransferStart(long transferId, TransferItem.Type type) throws JSONException, IOException
+    public boolean requestFileTransferStart(long transferId, TransferItem.Type type) throws JSONException, IOException,
+            CommunicationException
     {
         getActiveConnection().reply(new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER_JOB)
                 .put(Keyword.TRANSFER_ID, transferId)
                 .put(Keyword.TRANSFER_TYPE, type));
+        return receiveResult();
     }
 
-    public void requestNotifyTransferState(long transferId, boolean accepted) throws JSONException, IOException
+    /**
+     * Inform remote about the state of a transfer request it sent previously.
+     *
+     * @param transferId The transfer id that you are informing about.
+     * @param accepted   True if the transfer request was accepted.
+     * @return True if the request was processed successfully.
+     * @throws JSONException          If something goes wrong when creating JSON object.
+     * @throws IOException            If an IO error occurs.
+     * @throws CommunicationException When there is a communication error due to misconfiguration.
+     */
+    public boolean requestNotifyTransferState(long transferId, boolean accepted) throws JSONException, IOException,
+            CommunicationException
     {
         getActiveConnection().reply(new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_NOTIFY_TRANSFER_STATE)
                 .put(Keyword.TRANSFER_ID, transferId)
                 .put(Keyword.TRANSFER_IS_ACCEPTED, accepted));
+        return receiveResult();
     }
 
-    public void requestTextTransfer(String text) throws JSONException, IOException
+    /**
+     * Request a text transfer.
+     *
+     * @param text To send.
+     * @throws JSONException          If something goes wrong when creating JSON object.
+     * @throws IOException            If an IO error occurs.
+     * @throws CommunicationException When there is a communication error due to misconfiguration.
+     */
+    public boolean requestTextTransfer(String text) throws JSONException, IOException, CommunicationException
     {
         getActiveConnection().reply(new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER_TEXT)
                 .put(Keyword.TRANSFER_TEXT, text));
+        return receiveResult();
     }
 
     public static JSONObject receiveSecure(ActiveConnection activeConnection, Device device) throws IOException,

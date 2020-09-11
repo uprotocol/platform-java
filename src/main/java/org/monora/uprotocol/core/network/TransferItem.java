@@ -78,4 +78,15 @@ public abstract class TransferItem
          */
         OUTGOING
     }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (obj instanceof TransferItem) {
+            TransferItem other = (TransferItem) obj;
+            return type != null && type.equals(other.type) && transferId == other.transferId && id == other.id;
+        }
+
+        return super.equals(obj);
+    }
 }

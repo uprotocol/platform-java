@@ -6,14 +6,13 @@ import org.monora.uprotocol.core.network.Device;
 import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
-import org.monora.uprotocol.core.protocol.ConnectionProvider;
-import org.monora.uprotocol.core.protocol.DeviceBlockedException;
-import org.monora.uprotocol.core.protocol.DeviceInsecureException;
-import org.monora.uprotocol.core.protocol.DeviceVerificationException;
+import org.monora.uprotocol.core.protocol.*;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
 
 import java.net.InetAddress;
 import java.util.Base64;
+
+import static org.monora.uprotocol.core.spec.alpha.Config.LENGTH_DEVICE_USERNAME;
 
 public class DeviceLoader
 {
@@ -64,14 +63,15 @@ public class DeviceLoader
         device.brand = object.getString(Keyword.DEVICE_BRAND);
         device.model = object.getString(Keyword.DEVICE_MODEL);
         device.username = object.getString(Keyword.DEVICE_USERNAME);
+        device.clientType = object.getEnum(ClientType.class, Keyword.DEVICE_CLIENT_TYPE);
         device.lastUsageTime = System.currentTimeMillis();
         device.versionCode = object.getInt(Keyword.DEVICE_VERSION_CODE);
         device.versionName = object.getString(Keyword.DEVICE_VERSION_NAME);
         device.protocolVersion = object.getInt(Keyword.DEVICE_PROTOCOL_VERSION);
         device.protocolVersionMin = object.getInt(Keyword.DEVICE_PROTOCOL_VERSION_MIN);
 
-        if (device.username.length() > CommunicationBridge.LENGTH_DEVICE_NAME)
-            device.username = device.username.substring(0, CommunicationBridge.LENGTH_DEVICE_NAME);
+        if (device.username.length() > LENGTH_DEVICE_USERNAME)
+            device.username = device.username.substring(0, LENGTH_DEVICE_USERNAME);
 
         persistenceProvider.save(device);
 

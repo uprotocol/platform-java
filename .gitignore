@@ -1,0 +1,7 @@
+/target
+/.idea
+/projectFilesBackup
+*.iml
+local.properties
+*.jar
+settings.xml

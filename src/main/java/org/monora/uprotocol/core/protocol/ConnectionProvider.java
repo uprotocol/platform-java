@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 
 /**
- * This factory class is for opening connections in order to bypass the NAT/firewall. What this does is communicate with
- * the appropriate system resources before opening a connection.
+ * This factory class is responsible for opening connections in order to bypass the NAT/firewall. What this does is
+ * communicate with the appropriate system resources before opening a connection.
  */
 public interface ConnectionProvider
 {

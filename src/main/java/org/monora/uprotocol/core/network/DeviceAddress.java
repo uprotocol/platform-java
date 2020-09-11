@@ -18,12 +18,21 @@ public abstract class DeviceAddress
     /**
      * The {@link Device#uid} that specifies who owns this address.
      */
-    public String deviceId;
+    public String deviceUid;
 
     /**
      * The last time that a communication was started with this address.
      *
      * @see System#currentTimeMillis()
      */
-    public long lastCheckedDate;
+    public long lastUsageTime;
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (obj instanceof DeviceAddress) {
+            return inetAddress != null && inetAddress.equals(((DeviceAddress) obj).inetAddress);
+        }
+        return super.equals(obj);
+    }
 }

@@ -24,9 +24,9 @@ public class TransportSession extends CoolSocket
 
     public TransportSession(PersistenceProvider persistenceProvider, TransportSeat transportSeat)
     {
-        super(Config.SERVER_PORT_COMMUNICATION);
+        super(Config.PORT_UPROTOCOL);
 
-        getConfigFactory().setReadTimeout(CommunicationBridge.TIMEOUT_SOCKET_DEFAULT);
+        getConfigFactory().setReadTimeout(Config.TIMEOUT_SOCKET_DEFAULT);
         this.persistenceProvider = persistenceProvider;
         this.transportSeat = transportSeat;
     }

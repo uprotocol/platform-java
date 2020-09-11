@@ -1,5 +1,7 @@
 package org.monora.uprotocol.core.network;
 
+import org.monora.uprotocol.core.protocol.ClientType;
+
 /**
  * A device is a representation of a client using the latest information it has provided in a previous communication.
  */
@@ -21,11 +23,6 @@ public abstract class Device
     public String versionName;
 
     /**
-     * The OS that the client is running on.
-     */
-    public String clientOs;
-
-    /**
      * The brand/manufacturer of the device.
      */
     public String brand;
@@ -34,6 +31,11 @@ public abstract class Device
      * The model name of the device.
      */
     public String model;
+
+    /**
+     * The client type.
+     */
+    public ClientType clientType;
 
     /**
      * The key that we will send to the remote when we are the one who is initiating the communication.
@@ -78,7 +80,7 @@ public abstract class Device
     public boolean isTrusted;
 
     /**
-     * This represents whether this devices is blocked on this client. When devices are blocked they
+     * This represents whether this device is blocked on this client. When devices are blocked they
      * cannot access unless the user for this client unblocks it.
      *
      * @see #isTrusted
@@ -89,4 +91,35 @@ public abstract class Device
      * Determine whether this device instance belongs to this client (us).
      */
     public boolean isLocal;
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (obj instanceof Device) {
+            return uid != null && uid.equals(((Device) obj).uid);
+        }
+        return super.equals(obj);
+    }
+
+    public void from(Device device)
+    {
+        from(device.username, device.senderKey, device.receiverKey, device.brand, device.model, device.clientType,
+                device.versionName, device.versionCode, device.protocolVersion, device.protocolVersionMin);
+    }
+
+    protected void from(String username, int senderKey, int receiverKey, String brand, String model,
+                        ClientType clientType, String versionName, int versionCode, int protocolVersion,
+                        int protocolVersionMin)
+    {
+        this.username = username;
+        this.senderKey = senderKey;
+        this.receiverKey = receiverKey;
+        this.brand = brand;
+        this.model = model;
+        this.clientType = clientType;
+        this.versionName = versionName;
+        this.versionCode = versionCode;
+        this.protocolVersion = protocolVersion;
+        this.protocolVersionMin = protocolVersionMin;
+    }
 }
