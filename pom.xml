@@ -105,7 +105,7 @@
             <url>https://jcenter.bintray.com/</url>
         </repository>
         <repository>
-            <id>github</id>
+            <id>coolsocket</id>
             <name>GitHub CoolSocket Apache Maven Packages</name>
             <url>https://maven.pkg.github.com/libcoolsocket/java</url>
         </repository>
@@ -123,7 +123,6 @@
             <version>RELEASE</version>
             <scope>test</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.genonbeta.coolsocket/main -->
         <dependency>
             <groupId>org.monora.coolsocket</groupId>
             <artifactId>core</artifactId>
