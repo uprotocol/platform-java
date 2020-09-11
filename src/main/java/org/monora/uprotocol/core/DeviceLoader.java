@@ -6,6 +6,7 @@ import org.monora.uprotocol.core.network.Device;
 import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
+import org.monora.uprotocol.core.protocol.ConnectionProvider;
 import org.monora.uprotocol.core.protocol.DeviceBlockedException;
 import org.monora.uprotocol.core.protocol.DeviceInsecureException;
 import org.monora.uprotocol.core.protocol.DeviceVerificationException;
@@ -20,7 +21,7 @@ public class DeviceLoader
             throws JSONException
     {
         device.isBlocked = false;
-        device.receiveKey = object.getInt(Keyword.DEVICE_KEY);
+        device.receiverKey = object.getInt(Keyword.DEVICE_KEY);
         loadFrom(persistenceProvider, object, device);
     }
 
@@ -28,7 +29,7 @@ public class DeviceLoader
                                     boolean hasPin) throws JSONException, DeviceInsecureException
     {
         device.uid = object.getString(Keyword.DEVICE_UID);
-        int receiveKey = object.getInt(Keyword.DEVICE_KEY);
+        int receiverKey = object.getInt(Keyword.DEVICE_KEY);
         if (hasPin)
             device.isTrusted = true;
 
@@ -36,20 +37,20 @@ public class DeviceLoader
             try {
                 persistenceProvider.sync(device);
 
-                if (hasPin && receiveKey != device.receiveKey)
+                if (hasPin && receiverKey != device.receiverKey)
                     throw new PersistenceException("Generate new keys.");
             } catch (PersistenceException e) {
-                device.receiveKey = receiveKey;
-                device.sendKey = persistenceProvider.generateKey();
+                device.receiverKey = receiverKey;
+                device.senderKey = persistenceProvider.generateKey();
             }
 
             if (hasPin) {
                 device.isBlocked = false;
             } else if (device.isBlocked)
                 throw new DeviceBlockedException("The device is blocked.", device);
-            else if (receiveKey != device.receiveKey) {
+            else if (receiverKey != device.receiverKey) {
                 device.isBlocked = true;
-                throw new DeviceVerificationException("The device receive key is different.", device, receiveKey);
+                throw new DeviceVerificationException("The device receiver key is different.", device, receiverKey);
             }
         } finally {
             loadFrom(persistenceProvider, object, device);
@@ -84,11 +85,11 @@ public class DeviceLoader
         persistenceProvider.saveAvatar(device, deviceAvatar);
     }
 
-    public static void load(PersistenceProvider persistenceProvider, InetAddress address,
-                            OnDeviceResolvedListener listener)
+    public static void load(ConnectionProvider connectionProvider, PersistenceProvider persistenceProvider,
+                            InetAddress address, OnDeviceResolvedListener listener)
     {
         new Thread(() -> {
-            try (CommunicationBridge bridge = CommunicationBridge.connect(persistenceProvider,
+            try (CommunicationBridge bridge = CommunicationBridge.connect(connectionProvider, persistenceProvider,
                     persistenceProvider.createDeviceAddressFor(address), null, 0)) {
                 if (listener != null)
                     listener.onDeviceResolved(bridge.getDevice(), bridge.getDeviceAddress());

@@ -1,6 +1,8 @@
 package org.monora.uprotocol.core.network;
 
-public class TransferItem
+import org.monora.uprotocol.core.persistence.PersistenceProvider;
+
+public abstract class TransferItem
 {
     /**
      * The unique identifier for this transfer item.
@@ -8,7 +10,7 @@ public class TransferItem
     public long id;
 
     /**
-     * The transfer ID.
+     * The transfer ID which is used to tie one or more transfer items together.
      */
     public long transferId;
 
@@ -27,20 +29,22 @@ public class TransferItem
      * "cakes" and the file name is "birthday_cake_0024.jpg". When all those three are merged, the resulting path
      * will be "/home/pi/cakes/birthday_cake_0024.jpg". In other words, you should only keep "birthday_cake_0024.jpg"
      * in this field. As a good practice, you can keep a temporary name until the file is fully received, i.e.
-     * ".4124-4454-4532-6566.tshare" and change it to the {@link #name} when the file is saved.
+     * ".4124-4454-4532-6566.tshare" and change it to the {@link #name} when the file is saved. You can gather the
+     * suggested temporary file format from {@link PersistenceProvider#getTemporaryFileFormat()}.
      * <p>
-     * If this is a {@link Type#OUTGOING} transfer item, this will hold the fully resolved path/URI to the file that is
-     * sent.
+     * If this is a {@link Type#OUTGOING} transfer item, this will hold the fully resolved path/URI pointing at the file
+     * that is being sent.
      */
     public String file;
 
     /**
-     * Where this file should store in a give save path. Null when it should be stored in the root folder (save path).
+     * Where this file should store in a give save path. This will be 'null' when it should be stored in the root folder
+     * (save path).
      */
     public String directory;
 
     /**
-     * The MIME-Type which tells the actual file type. It could be "video/mp4".
+     * The MIME-Type, which tells the actual file type. It could be "video/mp4".
      */
     public String mimeType;
 
@@ -68,6 +72,10 @@ public class TransferItem
          * The item is incoming
          */
         INCOMING,
+
+        /**
+         * The item is outgoing.
+         */
         OUTGOING
     }
 }

@@ -12,7 +12,6 @@ import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.DeviceVerificationException;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
-import org.monora.uprotocol.core.protocol.communication.NotAllowedException;
 import org.monora.uprotocol.core.spec.alpha.Config;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
 
@@ -35,7 +34,6 @@ public class TransportSession extends CoolSocket
     @Override
     public void onConnected(ActiveConnection activeConnection)
     {
-        // check if the same address has other connections and limit that to 5
         try {
             activeConnection.reply(persistenceProvider.getDeviceUid());
 
@@ -50,18 +48,20 @@ public class TransportSession extends CoolSocket
             try {
                 DeviceLoader.loadAsServer(persistenceProvider, response, device, hasPin);
             } catch (DeviceVerificationException e) {
-                getNotificationHelper().notifyKeyChanged(device, e.receiveKey, persistenceProvider.generateKey());
+                transportSeat.notifyDeviceKeyChanged(device, e.receiverKey, persistenceProvider.generateKey());
                 throw e;
             } catch (Exception e) {
                 sendInfo = false;
                 throw e;
             } finally {
                 persistenceProvider.save(device, deviceAddress);
-                getKuick().broadcast();
+                persistenceProvider.broadcast();
 
                 if (sendInfo)
-                    CommunicationBridge.sendSecure(activeConnection, true, PersistenceProvider.toJson(
-                            persistenceProvider, device.sendKey, 0));
+                    // TODO: 9/9/20 Are we sending a key that should belong to the other user even when a key error is
+                    //  the case?
+                    CommunicationBridge.sendSecure(activeConnection, true,
+                            persistenceProvider.toJson(device.senderKey, 0));
             }
 
             CommunicationBridge.sendResult(activeConnection, true);
@@ -69,11 +69,11 @@ public class TransportSession extends CoolSocket
             if (hasPin) // pin is known, should be changed. Warn the listeners.
                 persistenceProvider.revokeNetworkPin();
 
-            getKuick().broadcast();
             activeConnection.setInternalCacheLimit(1073741824); // 1MB
-            response = activeConnection.receive().getAsJson();
 
-            handleRequest(activeConnection, device, deviceAddress, hasPin, response);
+            final CommunicationBridge bridge = new CommunicationBridge(persistenceProvider, activeConnection, device,
+                    deviceAddress);
+            handleRequest(bridge, device, deviceAddress, hasPin, activeConnection.receive().getAsJson());
         } catch (Exception e) {
             e.printStackTrace();
             try {
@@ -83,64 +83,42 @@ public class TransportSession extends CoolSocket
         }
     }
 
-    private void handleRequest(ActiveConnection activeConnection, Device device, DeviceAddress deviceAddress,
+    private void handleRequest(CommunicationBridge bridge, Device device, DeviceAddress deviceAddress,
                                boolean hasPin, JSONObject response) throws JSONException, IOException,
             PersistenceException, CommunicationException
     {
         switch (response.getString(Keyword.REQUEST)) {
-            case (Keyword.REQUEST_TRANSFER):
-                if (mApp.hasTaskOf(IndexTransferTask.class))
-                    throw new NotAllowedException(device);
-                else {
-                    long transferId = response.getLong(Keyword.TRANSFER_ID);
-                    String jsonIndex = response.getString(Keyword.INDEX);
+            case (Keyword.REQUEST_TRANSFER): {
+                long transferId = response.getLong(Keyword.TRANSFER_ID);
+                String jsonIndex = response.getString(Keyword.INDEX);
 
-                    try {
-                        getKuick().reconstruct(new Transfer(transferId));
-                        throw new ContentException(ContentException.Error.AlreadyExists);
-                    } catch (PersistenceException e) {
-                        CommunicationBridge.sendResult(activeConnection, true);
-                        mApp.run(new IndexTransferTask(transferId, jsonIndex, device, hasPin));
-                    }
+                if (transportSeat.hasTransferIndexingFor(transferId))
+                    throw new ContentException(ContentException.Error.AlreadyExists);
+                else {
+                    transportSeat.handleFileTransfer(device, hasPin, transferId, jsonIndex);
+                    bridge.sendResult(true);
                 }
                 return;
+            }
             case (Keyword.REQUEST_NOTIFY_TRANSFER_STATE): {
                 int transferId = response.getInt(Keyword.TRANSFER_ID);
                 boolean isAccepted = response.getBoolean(Keyword.TRANSFER_IS_ACCEPTED);
-                Transfer transfer = new Transfer(transferId);
-                TransferMember member = new TransferMember(transfer, device, TransferItem.Type.OUTGOING);
 
-                getKuick().reconstruct(transfer);
-                getKuick().reconstruct(member);
-
-                if (!isAccepted) {
-                    getKuick().remove(member);
-                    getKuick().broadcast();
-                }
-
-                CommunicationBridge.sendResult(activeConnection, true);
+                transportSeat.handleFileTransferState(device, transferId, isAccepted);
+                bridge.sendResult(true);
                 return;
             }
-            case (Keyword.REQUEST_CLIPBOARD):
-                TextStreamObject textStreamObject = new TextStreamObject(AppUtils.getUniqueNumber(),
-                        response.getString(Keyword.TRANSFER_TEXT));
-
-                getKuick().publish(textStreamObject);
-                getKuick().broadcast();
-                getNotificationHelper().notifyClipboardRequest(device, textStreamObject);
-
-                CommunicationBridge.sendResult(activeConnection, true);
+            case (Keyword.REQUEST_TRANSFER_TEXT):
+                transportSeat.handleTextTransfer(device, response.getString(Keyword.TRANSFER_TEXT));
+                bridge.sendResult(true);
                 return;
             case (Keyword.REQUEST_ACQUAINTANCE):
-                sendBroadcast(new Intent(ACTION_DEVICE_ACQUAINTANCE)
-                        .putExtra(EXTRA_DEVICE, device)
-                        .putExtra(EXTRA_DEVICE_ADDRESS, deviceAddress));
-                CommunicationBridge.sendResult(activeConnection, true);
+                transportSeat.handleAcquaintanceRequest(device, deviceAddress);
+                bridge.sendResult(true);
                 return;
             case (Keyword.REQUEST_TRANSFER_JOB):
                 int transferId = response.getInt(Keyword.TRANSFER_ID);
-                String typeValue = response.getString(Keyword.TRANSFER_TYPE);
-                TransferItem.Type type = TransferItem.Type.valueOf(typeValue);
+                TransferItem.Type type = response.getEnum(TransferItem.Type.class, Keyword.TRANSFER_TYPE);
 
                 // The type is reversed to match our side
                 if (TransferItem.Type.INCOMING.equals(type))
@@ -148,33 +126,17 @@ public class TransportSession extends CoolSocket
                 else if (TransferItem.Type.OUTGOING.equals(type))
                     type = TransferItem.Type.INCOMING;
 
-                Transfer transfer = new Transfer(transferId);
-                getKuick().reconstruct(transfer);
-
-                Log.d(BackgroundService.TAG, "CommunicationServer.onConnected(): "
-                        + "transferId=" + transferId + " typeValue=" + typeValue);
-
                 if (TransferItem.Type.INCOMING.equals(type) && !device.isTrusted)
-                    CommunicationBridge.sendError(activeConnection, Keyword.ERROR_NOT_TRUSTED);
-                else if (isProcessRunning(transferId, device.uid, type))
+                    bridge.sendError(Keyword.ERROR_NOT_TRUSTED);
+                else if (transportSeat.hasTransferFor(transferId, device.uid, type))
                     throw new ContentException(ContentException.Error.NotAccessible);
                 else {
-                    FileTransferTask task = new FileTransferTask();
-                    task.activeConnection = activeConnection;
-                    task.transfer = transfer;
-                    task.device = device;
-                    task.type = type;
-                    task.member = new TransferMember(transfer, device, type);
-                    task.index = new TransferIndex(transfer);
-
-                    getKuick().reconstruct(task.member);
-                    CommunicationBridge.sendResult(activeConnection, true);
-
-                    mApp.attach(task);
-                    return;
+                    bridge.sendResult(true);
+                    transportSeat.beginFileTransfer(bridge, device, transferId, type);
                 }
+                return;
             default:
-                CommunicationBridge.sendResult(activeConnection, false);
+                bridge.sendResult(false);
         }
     }
 }

@@ -1,7 +1,7 @@
 package org.monora.uprotocol.core.network;
 
 /**
- * This class
+ * A device is a representation of a client using the latest information it has provided in a previous communication.
  */
 public abstract class Device
 {
@@ -38,16 +38,16 @@ public abstract class Device
     /**
      * The key that we will send to the remote when we are the one who is initiating the communication.
      *
-     * @see #receiveKey
+     * @see #receiverKey
      */
-    public int sendKey;
+    public int senderKey;
 
     /**
      * The key that the remote will send us when it is the one initiating the communication.
      *
-     * @see #sendKey
+     * @see #senderKey
      */
-    public int receiveKey;
+    public int receiverKey;
 
     /**
      * The version code for the client running on the device.

@@ -25,11 +25,11 @@ import org.monora.uprotocol.core.network.Device;
  */
 public class DeviceVerificationException extends DeviceInsecureException
 {
-    public final int receiveKey;
+    public final int receiverKey;
 
-    public DeviceVerificationException(String message, Device device, int receiveKey)
+    public DeviceVerificationException(String message, Device device, int receiverKey)
     {
         super(message, device);
-        this.receiveKey = receiveKey;
+        this.receiverKey = receiverKey;
     }
 }

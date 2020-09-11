@@ -3,8 +3,10 @@ package org.monora.uprotocol.core.network;
 import java.net.InetAddress;
 
 /**
- * This class is a way to consume objects that are not actually an {@link InetAddress} but have internal object that
- * can be transformed into one.
+ * This class ties an internet address with a device.
+ *
+ * @see InetAddress
+ * @see Device
  */
 public abstract class DeviceAddress
 {
@@ -19,7 +21,9 @@ public abstract class DeviceAddress
     public String deviceId;
 
     /**
-     * The last time {@link System#currentTimeMillis()} that a connection was started with this address.
+     * The last time that a communication was started with this address.
+     *
+     * @see System#currentTimeMillis()
      */
     public long lastCheckedDate;
 }

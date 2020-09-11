@@ -116,13 +116,14 @@ public class CommunicationBridge implements Closeable
         try {
             persistenceProvider.sync(device);
         } catch (PersistenceException e) {
-            device.sendKey = persistenceProvider.generateKey();
+            device.senderKey = persistenceProvider.generateKey();
         }
 
-        activeConnection.reply(PersistenceProvider.toJson(persistenceProvider, device.sendKey, pin));
+        activeConnection.reply(persistenceProvider.toJson(device.senderKey, pin));
         persistenceProvider.save(device, deviceAddress);
+
         DeviceLoader.loadAsClient(persistenceProvider, receiveSecure(activeConnection, device), device);
-        CommunicationBridge.receiveResult(activeConnection, device);
+        receiveResult(activeConnection, device);
 
         return new CommunicationBridge(persistenceProvider, activeConnection, device, deviceAddress);
     }
@@ -152,11 +153,34 @@ public class CommunicationBridge implements Closeable
         return ActiveConnection.connect(new InetSocketAddress(inetAddress, PORT_UPROTOCOL), TIMEOUT_SOCKET_DEFAULT);
     }
 
+    /**
+     * Inform the remote that it should choose you (this client) if it's about to choose a device.
+     * <p>
+     * For instance, the remote is setting up a file transfer request and is about to pick a device. If you make this
+     * request in that timespan, this will invoke {@link TransportSeat#handleAcquaintanceRequest(Device, DeviceAddress)}
+     * method on the remote and it will choose you.
+     *
+     * @throws JSONException If something goes wrong when creating the JSON object.
+     * @throws IOException   If an IO error occurs.
+     */
     public void requestAcquaintance() throws JSONException, IOException
     {
         getActiveConnection().reply(new JSONObject().put(Keyword.REQUEST, Keyword.REQUEST_ACQUAINTANCE));
     }
 
+    /**
+     * Request a file transfer operation by informing the remote that you will send files.
+     * <p>
+     * This request doesn't guarantee that the request will be processed immediately. You should close the connection
+     * after making this request. If everything goes right, the remote will reach you using
+     * {@link #requestFileTransferStart(long, TransferItem.Type)}, which will end up in your
+     * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Device, long, TransferItem.Type)} method.
+     *
+     * @param transferId That ties a group of {@link TransferItem} as in {@link TransferItem#transferId}.
+     * @param files      That has been generated using {@link PersistenceProvider#toJson(List)}.
+     * @throws JSONException If something goes wrong when creating the JSON object.
+     * @throws IOException   If an IO error occurs.
+     */
     public void requestFileTransfer(long transferId, JSONArray files) throws JSONException, IOException
     {
         getActiveConnection().reply(new JSONObject()
@@ -165,6 +189,16 @@ public class CommunicationBridge implements Closeable
                 .put(Keyword.INDEX, files));
     }
 
+    /**
+     * Ask the remote to start the transfer job.
+     * <p>
+     * The transfer request has already been sent {@link #requestFileTransfer(long, JSONArray)}.
+     *
+     * @param transferId That ties a group of {@link TransferItem} as in {@link TransferItem#transferId}.
+     * @param type       Of the transfer as in {@link TransferItem#type}.
+     * @throws JSONException If something goes wrong when creating the JSON object.
+     * @throws IOException   If an IO error occurs.
+     */
     public void requestFileTransferStart(long transferId, TransferItem.Type type) throws JSONException, IOException
     {
         getActiveConnection().reply(new JSONObject()
@@ -184,26 +218,21 @@ public class CommunicationBridge implements Closeable
     public void requestTextTransfer(String text) throws JSONException, IOException
     {
         getActiveConnection().reply(new JSONObject()
-                .put(Keyword.REQUEST, Keyword.REQUEST_CLIPBOARD)
+                .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER_TEXT)
                 .put(Keyword.TRANSFER_TEXT, text));
     }
 
-    public boolean receiveResult() throws JSONException, IOException, CommunicationException
-    {
-        return receiveResult(getActiveConnection(), getDevice());
-    }
-
-    public static JSONObject receiveSecure(ActiveConnection connection, Device targetDevice) throws IOException,
+    public static JSONObject receiveSecure(ActiveConnection activeConnection, Device device) throws IOException,
             JSONException, CommunicationException
     {
-        JSONObject jsonObject = connection.receive().getAsJson();
+        JSONObject jsonObject = activeConnection.receive().getAsJson();
         if (jsonObject.has(Keyword.ERROR)) {
             final String errorCode = jsonObject.getString(Keyword.ERROR);
             switch (errorCode) {
                 case Keyword.ERROR_NOT_ALLOWED:
-                    throw new NotAllowedException(targetDevice);
+                    throw new NotAllowedException(device);
                 case Keyword.ERROR_NOT_TRUSTED:
-                    throw new NotTrustedException(targetDevice);
+                    throw new NotTrustedException(device);
                 case Keyword.ERROR_NOT_ACCESSIBLE:
                     throw new ContentException(ContentException.Error.NotAccessible);
                 case Keyword.ERROR_ALREADY_EXISTS:
@@ -219,55 +248,75 @@ public class CommunicationBridge implements Closeable
         return jsonObject;
     }
 
-    public static boolean receiveResult(ActiveConnection connection, Device targetDevice) throws IOException,
-            JSONException, CommunicationException
+    public JSONObject receiveSecure() throws IOException, JSONException, CommunicationException
     {
-        return receiveSecure(connection, targetDevice).getBoolean(Keyword.RESULT);
+        return receiveSecure(getActiveConnection(), getDevice());
     }
 
-    public static void sendError(ActiveConnection connection, Exception exception) throws IOException, JSONException,
-            UnhandledCommunicationException
+    public static boolean receiveResult(ActiveConnection activeConnection, Device device) throws IOException,
+            JSONException, CommunicationException
+    {
+        return resultOf(receiveSecure(activeConnection, device));
+    }
+
+    public boolean receiveResult() throws IOException, JSONException, CommunicationException
+    {
+        return receiveResult(getActiveConnection(), getDevice());
+    }
+
+    public static boolean resultOf(JSONObject jsonObject) throws JSONException
+    {
+        return jsonObject.getBoolean(Keyword.RESULT);
+    }
+
+    public static void sendError(ActiveConnection activeConnection, Exception exception) throws IOException,
+            JSONException, UnhandledCommunicationException
     {
         try {
             throw exception;
         } catch (NotTrustedException e) {
-            CommunicationBridge.sendError(connection, Keyword.ERROR_NOT_TRUSTED);
+            sendError(activeConnection, Keyword.ERROR_NOT_TRUSTED);
         } catch (DeviceBlockedException | DeviceVerificationException e) {
-            CommunicationBridge.sendError(connection, Keyword.ERROR_NOT_ALLOWED);
+            sendError(activeConnection, Keyword.ERROR_NOT_ALLOWED);
         } catch (PersistenceException e) {
-            CommunicationBridge.sendError(connection, Keyword.ERROR_NOT_FOUND);
+            sendError(activeConnection, Keyword.ERROR_NOT_FOUND);
         } catch (ContentException e) {
-            CommunicationBridge.sendError(connection, e);
+            switch (e.error) {
+                case NotFound:
+                    sendError(activeConnection, Keyword.ERROR_NOT_FOUND);
+                    break;
+                case NotAccessible:
+                    sendError(activeConnection, Keyword.ERROR_NOT_ACCESSIBLE);
+                    break;
+                case AlreadyExists:
+                    sendError(activeConnection, Keyword.ERROR_ALREADY_EXISTS);
+                    break;
+                default:
+                    sendError(activeConnection, Keyword.ERROR_UNKNOWN);
+            }
         } catch (Exception e) {
             throw new UnhandledCommunicationException("An unknown error was thrown during the communication", e);
         }
     }
 
-    public static void sendError(ActiveConnection connection, ContentException e) throws IOException, JSONException
+    public void sendError(Exception exception) throws IOException, UnhandledCommunicationException
     {
-        switch (e.error) {
-            case NotFound:
-                CommunicationBridge.sendError(connection, Keyword.ERROR_NOT_FOUND);
-                break;
-            case NotAccessible:
-                CommunicationBridge.sendError(connection, Keyword.ERROR_NOT_ACCESSIBLE);
-                break;
-            case AlreadyExists:
-                CommunicationBridge.sendError(connection, Keyword.ERROR_ALREADY_EXISTS);
-                break;
-            default:
-                CommunicationBridge.sendError(connection, Keyword.ERROR_UNKNOWN);
-        }
+        sendError(getActiveConnection(), exception);
     }
 
-    public void sendError(String errorCode) throws IOException, JSONException
+    public static void sendError(ActiveConnection activeConnection, String errorCode) throws IOException, JSONException
+    {
+        activeConnection.reply(new JSONObject().put(Keyword.ERROR, errorCode));
+    }
+
+    public void sendError(String errorCode) throws IOException
     {
         sendError(getActiveConnection(), errorCode);
     }
 
-    public static void sendError(ActiveConnection connection, String errorCode) throws IOException, JSONException
+    public static void sendResult(ActiveConnection activeConnection, boolean result) throws IOException, JSONException
     {
-        connection.reply(new JSONObject().put(Keyword.ERROR, errorCode));
+        sendSecure(activeConnection, result, new JSONObject());
     }
 
     public void sendResult(boolean result) throws IOException, JSONException
@@ -275,14 +324,14 @@ public class CommunicationBridge implements Closeable
         sendResult(getActiveConnection(), result);
     }
 
-    public static void sendResult(ActiveConnection connection, boolean result) throws IOException, JSONException
-    {
-        sendSecure(connection, result, new JSONObject());
-    }
-
-    public static void sendSecure(ActiveConnection connection, boolean result, JSONObject jsonObject)
+    public static void sendSecure(ActiveConnection activeConnection, boolean result, JSONObject jsonObject)
             throws JSONException, IOException
     {
-        connection.reply(jsonObject.put(Keyword.RESULT, result));
+        activeConnection.reply(jsonObject.put(Keyword.RESULT, result));
+    }
+
+    public void sendSecure(boolean result, JSONObject jsonObject) throws JSONException, IOException
+    {
+        sendSecure(getActiveConnection(), result, jsonObject);
     }
 }

@@ -31,10 +31,10 @@ public class Keyword
             REQUEST_TRANSFER = "transfer",
             REQUEST_NOTIFY_TRANSFER_STATE = "transferState",
             REQUEST_ACQUAINTANCE = "acquaintance",
-            REQUEST_CLIPBOARD = "text",
+            REQUEST_TRANSFER_TEXT = "text",
             REQUEST_TRANSFER_JOB = "transferJob", // Introduced in 99
             TRANSFER_TYPE = "type", // Introduced in 99
-            TRANSFER_REQUEST_ID = "requestId",
+            TRANSFER_ITEM_ID = "itemId",
             TRANSFER_ID = "transferId",
             TRANSFER_IS_ACCEPTED = "isAccepted",
             TRANSFER_TEXT = "text",
@@ -54,7 +54,7 @@ public class Keyword
             DEVICE_VERSION_CODE = "versionCode",
             DEVICE_PROTOCOL_VERSION = "protocolVersion", // Introduced in 99
             DEVICE_PROTOCOL_VERSION_MIN = "minimumProtocolVersion", // Introduced in 99
-            SKIPPED_BYTES = "skippedBytes",
+            TRANSFER_SKIPPED_BYTES = "skippedBytes",
             ERROR = "error",
             ERROR_NOT_ALLOWED = "notAllowed",
             ERROR_NOT_FOUND = "notFound",
