@@ -107,7 +107,7 @@
         <repository>
             <id>github</id>
             <name>GitHub CoolSocket Apache Maven Packages</name>
-            <url>https://maven.pkg.github.com/</url>
+            <url>https://maven.pkg.github.com/libcoolsocket/java</url>
         </repository>
     </repositories>
     <dependencies>
