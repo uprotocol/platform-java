@@ -1,5 +1,8 @@
 package org.monora.uprotocol.core.spec.alpha;
 
+/**
+ * The default values for uprotocol.
+ */
 public class Config
 {
     public static final int TIMEOUT_SOCKET_DEFAULT = 5000;

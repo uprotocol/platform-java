@@ -101,6 +101,11 @@ public abstract class Device
         return super.equals(obj);
     }
 
+    /**
+     * Load the details for this instance from another instance.
+     *
+     * @param device To load from.
+     */
     public void from(Device device)
     {
         from(device.username, device.senderKey, device.receiverKey, device.brand, device.model, device.clientType,

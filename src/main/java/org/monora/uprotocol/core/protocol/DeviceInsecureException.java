@@ -21,13 +21,23 @@ package org.monora.uprotocol.core.protocol;
 import org.monora.uprotocol.core.network.Device;
 
 // TODO: 9/8/20 DeviceInsecureException was targeting ReconstructionFailedException. What now?
+
 /**
  * Thrown when a known device connects with a different key.
  */
 public class DeviceInsecureException extends Exception
 {
+    /**
+     * The insecure device.
+     */
     public final Device device;
 
+    /**
+     * Create a new instance.
+     *
+     * @param message The reason for this error.
+     * @param device  The insecure device.
+     */
     public DeviceInsecureException(String message, Device device)
     {
         super(message);

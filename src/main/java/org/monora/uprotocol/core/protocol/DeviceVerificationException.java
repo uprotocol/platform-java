@@ -27,6 +27,13 @@ public class DeviceVerificationException extends DeviceInsecureException
 {
     public final int receiverKey;
 
+    /**
+     * Create a new instance.
+     *
+     * @param message     The reason for this error.
+     * @param device      That has a key mismatch.
+     * @param receiverKey The wrong key it sent.
+     */
     public DeviceVerificationException(String message, Device device, int receiverKey)
     {
         super(message, device);

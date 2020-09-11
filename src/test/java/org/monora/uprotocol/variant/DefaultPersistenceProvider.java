@@ -119,17 +119,11 @@ public class DefaultPersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void save(Device device, DeviceAddress deviceAddress)
+    public void save(DeviceAddress deviceAddress)
     {
         synchronized (deviceAddressList) {
             deviceAddressList.add(deviceAddress);
         }
-    }
-
-    @Override
-    public void save(Device device, InetAddress inetAddress)
-    {
-        save(device, new DefaultDeviceAddress(inetAddress, device.uid, System.currentTimeMillis()));
     }
 
     @Override
@@ -147,11 +141,11 @@ public class DefaultPersistenceProvider implements PersistenceProvider
             for (Device persistentDevice : deviceList) {
                 if (device.equals(persistentDevice)) {
                     device.from(persistentDevice);
-                    break;
+                    return;
                 }
             }
         }
 
-        throw new PersistenceException("I am breathing stereo.");
+        throw new PersistenceException("I grieve in stereo.");
     }
 }

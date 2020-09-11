@@ -5,6 +5,11 @@ package org.monora.uprotocol.core.persistence;
  */
 public class PersistenceException extends Exception
 {
+    /**
+     * Create a new instance.
+     *
+     * @param message The details of the error.
+     */
     public PersistenceException(String message)
     {
         super(message);

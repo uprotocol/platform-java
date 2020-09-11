@@ -45,6 +45,9 @@ public class TransportSession extends CoolSocket
                     activeConnection.getAddress());
             boolean sendInfo = true;
 
+            if (hasPin)
+                persistenceProvider.revokeNetworkPin();
+
             try {
                 DeviceLoader.loadAsServer(persistenceProvider, response, device, hasPin);
             } catch (DeviceVerificationException e) {
@@ -54,7 +57,7 @@ public class TransportSession extends CoolSocket
                 sendInfo = false;
                 throw e;
             } finally {
-                persistenceProvider.save(device, deviceAddress);
+                persistenceProvider.save(deviceAddress);
                 persistenceProvider.broadcast();
 
                 if (sendInfo)
@@ -66,14 +69,15 @@ public class TransportSession extends CoolSocket
 
             CommunicationBridge.sendResult(activeConnection, true);
 
-            if (hasPin) // pin is known, should be changed. Warn the listeners.
-                persistenceProvider.revokeNetworkPin();
-
             activeConnection.setInternalCacheLimit(1073741824); // 1MB
 
-            final CommunicationBridge bridge = new CommunicationBridge(persistenceProvider, activeConnection, device,
-                    deviceAddress);
-            handleRequest(bridge, device, deviceAddress, hasPin, activeConnection.receive().getAsJson());
+            JSONObject request = activeConnection.receive().getAsJson();
+
+            if (!CommunicationBridge.resultOf(request))
+                return;
+
+            handleRequest(new CommunicationBridge(persistenceProvider, activeConnection, device, deviceAddress), device,
+                    deviceAddress, hasPin, request);
         } catch (Exception e) {
             e.printStackTrace();
             try {

@@ -16,6 +16,14 @@ import static org.monora.uprotocol.core.spec.alpha.Config.LENGTH_DEVICE_USERNAME
 
 public class DeviceLoader
 {
+    /**
+     * Load the device details as if you are connecting as a device.
+     *
+     * @param persistenceProvider That stores persistent data.
+     * @param object              To load the details from.
+     * @param device              To load into.
+     * @throws JSONException If something goes wrong when inflating the JSON data.
+     */
     public static void loadAsClient(PersistenceProvider persistenceProvider, JSONObject object, Device device)
             throws JSONException
     {
@@ -24,6 +32,17 @@ public class DeviceLoader
         loadFrom(persistenceProvider, object, device);
     }
 
+    /**
+     * Load the device details as if you are server.
+     *
+     * @param persistenceProvider That stores persistent data.
+     * @param object              To load the details from.
+     * @param device              To load into.
+     * @param hasPin              True will mean this device has a valid PIN and this will escalate the privileges it
+     *                            will have. For instance, it will be unblocked if blocked and it will be flagged as
+     *                            trusted.
+     * @throws JSONException If something goes wrong when inflating the JSON data.* @throws DeviceInsecureException
+     */
     public static void loadAsServer(PersistenceProvider persistenceProvider, JSONObject object, Device device,
                                     boolean hasPin) throws JSONException, DeviceInsecureException
     {
@@ -85,12 +104,21 @@ public class DeviceLoader
         persistenceProvider.saveAvatar(device, deviceAvatar);
     }
 
+    /**
+     * Load a device using an internet address.
+     *
+     * @param connectionProvider  That will set up the connection.
+     * @param persistenceProvider That stores the persistent data.
+     * @param address             To connect to.
+     * @param listener            That listens for successful attempts. Pass it as 'null' if unneeded.
+     */
     public static void load(ConnectionProvider connectionProvider, PersistenceProvider persistenceProvider,
                             InetAddress address, OnDeviceResolvedListener listener)
     {
         new Thread(() -> {
             try (CommunicationBridge bridge = CommunicationBridge.connect(connectionProvider, persistenceProvider,
                     persistenceProvider.createDeviceAddressFor(address), null, 0)) {
+                bridge.sendResult(false);
                 if (listener != null)
                     listener.onDeviceResolved(bridge.getDevice(), bridge.getDeviceAddress());
             } catch (Exception ignored) {
@@ -98,8 +126,17 @@ public class DeviceLoader
         }).start();
     }
 
+    /**
+     * Callback for delivering the details for a client when successful.
+     */
     public interface OnDeviceResolvedListener
     {
+        /**
+         * Called after the connection is successful.
+         *
+         * @param device  The devices that has been reached.
+         * @param address The address that device was found at.
+         */
         void onDeviceResolved(Device device, DeviceAddress address);
     }
 }

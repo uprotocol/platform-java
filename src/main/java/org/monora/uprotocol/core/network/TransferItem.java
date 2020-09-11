@@ -2,6 +2,9 @@ package org.monora.uprotocol.core.network;
 
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 
+/**
+ * Holds the details for a transfer detail.
+ */
 public abstract class TransferItem
 {
     /**

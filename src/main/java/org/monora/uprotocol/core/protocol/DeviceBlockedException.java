@@ -25,6 +25,12 @@ import org.monora.uprotocol.core.network.Device;
  */
 public class DeviceBlockedException extends DeviceInsecureException
 {
+    /**
+     * Create new instance.
+     *
+     * @param message The reason for this error.
+     * @param device  That is blocked.
+     */
     public DeviceBlockedException(String message, Device device)
     {
         super(message, device);

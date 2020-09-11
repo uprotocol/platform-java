@@ -156,21 +156,12 @@ public interface PersistenceProvider
 
     /**
      * Save this device address in the persistence database.
+     * <p>
+     * Doing so will allow you to connect to a device later.
      *
-     * @param device        That owns the given address.
      * @param deviceAddress To save.
      */
-    void save(Device device, DeviceAddress deviceAddress);
-
-    /**
-     * Save the connection address for the given device.
-     * <p>
-     * The database should be checked in order for the removal of the duplicates.
-     *
-     * @param device      That owns the given address.
-     * @param inetAddress that the remote device connected to us over.
-     */
-    void save(Device device, InetAddress inetAddress);
+    void save(DeviceAddress deviceAddress);
 
     /**
      * Save the avatar for the given device.

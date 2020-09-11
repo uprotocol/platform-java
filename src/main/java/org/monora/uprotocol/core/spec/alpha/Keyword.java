@@ -23,6 +23,9 @@ package org.monora.uprotocol.core.spec.alpha;
  * Date: 4/28/17 8:29 PM
  */
 
+/**
+ * uprotocol keywords as constants.
+ */
 public class Keyword
 {
     public static final String
