@@ -24,7 +24,7 @@
     <artifactId>core</artifactId>
     <version>0.1-ALPHA</version>
     <name>UProtocol</name>
-    <description>Socket implementation</description>
+    <description>Specification for peer-to-peer content exchange that aims to unify existing solutions.</description>
     <licenses>
         <license>
             <name>MIT License</name>
