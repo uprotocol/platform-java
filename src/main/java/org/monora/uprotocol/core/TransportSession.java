@@ -43,28 +43,24 @@ public class TransportSession extends CoolSocket
             final Device device = persistenceProvider.createDevice();
             final DeviceAddress deviceAddress = persistenceProvider.createDeviceAddressFor(
                     activeConnection.getAddress());
-            boolean sendInfo = true;
 
             if (hasPin)
                 persistenceProvider.revokeNetworkPin();
 
             try {
                 DeviceLoader.loadAsServer(persistenceProvider, response, device, hasPin);
+                CommunicationBridge.sendSecure(activeConnection, true,
+                        persistenceProvider.deviceAsJson(device.senderKey, 0));
             } catch (DeviceVerificationException e) {
-                transportSeat.notifyDeviceKeyChanged(device, e.receiverKey, persistenceProvider.generateKey());
-                throw e;
-            } catch (Exception e) {
-                sendInfo = false;
+                int newSenderKey = persistenceProvider.generateKey();
+
+                transportSeat.notifyDeviceKeyChanged(device, e.receiverKey, newSenderKey);
+                CommunicationBridge.sendSecure(activeConnection, true,
+                        persistenceProvider.deviceAsJson(newSenderKey, 0));
+
                 throw e;
             } finally {
-                persistenceProvider.save(deviceAddress);
                 persistenceProvider.broadcast();
-
-                if (sendInfo)
-                    // TODO: 9/9/20 Are we sending a key that should belong to the other user even when a key error is
-                    //  the case?
-                    CommunicationBridge.sendSecure(activeConnection, true,
-                            persistenceProvider.toJson(device.senderKey, 0));
             }
 
             CommunicationBridge.sendResult(activeConnection, true);

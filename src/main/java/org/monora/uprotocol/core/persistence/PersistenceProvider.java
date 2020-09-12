@@ -74,6 +74,53 @@ public interface PersistenceProvider
                                        String directory, TransferItem.Type type);
 
     /**
+     * Convert this device into {@link JSONObject}.
+     * <p>
+     * This should only be invoked when communicating with remote. Excluding the {@link PersistenceProvider}, the rest
+     * of values concerns the remote, which means those values are special to it and no other device should be
+     * using them.
+     * <p>
+     * The sender key should be gathered from the persistence database and assigned to {@link Device#senderKey}.
+     * <p>
+     * Keys should be persistent. They should never be random, and saving them as '0' should result in "error". These
+     * keys are mutually held by you and the remote. Here is a graph representing how the keys correspond to each other:
+     * <p>
+     * Us {@link Device#receiverKey} == Remote {@link Device#senderKey}
+     * Us {@link Device#senderKey} == Remote {@link Device#receiverKey}
+     * <p>
+     * The PIN will usually be unavailable, so it is okay to provide '0'. It should be available through connectionless
+     * means like QR Code or manual-entry. It is used to bypass the security mechanisms so the communication can happen
+     * seamlessly.
+     *
+     * @param senderKey The key which is known by the remote as {@link Device#receiverKey}.
+     * @param pin       The PIN to bypass errors like not matching keys. This will also flag this client as trusted.
+     * @return The JSON object
+     * @throws JSONException If the creation of the JSON object fails for some reason.
+     */
+    default JSONObject deviceAsJson(int senderKey, int pin) throws JSONException
+    {
+        Device device = getDevice();
+        JSONObject object = new JSONObject()
+                .put(Keyword.DEVICE_UID, device.uid)
+                .put(Keyword.DEVICE_BRAND, device.brand)
+                .put(Keyword.DEVICE_MODEL, device.model)
+                .put(Keyword.DEVICE_USERNAME, device.username)
+                .put(Keyword.DEVICE_CLIENT_TYPE, device.clientType)
+                .put(Keyword.DEVICE_VERSION_CODE, device.versionCode)
+                .put(Keyword.DEVICE_VERSION_NAME, device.versionName)
+                .put(Keyword.DEVICE_PROTOCOL_VERSION, device.protocolVersion)
+                .put(Keyword.DEVICE_PROTOCOL_VERSION_MIN, device.protocolVersionMin)
+                .put(Keyword.DEVICE_KEY, senderKey)
+                .put(Keyword.DEVICE_PIN, pin);
+
+        byte[] deviceAvatar = getAvatar();
+        if (deviceAvatar.length > 0)
+            object.put(Keyword.DEVICE_AVATAR, Base64.getEncoder().encodeToString(deviceAvatar));
+
+        return object;
+    }
+
+    /**
      * Generate a unique 32-bit signed integer to use as a key.
      *
      * @return The generated key.
@@ -180,53 +227,6 @@ public interface PersistenceProvider
      * @throws PersistenceException When there is no device associated with the unique identifier {@link Device#uid}.
      */
     void sync(Device device) throws PersistenceException;
-
-    /**
-     * Convert this device into {@link JSONObject}.
-     * <p>
-     * This should only be invoked when communicating with remote. Excluding the {@link PersistenceProvider}, the rest
-     * of values concerns the remote, which means those values are special to it and no other device should be
-     * using them.
-     * <p>
-     * The sender key should be gathered from the persistence database and assigned to {@link Device#senderKey}.
-     * <p>
-     * Keys should be persistent. They should never be random, and saving them as '0' should result in "error". These
-     * keys are mutually held by you and the remote. Here is a graph representing how the keys correspond to each other:
-     * <p>
-     * Us {@link Device#receiverKey} == Remote {@link Device#senderKey}
-     * Us {@link Device#senderKey} == Remote {@link Device#receiverKey}
-     * <p>
-     * The PIN will usually be unavailable, so it is okay to provide '0'. It should be available through connectionless
-     * means like QR Code or manual-entry. It is used to bypass the security mechanisms so the communication can happen
-     * seamlessly.
-     *
-     * @param senderKey The key which is known by the remote as {@link Device#receiverKey}.
-     * @param pin       The PIN to bypass errors like not matching keys. This will also flag this client as trusted.
-     * @return The JSON object
-     * @throws JSONException If the creation of the JSON object fails for some reason.
-     */
-    default JSONObject toJson(int senderKey, int pin) throws JSONException
-    {
-        Device device = getDevice();
-        JSONObject object = new JSONObject()
-                .put(Keyword.DEVICE_UID, device.uid)
-                .put(Keyword.DEVICE_BRAND, device.brand)
-                .put(Keyword.DEVICE_MODEL, device.model)
-                .put(Keyword.DEVICE_USERNAME, device.username)
-                .put(Keyword.DEVICE_CLIENT_TYPE, device.clientType)
-                .put(Keyword.DEVICE_VERSION_CODE, device.versionCode)
-                .put(Keyword.DEVICE_VERSION_NAME, device.versionName)
-                .put(Keyword.DEVICE_PROTOCOL_VERSION, device.protocolVersion)
-                .put(Keyword.DEVICE_PROTOCOL_VERSION_MIN, device.protocolVersionMin)
-                .put(Keyword.DEVICE_KEY, senderKey)
-                .put(Keyword.DEVICE_PIN, pin);
-
-        byte[] deviceAvatar = getAvatar();
-        if (deviceAvatar.length > 0)
-            object.put(Keyword.DEVICE_AVATAR, Base64.getEncoder().encodeToString(deviceAvatar));
-
-        return object;
-    }
 
     /**
      * Transform a given {@link TransferItem} list into its {@link JSONArray} equivalent.

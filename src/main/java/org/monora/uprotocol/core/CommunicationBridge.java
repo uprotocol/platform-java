@@ -159,6 +159,9 @@ public class CommunicationBridge implements Closeable
         ActiveConnection activeConnection = connectionProvider.openConnection(deviceAddress.inetAddress);
         String remoteDeviceUid = activeConnection.receive().getAsString();
 
+        deviceAddress.deviceUid = remoteDeviceUid;
+        persistenceProvider.save(deviceAddress);
+
         if (device != null && device.uid != null && !device.uid.equals(remoteDeviceUid)) {
             activeConnection.closeSafely();
             throw new DifferentClientException(device, remoteDeviceUid);
@@ -173,8 +176,7 @@ public class CommunicationBridge implements Closeable
             device.senderKey = persistenceProvider.generateKey();
         }
 
-        activeConnection.reply(persistenceProvider.toJson(device.senderKey, pin));
-        persistenceProvider.save(deviceAddress);
+        activeConnection.reply(persistenceProvider.deviceAsJson(device.senderKey, pin));
 
         DeviceLoader.loadAsClient(persistenceProvider, receiveSecure(activeConnection, device), device);
         receiveResult(activeConnection, device);

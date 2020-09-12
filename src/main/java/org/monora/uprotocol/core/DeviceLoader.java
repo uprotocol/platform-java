@@ -14,6 +14,9 @@ import java.util.Base64;
 
 import static org.monora.uprotocol.core.spec.alpha.Config.LENGTH_DEVICE_USERNAME;
 
+/**
+ * Handles loading details of remote.
+ */
 public class DeviceLoader
 {
     /**
