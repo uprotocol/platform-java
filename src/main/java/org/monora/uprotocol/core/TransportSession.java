@@ -17,11 +17,30 @@ import org.monora.uprotocol.core.spec.alpha.Keyword;
 
 import java.io.IOException;
 
+/**
+ * The server that accepts requests from clients.
+ * <p>
+ * There can only be one session that is started. You can check if a session started using
+ * {@link TransportSession#isListening()}.
+ * <p>
+ * uprotocol sessions run on {@link Config#PORT_UPROTOCOL}.
+ * <p>
+ * They don't support different range of ports. For this reason, a session should be closed as soon as it becomes stale.
+ * <p>
+ * This will take {@link PersistenceProvider} and {@link TransportSeat} to save.
+ */
 public class TransportSession extends CoolSocket
 {
     private final PersistenceProvider persistenceProvider;
+
     private final TransportSeat transportSeat;
 
+    /**
+     * Create a new session instance.
+     *
+     * @param persistenceProvider Where persistent data will be stored.
+     * @param transportSeat       Which will manage the requests and do appropriate actions.
+     */
     public TransportSession(PersistenceProvider persistenceProvider, TransportSeat transportSeat)
     {
         super(Config.PORT_UPROTOCOL);
@@ -94,7 +113,7 @@ public class TransportSession extends CoolSocket
                 if (transportSeat.hasTransferIndexingFor(transferId))
                     throw new ContentException(ContentException.Error.AlreadyExists);
                 else {
-                    transportSeat.handleFileTransfer(device, hasPin, transferId, jsonIndex);
+                    transportSeat.handleFileTransferRequest(device, hasPin, transferId, jsonIndex);
                     bridge.sendResult(true);
                 }
                 return;

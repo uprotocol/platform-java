@@ -25,7 +25,7 @@ public interface TransportSeat
      * @param transferId {@link TransferItem#transferId}
      * @param type       Of the transfer.
      * @throws PersistenceException   If some of the data is missing for this transfer (i.e., the remote doesn't have
-     *                                permission field in the database).
+     *                                some permissions enabled in the database).
      * @throws CommunicationException If the remote doesn't have satisfactory permissions or sent invalid values.
      */
     void beginFileTransfer(CommunicationBridge bridge, Device device, long transferId, TransferItem.Type type)
@@ -57,7 +57,7 @@ public interface TransportSeat
      * @throws PersistenceException   If anything related to handling of the persistent data goes wrong.
      * @throws CommunicationException If something related to permissions or similar goes wrong.
      */
-    void handleFileTransfer(Device device, boolean hasPin, long transferId, String jsonArray)
+    void handleFileTransferRequest(Device device, boolean hasPin, long transferId, String jsonArray)
             throws PersistenceException, CommunicationException;
 
     /**

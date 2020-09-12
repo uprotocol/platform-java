@@ -265,19 +265,40 @@ public class CommunicationBridge implements Closeable
      * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Device, long, TransferItem.Type)} method.
      *
      * @param transferId That ties a group of {@link TransferItem} as in {@link TransferItem#transferId}.
-     * @param files      That has been generated using {@link PersistenceProvider#toJson(List)}.
+     * @param itemList   Items that you will send.
      * @return True if successful.
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
      * @throws CommunicationException When there is a communication error due to misconfiguration.
      */
-    public boolean requestFileTransfer(long transferId, JSONArray files) throws JSONException, IOException,
+    public boolean requestFileTransfer(long transferId, List<TransferItem> itemList) throws JSONException, IOException,
+            CommunicationException
+    {
+        return requestFileTransfer(transferId, getPersistenceProvider().toJson(itemList));
+    }
+
+    /**
+     * Request a file transfer operation by informing the remote that you will send files.
+     * <p>
+     * This request doesn't guarantee that the request will be processed immediately. You should close the connection
+     * after making this request. If everything goes right, the remote will reach you using
+     * {@link #requestFileTransferStart(long, TransferItem.Type)}, which will end up in your
+     * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Device, long, TransferItem.Type)} method.
+     *
+     * @param transferId That ties a group of {@link TransferItem} as in {@link TransferItem#transferId}.
+     * @param items      That has been generated using {@link PersistenceProvider#toJson(List)}.
+     * @return True if successful.
+     * @throws IOException            If an IO error occurs.
+     * @throws JSONException          If something goes wrong when creating JSON object.
+     * @throws CommunicationException When there is a communication error due to misconfiguration.
+     */
+    public boolean requestFileTransfer(long transferId, JSONArray items) throws JSONException, IOException,
             CommunicationException
     {
         sendSecure(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER)
                 .put(Keyword.TRANSFER_ID, transferId)
-                .put(Keyword.INDEX, files));
+                .put(Keyword.INDEX, items.toString()));
         return receiveResult();
     }
 

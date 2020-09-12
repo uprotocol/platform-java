@@ -32,7 +32,7 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public void handleFileTransfer(Device device, boolean hasPin, long transferId, String jsonArray)
+    public void handleFileTransferRequest(Device device, boolean hasPin, long transferId, String jsonArray)
             throws PersistenceException, CommunicationException
     {
 
