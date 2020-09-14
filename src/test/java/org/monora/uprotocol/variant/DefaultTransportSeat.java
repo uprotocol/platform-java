@@ -9,6 +9,8 @@ import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 
+import java.util.List;
+
 public class DefaultTransportSeat implements TransportSeat
 {
     public final PersistenceProvider persistenceProvider;
@@ -35,7 +37,9 @@ public class DefaultTransportSeat implements TransportSeat
     public void handleFileTransferRequest(Device device, boolean hasPin, long transferId, String jsonArray)
             throws PersistenceException, CommunicationException
     {
-
+        List<TransferItem> itemList = persistenceProvider.toTransferItemList(transferId, jsonArray);
+        for (TransferItem item : itemList)
+            System.out.println(item.name + " " + item.file);
     }
 
     @Override

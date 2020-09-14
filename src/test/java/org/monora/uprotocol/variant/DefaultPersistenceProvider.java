@@ -99,9 +99,9 @@ public class DefaultPersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public String getTemporaryFileFormat()
+    public String getTemporaryName()
     {
-        return ".tmp";
+        return "." + System.nanoTime() + ".tmp";
     }
 
     @Override

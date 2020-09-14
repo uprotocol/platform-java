@@ -4,11 +4,15 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.uprotocol.core.CommunicationBridge;
+import org.monora.uprotocol.core.TransportSession;
 import org.monora.uprotocol.core.network.Device;
 import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
 
+import javax.activation.MimetypesFileTypeMap;
+import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -19,6 +23,11 @@ import java.util.List;
  */
 public interface PersistenceProvider
 {
+    /**
+     * Type map provides the mime-type for filenames and file objects.
+     */
+    MimetypesFileTypeMap typeMap = new MimetypesFileTypeMap();
+
     /**
      * Broadcast the awaiting operation reports.
      * <p>
@@ -74,11 +83,37 @@ public interface PersistenceProvider
                                        String directory, TransferItem.Type type);
 
     /**
+     * Create a transfer item from the given file.
+     *
+     * @param transferId Points to {@link TransferItem#transferId}.
+     * @param file       The file to generate the transfer item from.
+     * @param directory  The relative path where this transfer item will be saved in. Pass 'null' if none.
+     * @return The generated transfer item.
+     * @throws IOException              If the given file is not readable.
+     * @throws IllegalArgumentException If the given file is not a file.
+     */
+    default TransferItem createTransferItemFor(long transferId, File file, String directory) throws IOException,
+            IllegalArgumentException
+    {
+        if (!file.isFile())
+            throw new IllegalArgumentException("The given file object should point to a file.");
+
+        if (!file.canRead())
+            throw new IOException("The given file " + file.getAbsolutePath() + " is not readable.");
+
+        return createTransferItemFor(transferId, generateKey(), file.getName(), typeMap.getContentType(file),
+                file.length(), file.getAbsolutePath(), directory, TransferItem.Type.OUTGOING);
+    }
+
+    /**
      * Convert this device into {@link JSONObject}.
      * <p>
-     * This should only be invoked when communicating with remote. Excluding the {@link PersistenceProvider}, the rest
-     * of values concerns the remote, which means those values are special to it and no other device should be
-     * using them.
+     * This should only be invoked when communicating with remote.
+     * <p>
+     * The sender key and the PIN are special to the client that you are sending your details to.
+     * <p>
+     * Because this is either invoked by the {@link TransportSession} or {@link CommunicationBridge}, you should already
+     * know the client that you are talking to.
      * <p>
      * The sender key should be gathered from the persistence database and assigned to {@link Device#senderKey}.
      * <p>
@@ -91,6 +126,10 @@ public interface PersistenceProvider
      * The PIN will usually be unavailable, so it is okay to provide '0'. It should be available through connectionless
      * means like QR Code or manual-entry. It is used to bypass the security mechanisms so the communication can happen
      * seamlessly.
+     * <p>
+     * The remote client can gather the PIN from {@link PersistenceProvider#getNetworkPin()} which should be the
+     * same until the remote invokes {@link PersistenceProvider#revokeNetworkPin()}, corresponding you sending the
+     * right PIN and consuming it.
      *
      * @param senderKey The key which is known by the remote as {@link Device#receiverKey}.
      * @param pin       The PIN to bypass errors like not matching keys. This will also flag this client as trusted.
@@ -175,15 +214,13 @@ public interface PersistenceProvider
     int getNetworkPin();
 
     /**
-     * Get the temporary file format which will be used for the incoming files until they are saved to their original
-     * paths.
+     * Generate a temporary name that will be used for incoming files until they are saved to their original paths.
      * <p>
-     * As an example, let us say that this method returns 'tmp' and the transfer item id is 42424242. The resulting
-     * file name will be ".42424242.tmp".
+     * For instance, '.4234324.tmp' could be a good temporary name.
      *
      * @return The temporary file format.
      */
-    String getTemporaryFileFormat();
+    String getTemporaryName();
 
     /**
      * This method is invoked after the PIN is used by a device.
@@ -275,13 +312,12 @@ public interface PersistenceProvider
         if (json.length() > 0) {
             for (int i = 0; i < json.length(); i++) {
                 JSONObject jsonObject = json.getJSONObject(i);
-                long itemId = jsonObject.getLong(Keyword.TRANSFER_ITEM_ID);
                 String directory = jsonObject.has(Keyword.INDEX_DIRECTORY)
                         ? jsonObject.getString(Keyword.INDEX_DIRECTORY) : null;
-                String file = "." + itemId + "." + getTemporaryFileFormat();
-                transferItemList.add(createTransferItemFor(transferId, itemId,
+                transferItemList.add(createTransferItemFor(transferId, jsonObject.getLong(Keyword.TRANSFER_ITEM_ID),
                         jsonObject.getString(Keyword.INDEX_FILE_NAME), jsonObject.getString(Keyword.INDEX_FILE_MIME),
-                        jsonObject.getLong(Keyword.INDEX_FILE_SIZE), file, directory, TransferItem.Type.INCOMING));
+                        jsonObject.getLong(Keyword.INDEX_FILE_SIZE), getTemporaryName(), directory,
+                        TransferItem.Type.INCOMING));
             }
         }
 

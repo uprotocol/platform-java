@@ -22,7 +22,7 @@
 
     <groupId>org.monora.uprotocol</groupId>
     <artifactId>core</artifactId>
-    <version>0.1-ALPHA</version>
+    <version>0.1-ALPHA01</version>
     <name>UProtocol</name>
     <description>Specification for peer-to-peer content exchange that aims to unify existing solutions.</description>
     <licenses>
@@ -136,6 +136,11 @@
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
             <version>1.14</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.activation</groupId>
+            <artifactId>activation</artifactId>
+            <version>1.1</version>
         </dependency>
     </dependencies>
 </project>

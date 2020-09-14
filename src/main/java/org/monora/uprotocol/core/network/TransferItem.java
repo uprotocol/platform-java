@@ -33,7 +33,7 @@ public abstract class TransferItem
      * will be "/home/pi/cakes/birthday_cake_0024.jpg". In other words, you should only keep "birthday_cake_0024.jpg"
      * in this field. As a good practice, you can keep a temporary name until the file is fully received, i.e.
      * ".4124-4454-4532-6566.tshare" and change it to the {@link #name} when the file is saved. You can gather the
-     * suggested temporary file format from {@link PersistenceProvider#getTemporaryFileFormat()}.
+     * suggested temporary file format from {@link PersistenceProvider#getTemporaryName()}.
      * <p>
      * If this is a {@link Type#OUTGOING} transfer item, this will hold the fully resolved path/URI pointing at the file
      * that is being sent.
