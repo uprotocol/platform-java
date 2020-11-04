@@ -17,6 +17,7 @@ import org.monora.uprotocol.variant.DefaultConnectionProvider;
 import org.monora.uprotocol.variant.DefaultPersistenceProvider;
 import org.monora.uprotocol.variant.DefaultTransportSeat;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -81,5 +82,19 @@ public class RequestTest
         } finally {
             transportSession.stop();
         }
+    }
+
+    @Test
+    public void transferFileTest() {
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024*1024);
+        final List<TransferItem> transferItemList = new ArrayList<>();
+        final PersistenceProvider localPersistenceProvider = new DefaultPersistenceProvider();
+        final long transferId = 1;
+        final long id = 1;
+        final String fileName = "Something.txt";
+        final String fileMime = "text/plain";
+
+        transferItemList.add(localPersistenceProvider.createTransferItemFor(transferId, id, fileName, fileMime,
+                outputStream.size(), ))
     }
 }

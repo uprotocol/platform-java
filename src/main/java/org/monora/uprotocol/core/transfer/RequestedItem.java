@@ -17,11 +17,11 @@ public class RequestedItem
      * <p>
      * If skip fails, do not attempt to sending this item.
      */
-    public final long currentBytes;
+    public final long skippedBytes;
 
-    RequestedItem(long itemId, long currentBytes)
+    RequestedItem(long itemId, long skippedBytes)
     {
         this.itemId = itemId;
-        this.currentBytes = currentBytes;
+        this.skippedBytes = skippedBytes;
     }
 }

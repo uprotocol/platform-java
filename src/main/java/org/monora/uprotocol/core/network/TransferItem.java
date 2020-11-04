@@ -20,7 +20,7 @@ public abstract class TransferItem
     /**
      * The name of the file. It includes the file format along with the name.
      * <p>
-     * For instance, "Rick Astley - Never Gonna Give You Up.mp3".
+     * For instance, "Rick Ashley - Never Gonna Give You Up.mp3".
      * <p>
      * The name here should never be altered. If you need to point to the file name, use {@link #file} field for that.
      */
@@ -37,7 +37,12 @@ public abstract class TransferItem
      * <p>
      * If this is a {@link Type#OUTGOING} transfer item, this will hold the fully resolved path/URI pointing at the file
      * that is being sent.
+     *
+     * @deprecated This API should avoid suggesting what the source is. That decision should be up to the developer
+     * implementing this. In other words, yes this could be a file, but may also be a stream descriptor that never
+     * translates to {@link String}.
      */
+    @Deprecated
     public String file;
 
     /**
