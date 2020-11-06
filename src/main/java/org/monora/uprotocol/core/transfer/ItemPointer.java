@@ -5,7 +5,7 @@ import org.monora.uprotocol.core.network.TransferItem;
 /**
  * Hols the details for a requested {@link TransferItem}.
  */
-public class RequestedItem
+public class ItemPointer
 {
     /**
      * Corresponds to {@link TransferItem#id}.
@@ -13,15 +13,15 @@ public class RequestedItem
     public final long itemId;
 
     /**
-     * The position (skip bytes as many) to start when sending data for this item.
+     * The position of bytes to start from when sending the data.
      * <p>
      * If skip fails, do not attempt to sending this item.
      */
-    public final long skippedBytes;
+    public final long position;
 
-    RequestedItem(long itemId, long skippedBytes)
+    ItemPointer(long itemId, long position)
     {
         this.itemId = itemId;
-        this.skippedBytes = skippedBytes;
+        this.position = position;
     }
 }

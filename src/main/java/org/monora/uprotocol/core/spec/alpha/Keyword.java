@@ -58,7 +58,7 @@ public class Keyword
             DEVICE_VERSION_CODE = "versionCode",
             DEVICE_PROTOCOL_VERSION = "protocolVersion",
             DEVICE_PROTOCOL_VERSION_MIN = "minimumProtocolVersion",
-            TRANSFER_SKIPPED_BYTES = "skippedBytes",
+            TRANSFER_CURRENT_POSITION = "currentPosition",
             ERROR = "error",
             ERROR_NOT_ALLOWED = "notAllowed",
             ERROR_NOT_FOUND = "notFound",

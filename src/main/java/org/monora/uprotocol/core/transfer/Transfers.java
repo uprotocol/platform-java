@@ -22,10 +22,10 @@ public class Transfers
      * @return The requested item holder.
      * @throws JSONException If something goes wrong when inflating the JSON data.
      */
-    public RequestedItem getRequestedItem(JSONObject jsonObject) throws JSONException
+    public static ItemPointer getItemRequest(JSONObject jsonObject) throws JSONException
     {
-        return new RequestedItem(jsonObject.getLong(Keyword.TRANSFER_ITEM_ID),
-                jsonObject.getLong(Keyword.TRANSFER_SKIPPED_BYTES));
+        return new ItemPointer(jsonObject.getLong(Keyword.TRANSFER_ITEM_ID),
+                jsonObject.getLong(Keyword.TRANSFER_CURRENT_POSITION));
     }
 
     /**
@@ -33,19 +33,19 @@ public class Transfers
      *
      * @param bridge    The bridge that speaks on behalf of you when making requests. A connection wrapper.
      * @param itemId    Corresponds to {@link TransferItem#id}.
-     * @param skipBytes To skip if this item has recovered and error, meaning it already has some bytes transferred
+     * @param currentPosition To skip if this item has recovered from an error, meaning it already has some bytes transferred
      *                  on your side.
      * @return True if the remote approved of the request.
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
      * @throws CommunicationException When there is a communication error due to misconfiguration.
      */
-    public static boolean requestItem(CommunicationBridge bridge, long itemId, long skipBytes) throws IOException,
+    public static boolean requestItem(CommunicationBridge bridge, long itemId, long currentPosition) throws IOException,
             JSONException, CommunicationException
     {
         bridge.sendSecure(true, new JSONObject()
                 .put(Keyword.TRANSFER_ITEM_ID, itemId)
-                .put(Keyword.TRANSFER_SKIPPED_BYTES, skipBytes));
+                .put(Keyword.TRANSFER_CURRENT_POSITION, currentPosition));
         return bridge.receiveResult();
     }
 }

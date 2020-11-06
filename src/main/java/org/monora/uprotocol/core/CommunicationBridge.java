@@ -65,8 +65,8 @@ public class CommunicationBridge implements Closeable
      *
      * @param persistenceProvider Where the persistent data is stored and queried.
      * @param activeConnection    Represents a valid connection with the said device.
-     * @param device              That we are connected to.
-     * @param deviceAddress       The device is located at.l
+     * @param device              We are connected to.
+     * @param deviceAddress       Where the device is located at.
      */
     public CommunicationBridge(PersistenceProvider persistenceProvider, ActiveConnection activeConnection,
                                Device device, DeviceAddress deviceAddress)

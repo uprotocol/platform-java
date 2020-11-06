@@ -13,6 +13,8 @@ import org.monora.uprotocol.core.spec.alpha.Keyword;
 import javax.activation.MimetypesFileTypeMap;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -23,6 +25,44 @@ import java.util.List;
  */
 public interface PersistenceProvider
 {
+    /**
+     * The item is in pending state. It can also have a temporary location.
+     * <p>
+     * In the case of incoming files, if you force set this state, keep the temporary file location as we can later
+     * restart this item, resuming from where it was left.
+     * <p>
+     * This is the only state that will feed the {@link #getFirstReceivableItem(long)} invocations.
+     */
+    int STATE_PENDING = 0;
+
+    /**
+     * The item is invalidated temporarily. The reason for that may be an unexpected connection that could not be
+     * recovered.
+     * <p>
+     * The user can reset this state to {@link #STATE_PENDING}.
+     */
+    int STATE_INVALIDATED_TEMPORARILY = 1;
+
+    /**
+     * The item is invalidated indefinitely because its length has changed or the file no longer exits.
+     * <p>
+     * The user should <b>NOT</b> be able to remove this flag, setting a valid state such as {@link #STATE_PENDING}.
+     */
+    int STATE_INVALIDATED_STICKY = 2;
+
+    /**
+     * The item is in progress, that is, it is either being received or sent.
+     * <p>
+     * The user can reset this state to {@link #STATE_PENDING} as we may not have a chance to do it ourselves in the
+     * case of a crash.
+     */
+    int STATE_IN_PROGRESS = 3;
+
+    /**
+     * The item is done, that is, it has been received or sent for a given device.
+     */
+    int STATE_DONE = 4;
+
     /**
      * Type map provides the mime-type for filenames and file objects.
      */
@@ -185,6 +225,19 @@ public interface PersistenceProvider
     byte[] getAvatarFor(Device device);
 
     /**
+     * This will return the descriptor that points to the file that is received or sent.
+     * <p>
+     * For instance, this can be a file descriptor or a network stream of which only the name, size and location are
+     * known.
+     *
+     * @param transferItem For which the descriptor will be generated.
+     * @return The generated descriptor.
+     * @see #openInputStream(SourceDescriptor)
+     * @see #openOutputStream(SourceDescriptor)
+     */
+    SourceDescriptor getDescriptorFor(TransferItem transferItem);
+
+    /**
      * This should return the unique identifier for this client. It should be both unique and persistent.
      * <p>
      * It is not meant to change.
@@ -199,6 +252,14 @@ public interface PersistenceProvider
      * @return The device instance.
      */
     Device getDevice();
+
+    /**
+     * This will return the first valid item that that this side can receive.
+     *
+     * @param transferId Points to {@link TransferItem#transferId}.
+     * @return The transfer receivable item or null if there are none.
+     */
+    TransferItem getFirstReceivableItem(long transferId);
 
     /**
      * This method is invoked when there is a new connection to the server.
@@ -221,6 +282,33 @@ public interface PersistenceProvider
      * @return The temporary file format.
      */
     String getTemporaryName();
+
+    /**
+     * Load transfer item for the given parameters.
+     *
+     * @param deviceId   Owning the item.
+     * @param transferId Points to {@link TransferItem#transferId}.
+     * @param type       Specifying whether this is an incoming or outgoing operation.
+     * @return Null if there is no match or the transfer item that points to the given parameters.
+     * @throws PersistenceException When the given parameters don't point to a valid item.
+     */
+    TransferItem loadTransferItem(String deviceId, long transferId, TransferItem.Type type) throws PersistenceException;
+
+    /**
+     * Open the input stream for the given descriptor.
+     *
+     * @return The open input stream.
+     * @throws IOException If an IO error occurs.
+     */
+    InputStream openInputStream(SourceDescriptor descriptor) throws IOException;
+
+    /**
+     * Open the output stream for this descriptor.
+     *
+     * @return The open output stream.
+     * @throws IOException If an IO error occurs.
+     */
+    OutputStream openOutputStream(SourceDescriptor descriptor) throws IOException;
 
     /**
      * This method is invoked after the PIN is used by a device.
@@ -248,6 +336,15 @@ public interface PersistenceProvider
     void save(DeviceAddress deviceAddress);
 
     /**
+     * Save this transfer item in the persistence database.
+     * <p>
+     * Note: ensure there are no duplicates.
+     *
+     * @param item To save.
+     */
+    void save(TransferItem item);
+
+    /**
      * Save the avatar for the given device.
      * <p>
      * This will be invoked both when the device has an avatar and when it doesn't.
@@ -256,6 +353,23 @@ public interface PersistenceProvider
      * @param bitmap The bitmap data for the avatar.
      */
     void saveAvatar(Device device, byte[] bitmap);
+
+    /**
+     * Change the state of the given item.
+     * <p>
+     * Note: this should set the state but should not save it since saving it is spared for {@link #save(TransferItem)}.
+     *
+     * @param device That owns the copy of the 'item'.
+     * @param item   Of which the given state will be applied.
+     * @param state  The level of invalidation.
+     * @param e      The nullable additional exception cause this state.
+     * @see #STATE_PENDING
+     * @see #STATE_INVALIDATED_TEMPORARILY
+     * @see #STATE_INVALIDATED_STICKY
+     * @see #STATE_IN_PROGRESS
+     * @see #STATE_DONE
+     */
+    void setState(Device device, TransferItem item, int state, Exception e);
 
     /**
      * Sync the device with the persistence database.

@@ -1,11 +1,28 @@
 package org.monora.uprotocol.core;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
+import org.monora.coolsocket.core.response.SizeLimitExceededException;
+import org.monora.coolsocket.core.session.ActiveConnection;
+import org.monora.coolsocket.core.session.CancelledException;
 import org.monora.uprotocol.core.network.Device;
 import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
+import org.monora.uprotocol.core.persistence.PersistenceProvider;
+import org.monora.uprotocol.core.persistence.SourceDescriptor;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
+import org.monora.uprotocol.core.protocol.communication.ContentException;
+import org.monora.uprotocol.core.spec.alpha.Keyword;
+import org.monora.uprotocol.core.transfer.ItemPointer;
+import org.monora.uprotocol.core.transfer.Transfers;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.WritableByteChannel;
 
 /**
  * A transport seat instance handles the requests coming from the uprotocol clients.
@@ -114,4 +131,207 @@ public interface TransportSeat
      * @param senderKey   The new sender key that we want to use if user accepts the new receiver key from the remote.
      */
     void notifyDeviceKeyChanged(Device device, int receiverKey, int senderKey);
+
+    /**
+     * Handle the receive process. You can invoke this method in the {@link #beginFileTransfer} method when the type is
+     * {@link org.monora.uprotocol.core.network.TransferItem.Type#INCOMING}.
+     * <p>
+     * You should not override this default method unless that is really what you need.
+     *
+     * @param bridge     The bridge that speaks on behalf of you when making requests. A connection wrapper.
+     * @param transferId As in {@link TransferItem#transferId}.
+     */
+    default void receiveFiles(CommunicationBridge bridge, long transferId)
+    {
+        PersistenceProvider persistenceProvider = bridge.getPersistenceProvider();
+        ActiveConnection activeConnection = bridge.getActiveConnection();
+        Device device = bridge.getDevice();
+        TransferItem item;
+
+        // TODO: 11/6/20 This should belong to the task manager making the ETA calculation.
+        TransferItem lastItem;
+        long currentBytes = 0;
+        long completedBytes = 0;
+        long completedCount = 0;
+
+        try {
+            while ((item = persistenceProvider.getFirstReceivableItem(transferId)) != null) {
+                // TODO: 11/6/20 Update state here
+
+                // On the receiver side, we do not recover from permission or file system errors. This is why the
+                // following file operation is not inside a try-catch block. Those types of errors are not recoverable
+                // and there is no point in keeping on going.
+                SourceDescriptor descriptor = persistenceProvider.getDescriptorFor(item);
+                int itemState = PersistenceProvider.STATE_INVALIDATED_TEMPORARILY;
+                currentBytes = descriptor.length();
+
+                try (OutputStream outputStream = persistenceProvider.openOutputStream(descriptor)) {
+                    // This if-block will throw an error if the result is false.
+                    if (Transfers.requestItem(bridge, item.id, currentBytes)) {
+                        int len;
+                        ActiveConnection.Description description = bridge.getActiveConnection().readBegin();
+                        WritableByteChannel writableByteChannel = Channels.newChannel(outputStream);
+
+                        while (description.hasAvailable() && (len = activeConnection.read(description)) != -1) {
+                            // TODO: 11/6/20 Update the item state here.
+
+                            currentBytes += len;
+                            writableByteChannel.write(description.byteBuffer);
+                        }
+
+                        outputStream.flush();
+                        persistenceProvider.setState(device, item, PersistenceProvider.STATE_DONE, null);
+                        completedBytes += currentBytes;
+                        completedCount++;
+                        lastItem = item;
+
+                        // TODO: 11/6/20 Save the file here
+                    }
+                } catch (CancelledException e) {
+                    // The task is cancelled. We reset the state of this item to 'pending'.
+                    persistenceProvider.setState(device, item, PersistenceProvider.STATE_PENDING, e);
+                    throw e;
+                } catch (FileNotFoundException e) {
+                    throw e;
+                } catch (ContentException e) {
+                    switch (e.error) {
+                        case NotFound:
+                            persistenceProvider.setState(device, item, PersistenceProvider.STATE_INVALIDATED_STICKY, e);
+                            break;
+                        case AlreadyExists:
+                        case NotAccessible:
+                        default:
+                            persistenceProvider.setState(device, item,
+                                    PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
+                    }
+                } catch (Exception e) {
+                    persistenceProvider.setState(device, item, PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
+                    throw e;
+                } finally {
+                    persistenceProvider.save(item);
+                    item = null;
+                }
+            }
+
+            CommunicationBridge.sendResult(activeConnection, false);
+
+            if (completedCount > 0) {
+                // TODO: 11/6/20 Notify the total number of files received.
+            }
+        } catch (CancelledException e) {
+
+        } catch (Exception e) {
+            try {
+                bridge.sendError(e);
+            } catch (Exception e1) {
+                // TODO: 11/6/20 Notify errors
+            }
+        }
+    }
+
+    /**
+     * Handle the sending process. You can invoke this method in the {@link #beginFileTransfer} method when the type is
+     * {@link org.monora.uprotocol.core.network.TransferItem.Type#OUTGOING}.
+     * <p>
+     * You should not override this default method unless that is what you need.
+     *
+     * @param bridge     The bridge that speaks on behalf of you when making requests. A connection wrapper.
+     * @param transferId As in {@link TransferItem#transferId}.
+     */
+    default void sendFiles(CommunicationBridge bridge, long transferId)
+    {
+        PersistenceProvider persistenceProvider = bridge.getPersistenceProvider();
+        ActiveConnection activeConnection = bridge.getActiveConnection();
+        Device device = bridge.getDevice();
+        TransferItem item;
+
+        // TODO: 11/6/20 These variables belong to the ETA calculator.
+        long currentBytes = 0;
+        long completedBytes = 0;
+        int completedCount = 0;
+
+        try {
+            while (activeConnection.getSocket().isConnected()) {
+                // TODO: 11/6/20 Publish status here.
+                JSONObject request = bridge.receiveSecure();
+
+                if (!CommunicationBridge.resultOf(request))
+                    break;
+
+                try {
+                    final ItemPointer itemPointer = Transfers.getItemRequest(request);
+                    item = persistenceProvider.loadTransferItem(device.uid, itemPointer.itemId,
+                            TransferItem.Type.OUTGOING);
+                    currentBytes = itemPointer.position;
+
+                    try {
+                        SourceDescriptor descriptor = persistenceProvider.getDescriptorFor(item);
+                        if (descriptor.length() != item.size)
+                            // FIXME: 11/6/20 Is it a good idea to throw an unrelated error? Probably not.
+                            throw new FileNotFoundException("File size has changed. It is probably a different file.");
+
+                        try (InputStream inputStream = persistenceProvider.openInputStream(descriptor)) {
+                            if (inputStream == null)
+                                throw new FileNotFoundException("The input stream failed to open.");
+
+                            if (currentBytes > 0 && inputStream.skip(currentBytes) != currentBytes)
+                                throw new IOException("Failed to skip " + currentBytes + " bytes");
+
+                            bridge.sendResult(true);
+
+                            persistenceProvider.setState(device, item, PersistenceProvider.STATE_IN_PROGRESS, null);
+                            persistenceProvider.save(item);
+
+                            ActiveConnection.Description description = activeConnection.writeBegin(0,
+                                    item.size - currentBytes);
+                            byte[] bytes = new byte[8096];
+                            int readLength;
+
+                            try {
+                                while ((readLength = inputStream.read(bytes)) != -1) {
+                                    // TODO: 11/6/20 Publish item status here.
+
+                                    if (readLength > 0) {
+                                        currentBytes += readLength;
+                                        activeConnection.write(description, bytes, 0, readLength);
+                                    }
+                                }
+
+                                activeConnection.writeEnd(description);
+                            } catch (SizeLimitExceededException ignored) {
+                            }
+
+                            completedBytes += currentBytes;
+                            completedCount++;
+                            persistenceProvider.setState(device, item, PersistenceProvider.STATE_DONE, null);
+                        }
+                    } catch (CancelledException e) {
+                        persistenceProvider.setState(device, item, PersistenceProvider.STATE_PENDING, e);
+                        throw e;
+                    } catch (FileNotFoundException e) {
+                        persistenceProvider.setState(device, item, PersistenceProvider.STATE_INVALIDATED_STICKY, e);
+                        throw e;
+                    } catch (Exception e) {
+                        persistenceProvider.setState(device, item, PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
+                        throw e;
+                    } finally {
+                        persistenceProvider.save(item);
+                        item = null;
+                    }
+                } catch (CancelledException e) {
+                    throw e;
+                } catch (FileNotFoundException | PersistenceException e) {
+                    bridge.sendError(Keyword.ERROR_NOT_FOUND);
+                } catch (IOException e) {
+                    bridge.sendError(Keyword.ERROR_NOT_ACCESSIBLE);
+                } catch (Exception e) {
+                    bridge.sendError(Keyword.ERROR_UNKNOWN);
+                }
+            }
+        } catch (CancelledException ignored) {
+        } catch (Exception e) {
+            e.printStackTrace();
+            // TODO: 11/6/20 Handle the error
+        }
+    }
 }
