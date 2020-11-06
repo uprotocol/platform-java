@@ -7,7 +7,7 @@ package org.monora.uprotocol.core.persistence;
  * whereas {@link org.monora.uprotocol.core.network.TransferItem} keeps what the file was before it was exchanged
  * between networked clients.
  */
-public interface SourceDescriptor
+public interface StreamDescriptor
 {
     /**
      * Produce the total length of this descriptor.

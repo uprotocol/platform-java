@@ -5,8 +5,15 @@ import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
+import org.monora.uprotocol.core.persistence.StreamDescriptor;
 import org.monora.uprotocol.variant.holder.Avatar;
+import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
+import org.monora.uprotocol.variant.holder.OwnedTransferItem;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,8 +22,9 @@ public class DefaultPersistenceProvider implements PersistenceProvider
 {
     private final List<Device> deviceList = new ArrayList<>();
     private final List<DeviceAddress> deviceAddressList = new ArrayList<>();
-    private final List<TransferItem> transferItemsList = new ArrayList<>();
+    private final List<OwnedTransferItem> transferItemList = new ArrayList<>();
     private final List<Avatar> avatarList = new ArrayList<>();
+    private final List<MemoryStreamDescriptor> streamDescriptorList = new ArrayList<>();
 
     private int networkPin;
 
@@ -76,6 +84,21 @@ public class DefaultPersistenceProvider implements PersistenceProvider
     }
 
     @Override
+    public StreamDescriptor getDescriptorFor(TransferItem transferItem)
+    {
+        synchronized (streamDescriptorList) {
+            for (MemoryStreamDescriptor streamDescriptor : streamDescriptorList) {
+                if (streamDescriptor.transferItem.equals(transferItem))
+                    return streamDescriptor;
+            }
+
+            MemoryStreamDescriptor descriptor = MemoryStreamDescriptor.newInstance(transferItem);
+            streamDescriptorList.add(descriptor);
+            return descriptor;
+        }
+    }
+
+    @Override
     public String getDeviceUid()
     {
         return "fdsfgffgdfgsf";
@@ -91,6 +114,19 @@ public class DefaultPersistenceProvider implements PersistenceProvider
     }
 
     @Override
+    public TransferItem getFirstReceivableItem(long transferId)
+    {
+        synchronized (transferItemList) {
+            for (OwnedTransferItem holder : transferItemList) {
+                if (TransferItem.Type.INCOMING.equals(holder.item.type) && holder.item.transferId == transferId
+                        && holder.state == STATE_PENDING)
+                    return holder.item;
+            }
+        }
+        return null;
+    }
+
+    @Override
     public int getNetworkPin()
     {
         if (networkPin == 0)
@@ -102,6 +138,37 @@ public class DefaultPersistenceProvider implements PersistenceProvider
     public String getTemporaryName()
     {
         return "." + System.nanoTime() + ".tmp";
+    }
+
+    @Override
+    public TransferItem loadTransferItem(String deviceId, long id, TransferItem.Type type) throws PersistenceException
+    {
+        synchronized (transferItemList) {
+            for (OwnedTransferItem holder : transferItemList) {
+                if (holder.item.id == id && holder.item.type.equals(type) && holder.deviceId.equals(deviceId))
+                    return holder.item;
+            }
+        }
+
+        throw new PersistenceException("There is no transfer data matching the given parameters.");
+    }
+
+    @Override
+    public InputStream openInputStream(StreamDescriptor descriptor) throws IOException
+    {
+        if (descriptor instanceof MemoryStreamDescriptor)
+            return new ByteArrayInputStream(((MemoryStreamDescriptor) descriptor).data.toByteArray());
+
+        throw new IOException("Unknown descriptor type");
+    }
+
+    @Override
+    public OutputStream openOutputStream(StreamDescriptor descriptor) throws IOException
+    {
+        if (descriptor instanceof MemoryStreamDescriptor)
+            return ((MemoryStreamDescriptor) descriptor).data;
+
+        throw new IOException("Unknown descriptor type");
     }
 
     @Override
@@ -127,10 +194,36 @@ public class DefaultPersistenceProvider implements PersistenceProvider
     }
 
     @Override
+    public void save(TransferItem item)
+    {
+        synchronized (transferItemList) {
+            for (OwnedTransferItem holder : transferItemList) {
+                if (holder.item.equals(item)) {
+                    holder.item = item;
+                    return;
+                }
+            }
+
+            transferItemList.add(new OwnedTransferItem(item));
+        }
+    }
+
+    @Override
     public void saveAvatar(Device device, byte[] bitmap)
     {
         synchronized (avatarList) {
             avatarList.add(new Avatar(device.uid, bitmap));
+        }
+    }
+
+    @Override
+    public void setState(Device device, TransferItem item, int state, Exception e)
+    {
+        synchronized (transferItemList) {
+            for (OwnedTransferItem holder : transferItemList) {
+                if (device.uid.equals(holder.deviceId) && item.equals(holder.item))
+                    holder.state = state;
+            }
         }
     }
 

@@ -10,7 +10,7 @@ import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
-import org.monora.uprotocol.core.persistence.SourceDescriptor;
+import org.monora.uprotocol.core.persistence.StreamDescriptor;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
@@ -161,7 +161,7 @@ public interface TransportSeat
                 // On the receiver side, we do not recover from permission or file system errors. This is why the
                 // following file operation is not inside a try-catch block. Those types of errors are not recoverable
                 // and there is no point in keeping on going.
-                SourceDescriptor descriptor = persistenceProvider.getDescriptorFor(item);
+                StreamDescriptor descriptor = persistenceProvider.getDescriptorFor(item);
                 int itemState = PersistenceProvider.STATE_INVALIDATED_TEMPORARILY;
                 currentBytes = descriptor.length();
 
@@ -265,7 +265,7 @@ public interface TransportSeat
                     currentBytes = itemPointer.position;
 
                     try {
-                        SourceDescriptor descriptor = persistenceProvider.getDescriptorFor(item);
+                        StreamDescriptor descriptor = persistenceProvider.getDescriptorFor(item);
                         if (descriptor.length() != item.size)
                             // FIXME: 11/6/20 Is it a good idea to throw an unrelated error? Probably not.
                             throw new FileNotFoundException("File size has changed. It is probably a different file.");

@@ -232,10 +232,10 @@ public interface PersistenceProvider
      *
      * @param transferItem For which the descriptor will be generated.
      * @return The generated descriptor.
-     * @see #openInputStream(SourceDescriptor)
-     * @see #openOutputStream(SourceDescriptor)
+     * @see #openInputStream(StreamDescriptor)
+     * @see #openOutputStream(StreamDescriptor)
      */
-    SourceDescriptor getDescriptorFor(TransferItem transferItem);
+    StreamDescriptor getDescriptorFor(TransferItem transferItem);
 
     /**
      * This should return the unique identifier for this client. It should be both unique and persistent.
@@ -286,13 +286,13 @@ public interface PersistenceProvider
     /**
      * Load transfer item for the given parameters.
      *
-     * @param deviceId   Owning the item.
-     * @param transferId Points to {@link TransferItem#transferId}.
-     * @param type       Specifying whether this is an incoming or outgoing operation.
+     * @param deviceId Owning the item.
+     * @param id       Points to {@link TransferItem#id}.
+     * @param type     Specifying whether this is an incoming or outgoing operation.
      * @return Null if there is no match or the transfer item that points to the given parameters.
      * @throws PersistenceException When the given parameters don't point to a valid item.
      */
-    TransferItem loadTransferItem(String deviceId, long transferId, TransferItem.Type type) throws PersistenceException;
+    TransferItem loadTransferItem(String deviceId, long id, TransferItem.Type type) throws PersistenceException;
 
     /**
      * Open the input stream for the given descriptor.
@@ -300,7 +300,7 @@ public interface PersistenceProvider
      * @return The open input stream.
      * @throws IOException If an IO error occurs.
      */
-    InputStream openInputStream(SourceDescriptor descriptor) throws IOException;
+    InputStream openInputStream(StreamDescriptor descriptor) throws IOException;
 
     /**
      * Open the output stream for this descriptor.
@@ -308,7 +308,7 @@ public interface PersistenceProvider
      * @return The open output stream.
      * @throws IOException If an IO error occurs.
      */
-    OutputStream openOutputStream(SourceDescriptor descriptor) throws IOException;
+    OutputStream openOutputStream(StreamDescriptor descriptor) throws IOException;
 
     /**
      * This method is invoked after the PIN is used by a device.

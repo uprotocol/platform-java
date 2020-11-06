@@ -1,7 +1,5 @@
 package org.monora.uprotocol.core.network;
 
-import org.monora.uprotocol.core.persistence.PersistenceProvider;
-
 /**
  * Holds the details for a transfer detail.
  */
@@ -18,32 +16,11 @@ public abstract class TransferItem
     public long transferId;
 
     /**
-     * The name of the file. It includes the file format along with the name.
+     * The original name of the file.
      * <p>
-     * For instance, "Rick Ashley - Never Gonna Give You Up.mp3".
-     * <p>
-     * The name here should never be altered. If you need to point to the file name, use {@link #file} field for that.
+     * This includes the file format along with the name. For instance, "Rick Ashley - Never Gonna Give You Up.mp3".
      */
     public String name;
-
-    /**
-     * If this is a {@link Type#INCOMING} transfer item, this will be the relative path to the save path and the
-     * {@link #directory}. For instance, let us say that the save path is "/home/pi/" and {@link #directory} is
-     * "cakes" and the file name is "birthday_cake_0024.jpg". When all those three are merged, the resulting path
-     * will be "/home/pi/cakes/birthday_cake_0024.jpg". In other words, you should only keep "birthday_cake_0024.jpg"
-     * in this field. As a good practice, you can keep a temporary name until the file is fully received, i.e.
-     * ".4124-4454-4532-6566.tshare" and change it to the {@link #name} when the file is saved. You can gather the
-     * suggested temporary file format from {@link PersistenceProvider#getTemporaryName()}.
-     * <p>
-     * If this is a {@link Type#OUTGOING} transfer item, this will hold the fully resolved path/URI pointing at the file
-     * that is being sent.
-     *
-     * @deprecated This API should avoid suggesting what the source is. That decision should be up to the developer
-     * implementing this. In other words, yes this could be a file, but may also be a stream descriptor that never
-     * translates to {@link String}.
-     */
-    @Deprecated
-    public String file;
 
     /**
      * Where this file should store in a give save path. This will be 'null' when it should be stored in the root folder

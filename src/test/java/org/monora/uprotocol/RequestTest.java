@@ -94,7 +94,8 @@ public class RequestTest
         final String fileName = "Something.txt";
         final String fileMime = "text/plain";
 
-        transferItemList.add(localPersistenceProvider.createTransferItemFor(transferId, id, fileName, fileMime,
-                outputStream.size(), ))
+        //transferItemList.add(localPersistenceProvider.createTransferItemFor(transferId, id, fileName, fileMime,
+        //        outputStream.size(), ));
+        // TODO: 11/6/20 Implement
     }
 }
