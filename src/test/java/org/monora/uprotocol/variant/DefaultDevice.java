@@ -24,7 +24,7 @@ public class DefaultDevice extends Device
     {
         this(uid);
         from(username, senderKey, receiverKey, brand, model, type, versionName, versionCode, protocolVersion,
-                protocolVersionMin);
+                protocolVersionMin, false, false);
     }
 
     public DefaultDevice(String uid, String username, int senderKey, int receiverKey, String brand, String model)

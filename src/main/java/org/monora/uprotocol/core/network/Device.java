@@ -109,12 +109,13 @@ public abstract class Device
     public void from(Device device)
     {
         from(device.username, device.senderKey, device.receiverKey, device.brand, device.model, device.clientType,
-                device.versionName, device.versionCode, device.protocolVersion, device.protocolVersionMin);
+                device.versionName, device.versionCode, device.protocolVersion, device.protocolVersionMin,
+                device.isTrusted, device.isBlocked);
     }
 
     protected void from(String username, int senderKey, int receiverKey, String brand, String model,
                         ClientType clientType, String versionName, int versionCode, int protocolVersion,
-                        int protocolVersionMin)
+                        int protocolVersionMin, boolean isTrusted, boolean isBlocked)
     {
         this.username = username;
         this.senderKey = senderKey;
@@ -126,5 +127,7 @@ public abstract class Device
         this.versionCode = versionCode;
         this.protocolVersion = protocolVersion;
         this.protocolVersionMin = protocolVersionMin;
+        this.isTrusted = isTrusted;
+        this.isBlocked = isBlocked;
     }
 }

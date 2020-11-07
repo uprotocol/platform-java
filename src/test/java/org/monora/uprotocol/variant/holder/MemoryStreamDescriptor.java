@@ -5,6 +5,10 @@ import org.monora.uprotocol.core.persistence.StreamDescriptor;
 
 import java.io.ByteArrayOutputStream;
 
+/**
+ * This class will match with its other instances regardless of the direction of the{@link TransferItem} it holds, that
+ * is, {@link org.monora.uprotocol.core.network.TransferItem.Type#INCOMING} will <b>NOT</b> a difference.
+ */
 public class MemoryStreamDescriptor implements StreamDescriptor
 {
     public final ByteArrayOutputStream data;

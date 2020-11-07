@@ -2,19 +2,24 @@ package org.monora.uprotocol;
 
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSeat;
 import org.monora.uprotocol.core.TransportSession;
+import org.monora.uprotocol.core.network.Device;
 import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.network.TransferItem;
+import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.persistence.StreamDescriptor;
 import org.monora.uprotocol.core.protocol.ConnectionProvider;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
+import org.monora.uprotocol.core.protocol.communication.NotTrustedException;
 import org.monora.uprotocol.variant.DefaultConnectionProvider;
 import org.monora.uprotocol.variant.DefaultTransportSeat;
+import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
+import org.monora.uprotocol.variant.holder.OwnedTransferHolder;
+import org.monora.uprotocol.variant.persistence.BasePersistenceProvider;
 import org.monora.uprotocol.variant.persistence.PrimaryPersistenceProvider;
 import org.monora.uprotocol.variant.persistence.SecondaryPersistenceProvider;
 
@@ -32,8 +37,8 @@ import java.util.List;
 public class TransferTest
 {
     private final ConnectionProvider connectionProvider = new DefaultConnectionProvider();
-    private final PersistenceProvider primaryPersistence = new PrimaryPersistenceProvider();
-    private final PersistenceProvider secondaryPersistence = new SecondaryPersistenceProvider();
+    private final BasePersistenceProvider primaryPersistence = new PrimaryPersistenceProvider();
+    private final BasePersistenceProvider secondaryPersistence = new SecondaryPersistenceProvider();
     private final TransportSeat primarySeat = new DefaultTransportSeat(primaryPersistence);
     private final TransportSeat secondarySeat = new DefaultTransportSeat(secondaryPersistence);
     private final TransportSession primarySession = new TransportSession(primaryPersistence, primarySeat);
@@ -81,7 +86,6 @@ public class TransferTest
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence)) {
             bridge.requestFileTransfer(transferId, itemList);
-
         }
 
         primarySession.stop();
@@ -100,5 +104,81 @@ public class TransferTest
         }
 
         secondarySession.stop();
+
+        // Compare the received data with the original data.
+        List<MemoryStreamDescriptor> primaryList = primaryPersistence.getStreamDescriptorList();
+        List<MemoryStreamDescriptor> secondaryList = secondaryPersistence.getStreamDescriptorList();
+
+        for (MemoryStreamDescriptor descriptor : primaryList) {
+            boolean dataMatched = false;
+            for (MemoryStreamDescriptor secondaryDescriptor : secondaryList) {
+                if (descriptor.transferItem.transferId == secondaryDescriptor.transferItem.transferId
+                        && descriptor.transferItem.id == secondaryDescriptor.transferItem.id) {
+                    Assert.assertEquals("The data should match", descriptor.data.toString(),
+                            secondaryDescriptor.data.toString());
+                    dataMatched = true;
+                }
+            }
+
+            Assert.assertTrue("There should not be a missing data", dataMatched);
+        }
+    }
+
+    @Test
+    public void flagItemAsDoneTest() throws IOException, InterruptedException, CommunicationException
+    {
+        secondarySession.start();
+
+        try (CommunicationBridge bridge = openConnection(primaryPersistence)) {
+            bridge.requestFileTransferStart(transferId, TransferItem.Type.INCOMING);
+            primarySeat.receiveFiles(bridge, transferId);
+        }
+
+        secondarySession.stop();
+
+        final List<OwnedTransferHolder> itemList = new ArrayList<>();
+        itemList.addAll(primaryPersistence.getTransferHolderList());
+        itemList.addAll(secondaryPersistence.getTransferHolderList());
+
+        Assert.assertEquals("Items should not overwrite their counterparts", itemList.size(),
+                primaryPersistence.getTransferHolderList().size() + secondaryPersistence.getTransferHolderList().size());
+
+        for (OwnedTransferHolder holder : itemList) {
+            Assert.assertEquals("The item should be marked as done", PersistenceProvider.STATE_DONE,
+                    holder.state);
+        }
+    }
+
+    @Test(expected = NotTrustedException.class)
+    public void senderFailsToStartTransferIfNotTrusted() throws IOException, InterruptedException,
+            CommunicationException
+    {
+        primarySession.start();
+
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence)) {
+            bridge.requestFileTransferStart(transferId, TransferItem.Type.OUTGOING);
+            secondarySeat.receiveFiles(bridge, transferId);
+        } finally {
+            primarySession.stop();
+        }
+    }
+
+    @Test
+    public void senderStartsTransferIfTrusted() throws IOException, InterruptedException, CommunicationException,
+            PersistenceException
+    {
+        Device secondaryOnPrimary = primaryPersistence.createDeviceFor(secondaryPersistence.getDeviceUid());
+        primaryPersistence.sync(secondaryOnPrimary);
+        secondaryOnPrimary.isTrusted = true;
+        primaryPersistence.save(secondaryOnPrimary);
+
+        primarySession.start();
+
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence)) {
+            bridge.requestFileTransferStart(transferId, TransferItem.Type.OUTGOING);
+            secondarySeat.receiveFiles(bridge, transferId);
+        }
+
+        primarySession.stop();
     }
 }

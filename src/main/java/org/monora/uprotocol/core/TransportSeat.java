@@ -157,7 +157,7 @@ public interface TransportSeat
 
         try {
             while ((item = persistenceProvider.getFirstReceivableItem(transferId)) != null) {
-                // TODO: 11/6/20 Update state here
+                // TODO: 11/6/20 Update the state here
 
                 // On the receiver side, we do not recover from permission or file system errors. This is why the
                 // following file operation is not inside a try-catch block. Those types of errors are not recoverable
@@ -197,7 +197,8 @@ public interface TransportSeat
                 } catch (ContentException e) {
                     switch (e.error) {
                         case NotFound:
-                            persistenceProvider.setState(device.uid, item, PersistenceProvider.STATE_INVALIDATED_STICKY, e);
+                            persistenceProvider.setState(device.uid, item,
+                                    PersistenceProvider.STATE_INVALIDATED_STICKY, e);
                             break;
                         case AlreadyExists:
                         case NotAccessible:

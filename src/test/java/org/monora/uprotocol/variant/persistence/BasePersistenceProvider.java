@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -140,6 +141,16 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         return networkPin;
     }
 
+    public List<MemoryStreamDescriptor> getStreamDescriptorList()
+    {
+        return Collections.unmodifiableList(streamDescriptorList);
+    }
+
+    public List<OwnedTransferHolder> getTransferHolderList()
+    {
+        return Collections.unmodifiableList(transferHolderList);
+    }
+
     @Override
     public TransferItem loadTransferItem(String deviceId, long transferId, long id, TransferItem.Type type)
             throws PersistenceException
@@ -183,6 +194,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     public void save(Device device)
     {
         synchronized (deviceList) {
+            deviceList.remove(device);
             deviceList.add(device);
         }
     }
@@ -191,6 +203,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     public void save(DeviceAddress deviceAddress)
     {
         synchronized (deviceAddressList) {
+            deviceAddressList.remove(deviceAddress);
             deviceAddressList.add(deviceAddress);
         }
     }
