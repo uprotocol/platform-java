@@ -69,11 +69,11 @@ public class RequestTest
         final long transferId = 1;
 
         transferItemList.add(localPersistenceProvider.createTransferItemFor(transferId, 1, "1.jpg",
-                "image/jpeg", 0, ".1.tmp", null, TransferItem.Type.OUTGOING));
+                "image/jpeg", 0, null, TransferItem.Type.OUTGOING));
         transferItemList.add(localPersistenceProvider.createTransferItemFor(transferId, 2, "2.jpg",
-                "image/jpeg", 0, ".2.tmp", null, TransferItem.Type.OUTGOING));
+                "image/jpeg", 0, null, TransferItem.Type.OUTGOING));
         transferItemList.add(localPersistenceProvider.createTransferItemFor(transferId, 3, "3.jpg",
-                "image/jpeg", 0, ".3.tmp", null, TransferItem.Type.OUTGOING));
+                "image/jpeg", 0, null, TransferItem.Type.OUTGOING));
 
         try (CommunicationBridge bridge = CommunicationBridge.connect(connectionProvider, localPersistenceProvider,
                 deviceAddress, null, 0)) {
@@ -85,8 +85,9 @@ public class RequestTest
     }
 
     @Test
-    public void transferFileTest() {
-        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024*1024);
+    public void transferFileTest()
+    {
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024 * 1024);
         final List<TransferItem> transferItemList = new ArrayList<>();
         final PersistenceProvider localPersistenceProvider = new DefaultPersistenceProvider();
         final long transferId = 1;

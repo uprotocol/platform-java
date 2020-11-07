@@ -39,7 +39,7 @@ public class DefaultTransportSeat implements TransportSeat
     {
         List<TransferItem> itemList = persistenceProvider.toTransferItemList(transferId, jsonArray);
         for (TransferItem item : itemList)
-            System.out.println(item.name + " " + item.file);
+            System.out.println(item.name);
     }
 
     @Override

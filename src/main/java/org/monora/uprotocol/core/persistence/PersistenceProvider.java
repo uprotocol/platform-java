@@ -113,37 +113,13 @@ public interface PersistenceProvider
      * @param id         Points to {@link TransferItem#id}.
      * @param name       Points to {@link TransferItem#name}.
      * @param mimeType   Points to {@link TransferItem#mimeType}.
-     * @param size       Points to {@link TransferItem#size}.
-     * @param file       Points to {@link TransferItem#file}.
+     * @param size       Points to {@link TransferItem#size}..
      * @param directory  Points to {@link TransferItem#directory}.
      * @param type       Points to {@link TransferItem#type}
      * @return The transfer item instance.
      */
-    TransferItem createTransferItemFor(long transferId, long id, String name, String mimeType, long size, String file,
+    TransferItem createTransferItemFor(long transferId, long id, String name, String mimeType, long size,
                                        String directory, TransferItem.Type type);
-
-    /**
-     * Create a transfer item from the given file.
-     *
-     * @param transferId Points to {@link TransferItem#transferId}.
-     * @param file       The file to generate the transfer item from.
-     * @param directory  The relative path where this transfer item will be saved in. Pass 'null' if none.
-     * @return The generated transfer item.
-     * @throws IOException              If the given file is not readable.
-     * @throws IllegalArgumentException If the given file is not a file.
-     */
-    default TransferItem createTransferItemFor(long transferId, File file, String directory) throws IOException,
-            IllegalArgumentException
-    {
-        if (!file.isFile())
-            throw new IllegalArgumentException("The given file object should point to a file.");
-
-        if (!file.canRead())
-            throw new IOException("The given file " + file.getAbsolutePath() + " is not readable.");
-
-        return createTransferItemFor(transferId, generateKey(), file.getName(), typeMap.getContentType(file),
-                file.length(), file.getAbsolutePath(), directory, TransferItem.Type.OUTGOING);
-    }
 
     /**
      * Convert this device into {@link JSONObject}.
@@ -430,8 +406,7 @@ public interface PersistenceProvider
                         ? jsonObject.getString(Keyword.INDEX_DIRECTORY) : null;
                 transferItemList.add(createTransferItemFor(transferId, jsonObject.getLong(Keyword.TRANSFER_ITEM_ID),
                         jsonObject.getString(Keyword.INDEX_FILE_NAME), jsonObject.getString(Keyword.INDEX_FILE_MIME),
-                        jsonObject.getLong(Keyword.INDEX_FILE_SIZE), getTemporaryName(), directory,
-                        TransferItem.Type.INCOMING));
+                        jsonObject.getLong(Keyword.INDEX_FILE_SIZE), directory, TransferItem.Type.INCOMING));
             }
         }
 

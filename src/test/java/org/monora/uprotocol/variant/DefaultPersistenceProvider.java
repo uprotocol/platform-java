@@ -54,9 +54,9 @@ public class DefaultPersistenceProvider implements PersistenceProvider
 
     @Override
     public TransferItem createTransferItemFor(long transferId, long id, String name, String mimeType, long size,
-                                              String file, String directory, TransferItem.Type type)
+                                              String directory, TransferItem.Type type)
     {
-        return new DefaultTransferItem(transferId, id, name, mimeType, size, file, directory, type);
+        return new DefaultTransferItem(transferId, id, name, mimeType, size, directory, type);
     }
 
     @Override
