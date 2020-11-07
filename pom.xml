@@ -22,7 +22,7 @@
 
     <groupId>org.monora.uprotocol</groupId>
     <artifactId>core</artifactId>
-    <version>0.1-ALPHA01</version>
+    <version>0.1-ALPHA02</version>
     <name>UProtocol</name>
     <description>Specification for peer-to-peer content exchange that aims to unify existing solutions.</description>
     <licenses>
