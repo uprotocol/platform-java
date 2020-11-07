@@ -81,6 +81,7 @@ public class TransferTest
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence)) {
             bridge.requestFileTransfer(transferId, itemList);
+
         }
 
         primarySession.stop();

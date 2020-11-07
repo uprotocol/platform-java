@@ -273,6 +273,7 @@ public interface PersistenceProvider
     /**
      * Open the input stream for the given descriptor.
      *
+     * @param descriptor Of which the input stream will be opened.
      * @return The open input stream.
      * @throws IOException If an IO error occurs.
      */
@@ -281,6 +282,7 @@ public interface PersistenceProvider
     /**
      * Open the output stream for this descriptor.
      *
+     * @param descriptor Of which the output stream will be opened.
      * @return The open output stream.
      * @throws IOException If an IO error occurs.
      */
@@ -342,7 +344,8 @@ public interface PersistenceProvider
     /**
      * Change the state of the given item.
      * <p>
-     * Note: this should set the state but should not save it since saving it is spared for {@link #save(TransferItem)}.
+     * Note: this should set the state but should not save it since saving it is spared for
+     * {@link #save(String, TransferItem)}.
      *
      * @param deviceId That owns the copy of the 'item'.
      * @param item     Of which the given state will be applied.
@@ -367,7 +370,7 @@ public interface PersistenceProvider
     /**
      * Transform a given {@link TransferItem} list into its {@link JSONArray} equivalent.
      * <p>
-     * The resulting {@link JSONArray} can be fed to {@link CommunicationBridge#requestFileTransfer(long, JSONArray)},
+     * The resulting {@link JSONArray} can be fed to {@link CommunicationBridge#requestFileTransfer(long, List)},
      * to start a file transfer operation.
      * <p>
      * You can have the same JSON data back using {@link #toTransferItemList(long, String)}.

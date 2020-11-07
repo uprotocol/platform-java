@@ -18,7 +18,6 @@
 
 package org.monora.uprotocol.core;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.session.ActiveConnection;
@@ -264,6 +263,9 @@ public class CommunicationBridge implements Closeable
      * {@link #requestFileTransferStart(long, TransferItem.Type)}, which will end up in your
      * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Device, long, TransferItem.Type)} method.
      *
+     * If the initial response is positive, the items will be saved to the persistence provider using
+     * {@link PersistenceProvider#save(String, List)}.
+     *
      * @param transferId That ties a group of {@link TransferItem} as in {@link TransferItem#transferId}.
      * @param itemList   Items that you will send.
      * @return True if successful.
@@ -274,38 +276,23 @@ public class CommunicationBridge implements Closeable
     public boolean requestFileTransfer(long transferId, List<TransferItem> itemList) throws JSONException, IOException,
             CommunicationException
     {
-        return requestFileTransfer(transferId, getPersistenceProvider().toJson(itemList));
-    }
-
-    /**
-     * Request a file transfer operation by informing the remote that you will send files.
-     * <p>
-     * This request doesn't guarantee that the request will be processed immediately. You should close the connection
-     * after making this request. If everything goes right, the remote will reach you using
-     * {@link #requestFileTransferStart(long, TransferItem.Type)}, which will end up in your
-     * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Device, long, TransferItem.Type)} method.
-     *
-     * @param transferId That ties a group of {@link TransferItem} as in {@link TransferItem#transferId}.
-     * @param items      That has been generated using {@link PersistenceProvider#toJson(List)}.
-     * @return True if successful.
-     * @throws IOException            If an IO error occurs.
-     * @throws JSONException          If something goes wrong when creating JSON object.
-     * @throws CommunicationException When there is a communication error due to misconfiguration.
-     */
-    public boolean requestFileTransfer(long transferId, JSONArray items) throws JSONException, IOException,
-            CommunicationException
-    {
         sendSecure(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER)
                 .put(Keyword.TRANSFER_ID, transferId)
-                .put(Keyword.INDEX, items.toString()));
-        return receiveResult();
+                .put(Keyword.INDEX, getPersistenceProvider().toJson(itemList).toString()));
+
+        boolean result = receiveResult();
+
+        if (result)
+            getPersistenceProvider().save(getDevice().uid, itemList);
+
+        return result;
     }
 
     /**
      * Ask remote to start file transfer.
      * <p>
-     * The transfer request, in this case, has already been sent with {@link #requestFileTransfer(long, JSONArray)}.
+     * The transfer request, in this case, has already been sent with {@link #requestFileTransfer(long, List)}.
      *
      * @param transferId That ties a group of {@link TransferItem} as in {@link TransferItem#transferId}.
      * @param type       Of the transfer as in {@link TransferItem#type}.

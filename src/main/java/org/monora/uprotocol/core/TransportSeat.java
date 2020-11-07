@@ -1,6 +1,5 @@
 package org.monora.uprotocol.core;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.response.SizeLimitExceededException;
 import org.monora.coolsocket.core.session.ActiveConnection;
@@ -23,6 +22,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
+import java.util.List;
 
 /**
  * A transport seat instance handles the requests coming from the uprotocol clients.
@@ -80,7 +80,7 @@ public interface TransportSeat
 
     /**
      * The remote has returned the answer to the file transfer request we made with
-     * {@link CommunicationBridge#requestFileTransfer(long, JSONArray)}.
+     * {@link CommunicationBridge#requestFileTransfer(long, List)}.
      * <p>
      * This may or not be called depending on the uprotocol client. You should not wait for this.
      *
