@@ -1,4 +1,4 @@
-package org.monora.uprotocol.variant;
+package org.monora.uprotocol.variant.persistence;
 
 import org.monora.uprotocol.core.network.Device;
 import org.monora.uprotocol.core.network.DeviceAddress;
@@ -6,6 +6,9 @@ import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.persistence.StreamDescriptor;
+import org.monora.uprotocol.variant.DefaultDevice;
+import org.monora.uprotocol.variant.DefaultDeviceAddress;
+import org.monora.uprotocol.variant.DefaultTransferItem;
 import org.monora.uprotocol.variant.holder.Avatar;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
 import org.monora.uprotocol.variant.holder.OwnedTransferItem;
@@ -18,7 +21,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DefaultPersistenceProvider implements PersistenceProvider
+public abstract class BasePersistenceProvider implements PersistenceProvider
 {
     private final List<Device> deviceList = new ArrayList<>();
     private final List<DeviceAddress> deviceAddressList = new ArrayList<>();
@@ -99,21 +102,6 @@ public class DefaultPersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public String getDeviceUid()
-    {
-        return "fdsfgffgdfgsf";
-    }
-
-    @Override
-    public DefaultDevice getDevice()
-    {
-        DefaultDevice defaultDevice = new DefaultDevice(getDeviceUid(), "uprotocol", 100,
-                100, "uwu", "wuw");
-        defaultDevice.isLocal = true;
-        return defaultDevice;
-    }
-
-    @Override
     public TransferItem getFirstReceivableItem(long transferId)
     {
         synchronized (transferItemList) {
@@ -132,12 +120,6 @@ public class DefaultPersistenceProvider implements PersistenceProvider
         if (networkPin == 0)
             networkPin = generateKey();
         return networkPin;
-    }
-
-    @Override
-    public String getTemporaryName()
-    {
-        return "." + System.nanoTime() + ".tmp";
     }
 
     @Override
@@ -239,6 +221,6 @@ public class DefaultPersistenceProvider implements PersistenceProvider
             }
         }
 
-        throw new PersistenceException("I grieve in stereo.");
+        throw new PersistenceException("The requested device did not exist and failed to sync.");
     }
 }

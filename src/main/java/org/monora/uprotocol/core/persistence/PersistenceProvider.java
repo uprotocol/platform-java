@@ -251,15 +251,6 @@ public interface PersistenceProvider
     int getNetworkPin();
 
     /**
-     * Generate a temporary name that will be used for incoming files until they are saved to their original paths.
-     * <p>
-     * For instance, '.4234324.tmp' could be a good temporary name.
-     *
-     * @return The temporary file format.
-     */
-    String getTemporaryName();
-
-    /**
      * Load transfer item for the given parameters.
      *
      * @param deviceId Owning the item.

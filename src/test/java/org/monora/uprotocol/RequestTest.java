@@ -14,10 +14,10 @@ import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.ConnectionProvider;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 import org.monora.uprotocol.variant.DefaultConnectionProvider;
-import org.monora.uprotocol.variant.DefaultPersistenceProvider;
 import org.monora.uprotocol.variant.DefaultTransportSeat;
+import org.monora.uprotocol.variant.persistence.PrimaryPersistenceProvider;
+import org.monora.uprotocol.variant.persistence.SecondaryPersistenceProvider;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -27,15 +27,16 @@ import java.util.List;
 public class RequestTest
 {
     private final ConnectionProvider connectionProvider = new DefaultConnectionProvider();
-    private final PersistenceProvider persistenceProvider = new DefaultPersistenceProvider();
-    private final TransportSeat transportSeat = new DefaultTransportSeat(persistenceProvider);
-    private final TransportSession transportSession = new TransportSession(persistenceProvider, transportSeat);
+    private final PersistenceProvider primaryPersistence = new PrimaryPersistenceProvider();
+    private final PersistenceProvider secondaryPersistence = new SecondaryPersistenceProvider();
+    private final TransportSeat transportSeat = new DefaultTransportSeat(primaryPersistence);
+    private final TransportSession transportSession = new TransportSession(primaryPersistence, transportSeat);
     private DeviceAddress deviceAddress;
 
     @Before
     public void setUp() throws UnknownHostException
     {
-        deviceAddress = persistenceProvider.createDeviceAddressFor(InetAddress.getLocalHost());
+        deviceAddress = primaryPersistence.createDeviceAddressFor(InetAddress.getLocalHost());
     }
 
     @Test
@@ -44,12 +45,12 @@ public class RequestTest
     {
         transportSession.start();
 
-        try (CommunicationBridge bridge = CommunicationBridge.connect(connectionProvider, persistenceProvider,
+        try (CommunicationBridge bridge = CommunicationBridge.connect(connectionProvider, secondaryPersistence,
                 deviceAddress, null, 0)) {
             Assert.assertTrue("Remote should send a positive message.", bridge.requestAcquaintance());
 
-            Device persistentDevice = persistenceProvider.createDeviceFor(bridge.getDevice().uid);
-            persistenceProvider.sync(persistentDevice);
+            Device persistentDevice = secondaryPersistence.createDeviceFor(bridge.getDevice().uid);
+            secondaryPersistence.sync(persistentDevice);
 
             Assert.assertEquals("Devices should be same.", bridge.getDevice(), persistentDevice);
             Assert.assertEquals("Devices should have the same username.", bridge.getDevice().username,
@@ -64,39 +65,22 @@ public class RequestTest
     {
         transportSession.start();
 
-        final PersistenceProvider localPersistenceProvider = new DefaultPersistenceProvider();
         final List<TransferItem> transferItemList = new ArrayList<>();
         final long transferId = 1;
 
-        transferItemList.add(localPersistenceProvider.createTransferItemFor(transferId, 1, "1.jpg",
+        transferItemList.add(secondaryPersistence.createTransferItemFor(transferId, 1, "1.jpg",
                 "image/jpeg", 0, null, TransferItem.Type.OUTGOING));
-        transferItemList.add(localPersistenceProvider.createTransferItemFor(transferId, 2, "2.jpg",
+        transferItemList.add(secondaryPersistence.createTransferItemFor(transferId, 2, "2.jpg",
                 "image/jpeg", 0, null, TransferItem.Type.OUTGOING));
-        transferItemList.add(localPersistenceProvider.createTransferItemFor(transferId, 3, "3.jpg",
+        transferItemList.add(secondaryPersistence.createTransferItemFor(transferId, 3, "3.jpg",
                 "image/jpeg", 0, null, TransferItem.Type.OUTGOING));
 
-        try (CommunicationBridge bridge = CommunicationBridge.connect(connectionProvider, localPersistenceProvider,
+        try (CommunicationBridge bridge = CommunicationBridge.connect(connectionProvider, secondaryPersistence,
                 deviceAddress, null, 0)) {
             Assert.assertTrue("The request should be successful", bridge.requestFileTransfer(transferId,
                     transferItemList));
         } finally {
             transportSession.stop();
         }
-    }
-
-    @Test
-    public void transferFileTest()
-    {
-        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024 * 1024);
-        final List<TransferItem> transferItemList = new ArrayList<>();
-        final PersistenceProvider localPersistenceProvider = new DefaultPersistenceProvider();
-        final long transferId = 1;
-        final long id = 1;
-        final String fileName = "Something.txt";
-        final String fileMime = "text/plain";
-
-        //transferItemList.add(localPersistenceProvider.createTransferItemFor(transferId, id, fileName, fileMime,
-        //        outputStream.size(), ));
-        // TODO: 11/6/20 Implement
     }
 }
