@@ -110,7 +110,7 @@ public class TransportSession extends CoolSocket
                 long transferId = response.getLong(Keyword.TRANSFER_ID);
                 String jsonIndex = response.getString(Keyword.INDEX);
 
-                if (transportSeat.hasTransferIndexingFor(transferId))
+                if (transportSeat.hasOngoingIndexingFor(transferId) || persistenceProvider.containsTransfer(transferId))
                     throw new ContentException(ContentException.Error.AlreadyExists);
                 else {
                     transportSeat.handleFileTransferRequest(device, hasPin, transferId, jsonIndex);
@@ -146,7 +146,7 @@ public class TransportSession extends CoolSocket
 
                 if (TransferItem.Type.INCOMING.equals(type) && !device.isTrusted)
                     bridge.sendError(Keyword.ERROR_NOT_TRUSTED);
-                else if (transportSeat.hasTransferFor(transferId, device.uid, type))
+                else if (transportSeat.hasOngoingTransferFor(transferId, device.uid, type))
                     throw new ContentException(ContentException.Error.NotAccessible);
                 else {
                     bridge.sendResult(true);

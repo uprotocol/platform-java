@@ -55,8 +55,9 @@ public interface TransportSeat
      *
      * @param device        That wants to be noticed.
      * @param deviceAddress Where that device is located.
+     * @return True if the request will be fulfilled.
      */
-    void handleAcquaintanceRequest(Device device, DeviceAddress deviceAddress);
+    boolean handleAcquaintanceRequest(Device device, DeviceAddress deviceAddress);
 
     /**
      * Handle the file transfer request.
@@ -106,7 +107,7 @@ public interface TransportSeat
      * @param type       To limit the type of the transfer as in {@link TransferItem#type}.
      * @return True if there is an ongoing transfer for the given parameters.
      */
-    boolean hasTransferFor(long transferId, String deviceUid, TransferItem.Type type);
+    boolean hasOngoingTransferFor(long transferId, String deviceUid, TransferItem.Type type);
 
     /**
      * Check whether there is an indexing process for the given transfer id.
@@ -116,7 +117,7 @@ public interface TransportSeat
      * @param transferId The transfer id as in {@link TransferItem#transferId}
      * @return True if there is an ongoing transfer indexing for the given id.
      */
-    boolean hasTransferIndexingFor(long transferId);
+    boolean hasOngoingIndexingFor(long transferId);
 
     /**
      * A device that was previously known accessed the server with a different key.
@@ -260,7 +261,7 @@ public interface TransportSeat
 
                 try {
                     final ItemPointer itemPointer = Transfers.getItemRequest(request);
-                    item = persistenceProvider.loadTransferItem(device.uid, itemPointer.itemId,
+                    item = persistenceProvider.loadTransferItem(device.uid, transferId, itemPointer.itemId,
                             TransferItem.Type.OUTGOING);
                     currentBytes = itemPointer.position;
 

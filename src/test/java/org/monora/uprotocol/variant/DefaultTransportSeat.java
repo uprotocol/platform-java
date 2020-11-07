@@ -24,13 +24,16 @@ public class DefaultTransportSeat implements TransportSeat
     public void beginFileTransfer(CommunicationBridge bridge, Device device, long transferId, TransferItem.Type type)
             throws PersistenceException, CommunicationException
     {
-
+        if (type.equals(TransferItem.Type.INCOMING))
+            receiveFiles(bridge, transferId);
+        else if (type.equals(TransferItem.Type.OUTGOING))
+            sendFiles(bridge, transferId);
     }
 
     @Override
-    public void handleAcquaintanceRequest(Device device, DeviceAddress deviceAddress)
+    public boolean handleAcquaintanceRequest(Device device, DeviceAddress deviceAddress)
     {
-
+        return true;
     }
 
     @Override
@@ -38,6 +41,7 @@ public class DefaultTransportSeat implements TransportSeat
             throws PersistenceException, CommunicationException
     {
         List<TransferItem> itemList = persistenceProvider.toTransferItemList(transferId, jsonArray);
+        persistenceProvider.save(itemList);
     }
 
     @Override
@@ -49,17 +53,17 @@ public class DefaultTransportSeat implements TransportSeat
     @Override
     public void handleTextTransfer(Device device, String text)
     {
-
+        System.out.println("Text received: " + text);
     }
 
     @Override
-    public boolean hasTransferFor(long transferId, String deviceUid, TransferItem.Type type)
+    public boolean hasOngoingTransferFor(long transferId, String deviceUid, TransferItem.Type type)
     {
         return false;
     }
 
     @Override
-    public boolean hasTransferIndexingFor(long transferId)
+    public boolean hasOngoingIndexingFor(long transferId)
     {
         return false;
     }

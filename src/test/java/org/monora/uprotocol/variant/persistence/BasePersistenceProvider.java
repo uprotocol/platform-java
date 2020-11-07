@@ -11,7 +11,7 @@ import org.monora.uprotocol.variant.DefaultDeviceAddress;
 import org.monora.uprotocol.variant.DefaultTransferItem;
 import org.monora.uprotocol.variant.holder.Avatar;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
-import org.monora.uprotocol.variant.holder.OwnedTransferItem;
+import org.monora.uprotocol.variant.holder.OwnedTransferHolder;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -19,13 +19,19 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+/**
+ * This class provides some level of "persistence" on the level for testing purposes.
+ * <p>
+ * This will be slow and is not meant to be used in production.
+ */
 public abstract class BasePersistenceProvider implements PersistenceProvider
 {
     private final List<Device> deviceList = new ArrayList<>();
     private final List<DeviceAddress> deviceAddressList = new ArrayList<>();
-    private final List<OwnedTransferItem> transferItemList = new ArrayList<>();
+    private final List<OwnedTransferHolder> transferHolderList = new ArrayList<>();
     private final List<Avatar> avatarList = new ArrayList<>();
     private final List<MemoryStreamDescriptor> streamDescriptorList = new ArrayList<>();
 
@@ -35,6 +41,19 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     public void broadcast()
     {
 
+    }
+
+    @Override
+    public boolean containsTransfer(long transferId)
+    {
+        synchronized (transferHolderList) {
+            for (OwnedTransferHolder holder : transferHolderList) {
+                if (holder.item.transferId == transferId)
+                    return true;
+            }
+        }
+
+        return false;
     }
 
     @Override
@@ -104,8 +123,8 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     @Override
     public TransferItem getFirstReceivableItem(long transferId)
     {
-        synchronized (transferItemList) {
-            for (OwnedTransferItem holder : transferItemList) {
+        synchronized (transferHolderList) {
+            for (OwnedTransferHolder holder : transferHolderList) {
                 if (TransferItem.Type.INCOMING.equals(holder.item.type) && holder.item.transferId == transferId
                         && holder.state == STATE_PENDING)
                     return holder.item;
@@ -123,11 +142,13 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public TransferItem loadTransferItem(String deviceId, long id, TransferItem.Type type) throws PersistenceException
+    public TransferItem loadTransferItem(String deviceId, long transferId, long id, TransferItem.Type type)
+            throws PersistenceException
     {
-        synchronized (transferItemList) {
-            for (OwnedTransferItem holder : transferItemList) {
-                if (holder.item.id == id && holder.item.type.equals(type) && holder.deviceId.equals(deviceId))
+        synchronized (transferHolderList) {
+            for (OwnedTransferHolder holder : transferHolderList) {
+                if (holder.item.transferId == transferId && holder.item.id == id && holder.item.type.equals(type)
+                        && holder.deviceId.equals(deviceId))
                     return holder.item;
             }
         }
@@ -178,15 +199,23 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     @Override
     public void save(TransferItem item)
     {
-        synchronized (transferItemList) {
-            for (OwnedTransferItem holder : transferItemList) {
+        synchronized (transferHolderList) {
+            for (OwnedTransferHolder holder : transferHolderList) {
                 if (holder.item.equals(item)) {
                     holder.item = item;
                     return;
                 }
             }
 
-            transferItemList.add(new OwnedTransferItem(item));
+            transferHolderList.add(new OwnedTransferHolder(item));
+        }
+    }
+
+    @Override
+    public void save(List<? extends TransferItem> itemList)
+    {
+        for (TransferItem item : itemList) {
+            save(item);
         }
     }
 
@@ -201,8 +230,8 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     @Override
     public void setState(Device device, TransferItem item, int state, Exception e)
     {
-        synchronized (transferItemList) {
-            for (OwnedTransferItem holder : transferItemList) {
+        synchronized (transferHolderList) {
+            for (OwnedTransferHolder holder : transferHolderList) {
                 if (device.uid.equals(holder.deviceId) && item.equals(holder.item))
                     holder.state = state;
             }

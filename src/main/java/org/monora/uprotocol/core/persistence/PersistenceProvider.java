@@ -11,7 +11,6 @@ import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
 
 import javax.activation.MimetypesFileTypeMap;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -80,6 +79,14 @@ public interface PersistenceProvider
      * altogether.
      */
     void broadcast();
+
+    /**
+     * Check whether the transfer is known to us.
+     *
+     * @param transferId To check.
+     * @return True there is matching data for the given transfer id.
+     */
+    boolean containsTransfer(long transferId);
 
     /**
      * Create device address instance.
@@ -253,13 +260,15 @@ public interface PersistenceProvider
     /**
      * Load transfer item for the given parameters.
      *
-     * @param deviceId Owning the item.
-     * @param id       Points to {@link TransferItem#id}.
-     * @param type     Specifying whether this is an incoming or outgoing operation.
-     * @return Null if there is no match or the transfer item that points to the given parameters.
+     * @param deviceId   Owning the item.
+     * @param transferId Points to {@link TransferItem#transferId}
+     * @param id         Points to {@link TransferItem#id}.
+     * @param type       Specifying whether this is an incoming or outgoing operation.
+     * @return The transfer item that points to the given parameters or null if there is no match.
      * @throws PersistenceException When the given parameters don't point to a valid item.
      */
-    TransferItem loadTransferItem(String deviceId, long id, TransferItem.Type type) throws PersistenceException;
+    TransferItem loadTransferItem(String deviceId, long transferId, long id, TransferItem.Type type)
+            throws PersistenceException;
 
     /**
      * Open the input stream for the given descriptor.
@@ -310,6 +319,13 @@ public interface PersistenceProvider
      * @param item To save.
      */
     void save(TransferItem item);
+
+    /**
+     * Save all the items in the given list.
+     *
+     * @param itemList To save.
+     */
+    void save(List<? extends TransferItem> itemList);
 
     /**
      * Save the avatar for the given device.
