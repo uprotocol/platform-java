@@ -41,7 +41,7 @@ public class DefaultTransportSeat implements TransportSeat
             throws PersistenceException, CommunicationException
     {
         List<TransferItem> itemList = persistenceProvider.toTransferItemList(transferId, jsonArray);
-        persistenceProvider.save(itemList);
+        persistenceProvider.save(device.uid, itemList);
     }
 
     @Override

@@ -181,7 +181,7 @@ public interface TransportSeat
                         }
 
                         outputStream.flush();
-                        persistenceProvider.setState(device, item, PersistenceProvider.STATE_DONE, null);
+                        persistenceProvider.setState(device.uid, item, PersistenceProvider.STATE_DONE, null);
                         completedBytes += currentBytes;
                         completedCount++;
                         lastItem = item;
@@ -190,26 +190,26 @@ public interface TransportSeat
                     }
                 } catch (CancelledException e) {
                     // The task is cancelled. We reset the state of this item to 'pending'.
-                    persistenceProvider.setState(device, item, PersistenceProvider.STATE_PENDING, e);
+                    persistenceProvider.setState(device.uid, item, PersistenceProvider.STATE_PENDING, e);
                     throw e;
                 } catch (FileNotFoundException e) {
                     throw e;
                 } catch (ContentException e) {
                     switch (e.error) {
                         case NotFound:
-                            persistenceProvider.setState(device, item, PersistenceProvider.STATE_INVALIDATED_STICKY, e);
+                            persistenceProvider.setState(device.uid, item, PersistenceProvider.STATE_INVALIDATED_STICKY, e);
                             break;
                         case AlreadyExists:
                         case NotAccessible:
                         default:
-                            persistenceProvider.setState(device, item,
+                            persistenceProvider.setState(device.uid, item,
                                     PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
                     }
                 } catch (Exception e) {
-                    persistenceProvider.setState(device, item, PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
+                    persistenceProvider.setState(device.uid, item, PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
                     throw e;
                 } finally {
-                    persistenceProvider.save(item);
+                    persistenceProvider.save(device.uid, item);
                     item = null;
                 }
             }
@@ -280,8 +280,8 @@ public interface TransportSeat
 
                             bridge.sendResult(true);
 
-                            persistenceProvider.setState(device, item, PersistenceProvider.STATE_IN_PROGRESS, null);
-                            persistenceProvider.save(item);
+                            persistenceProvider.setState(device.uid, item, PersistenceProvider.STATE_IN_PROGRESS, null);
+                            persistenceProvider.save(device.uid, item);
 
                             ActiveConnection.Description description = activeConnection.writeBegin(0,
                                     item.size - currentBytes);
@@ -304,19 +304,20 @@ public interface TransportSeat
 
                             completedBytes += currentBytes;
                             completedCount++;
-                            persistenceProvider.setState(device, item, PersistenceProvider.STATE_DONE, null);
+                            persistenceProvider.setState(device.uid, item, PersistenceProvider.STATE_DONE, null);
                         }
                     } catch (CancelledException e) {
-                        persistenceProvider.setState(device, item, PersistenceProvider.STATE_PENDING, e);
+                        persistenceProvider.setState(device.uid, item, PersistenceProvider.STATE_PENDING, e);
                         throw e;
                     } catch (FileNotFoundException e) {
-                        persistenceProvider.setState(device, item, PersistenceProvider.STATE_INVALIDATED_STICKY, e);
+                        persistenceProvider.setState(device.uid, item, PersistenceProvider.STATE_INVALIDATED_STICKY, e);
                         throw e;
                     } catch (Exception e) {
-                        persistenceProvider.setState(device, item, PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
+                        persistenceProvider.setState(device.uid, item,
+                                PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
                         throw e;
                     } finally {
-                        persistenceProvider.save(item);
+                        persistenceProvider.save(device.uid, item);
                         item = null;
                     }
                 } catch (CancelledException e) {

@@ -105,7 +105,7 @@ public class DeviceLoader
             deviceAvatar = new byte[0];
         }
 
-        persistenceProvider.saveAvatar(device, deviceAvatar);
+        persistenceProvider.saveAvatar(device.uid, deviceAvatar);
     }
 
     /**

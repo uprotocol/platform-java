@@ -316,43 +316,45 @@ public interface PersistenceProvider
      * <p>
      * Note: ensure there are no duplicates.
      *
-     * @param item To save.
+     * @param deviceId That owns the item.
+     * @param item     To save.
      */
-    void save(TransferItem item);
+    void save(String deviceId, TransferItem item);
 
     /**
      * Save all the items in the given list.
      *
+     * @param deviceId That owns the items.
      * @param itemList To save.
      */
-    void save(List<? extends TransferItem> itemList);
+    void save(String deviceId, List<? extends TransferItem> itemList);
 
     /**
      * Save the avatar for the given device.
      * <p>
      * This will be invoked both when the device has an avatar and when it doesn't.
      *
-     * @param device The device that the avatar belongs to.
-     * @param bitmap The bitmap data for the avatar.
+     * @param deviceId The device that the avatar belongs to.
+     * @param bitmap   The bitmap data for the avatar.
      */
-    void saveAvatar(Device device, byte[] bitmap);
+    void saveAvatar(String deviceId, byte[] bitmap);
 
     /**
      * Change the state of the given item.
      * <p>
      * Note: this should set the state but should not save it since saving it is spared for {@link #save(TransferItem)}.
      *
-     * @param device That owns the copy of the 'item'.
-     * @param item   Of which the given state will be applied.
-     * @param state  The level of invalidation.
-     * @param e      The nullable additional exception cause this state.
+     * @param deviceId That owns the copy of the 'item'.
+     * @param item     Of which the given state will be applied.
+     * @param state    The level of invalidation.
+     * @param e        The nullable additional exception cause this state.
      * @see #STATE_PENDING
      * @see #STATE_INVALIDATED_TEMPORARILY
      * @see #STATE_INVALIDATED_STICKY
      * @see #STATE_IN_PROGRESS
      * @see #STATE_DONE
      */
-    void setState(Device device, TransferItem item, int state, Exception e);
+    void setState(String deviceId, TransferItem item, int state, Exception e);
 
     /**
      * Sync the device with the persistence database.

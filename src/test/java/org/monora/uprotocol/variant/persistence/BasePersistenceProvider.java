@@ -19,7 +19,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -197,42 +196,43 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void save(TransferItem item)
+    public void save(String deviceId, TransferItem item)
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {
                 if (holder.item.equals(item)) {
                     holder.item = item;
+                    holder.deviceId = deviceId;
                     return;
                 }
             }
 
-            transferHolderList.add(new OwnedTransferHolder(item));
+            transferHolderList.add(new OwnedTransferHolder(item, deviceId));
         }
     }
 
     @Override
-    public void save(List<? extends TransferItem> itemList)
+    public void save(String deviceId, List<? extends TransferItem> itemList)
     {
         for (TransferItem item : itemList) {
-            save(item);
+            save(deviceId, item);
         }
     }
 
     @Override
-    public void saveAvatar(Device device, byte[] bitmap)
+    public void saveAvatar(String deviceId, byte[] bitmap)
     {
         synchronized (avatarList) {
-            avatarList.add(new Avatar(device.uid, bitmap));
+            avatarList.add(new Avatar(deviceId, bitmap));
         }
     }
 
     @Override
-    public void setState(Device device, TransferItem item, int state, Exception e)
+    public void setState(String deviceId, TransferItem item, int state, Exception e)
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {
-                if (device.uid.equals(holder.deviceId) && item.equals(holder.item))
+                if (deviceId.equals(holder.deviceId) && item.equals(holder.item))
                     holder.state = state;
             }
         }

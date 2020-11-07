@@ -15,4 +15,10 @@ public class OwnedTransferHolder
     {
         this.item = item;
     }
+
+    public OwnedTransferHolder(TransferItem item, String deviceId)
+    {
+        this(item);
+        this.deviceId = deviceId;
+    }
 }

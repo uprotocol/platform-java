@@ -87,7 +87,6 @@ public class TransferTest
     }
 
     @Test
-    @Ignore
     public void sendFilesTest() throws IOException, InterruptedException, CommunicationException
     {
         secondarySession.start();
@@ -96,7 +95,7 @@ public class TransferTest
             Assert.assertTrue("The result should be positive", bridge.requestFileTransferStart(transferId,
                     TransferItem.Type.INCOMING));
 
-            secondarySeat.receiveFiles(bridge, transferId);
+            primarySeat.receiveFiles(bridge, transferId);
         }
 
         secondarySession.stop();
