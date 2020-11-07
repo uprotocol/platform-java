@@ -1,6 +1,8 @@
 package org.monora.uprotocol;
 
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSeat;
@@ -21,14 +23,22 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This test class ensures that two different sides can communicate.
+ * <p>
+ * Because we can't run two servers at the same time due to the static port being in use, we are starting one at a time
+ * with the two sides having their own instances of objects separated as primary and secondary.
+ */
 public class TransferTest
 {
     private final ConnectionProvider connectionProvider = new DefaultConnectionProvider();
     private final PersistenceProvider primaryPersistence = new PrimaryPersistenceProvider();
     private final PersistenceProvider secondaryPersistence = new SecondaryPersistenceProvider();
+    private final TransportSeat primarySeat = new DefaultTransportSeat(primaryPersistence);
+    private final TransportSeat secondarySeat = new DefaultTransportSeat(secondaryPersistence);
+    private final TransportSession primarySession = new TransportSession(primaryPersistence, primarySeat);
+    private final TransportSession secondarySession = new TransportSession(secondaryPersistence, secondarySeat);
 
-    private TransportSeat transportSeat;
-    private TransportSession transportSession;
     private DeviceAddress deviceAddress;
     private TransferItem demoTransfer1;
     private TransferItem demoTransfer2;
@@ -41,19 +51,6 @@ public class TransferTest
             CommunicationException
     {
         return CommunicationBridge.connect(connectionProvider, persistenceProvider, deviceAddress, null, 0);
-    }
-
-    private void startSession(PersistenceProvider persistenceProvider) throws IOException, InterruptedException
-    {
-        transportSeat = new DefaultTransportSeat(persistenceProvider);
-        transportSession = new TransportSession(persistenceProvider, transportSeat);
-
-        transportSession.start();
-    }
-
-    private void stopSession() throws InterruptedException
-    {
-        transportSession.stop();
     }
 
     @Before
@@ -76,7 +73,7 @@ public class TransferTest
     @Before
     public void setUpInitialTransferItems() throws IOException, InterruptedException, CommunicationException
     {
-        startSession(primaryPersistence);
+        primarySession.start();
 
         final List<TransferItem> itemList = new ArrayList<>();
         itemList.add(demoTransfer1);
@@ -86,18 +83,22 @@ public class TransferTest
             bridge.requestFileTransfer(transferId, itemList);
         }
 
-        stopSession();
+        primarySession.stop();
     }
 
     @Test
+    @Ignore
     public void sendFilesTest() throws IOException, InterruptedException, CommunicationException
     {
-        startSession(secondaryPersistence);
+        secondarySession.start();
 
         try (CommunicationBridge bridge = openConnection(primaryPersistence)) {
-            bridge.requestFileTransferStart(transferId, TransferItem.Type.INCOMING);
+            Assert.assertTrue("The result should be positive", bridge.requestFileTransferStart(transferId,
+                    TransferItem.Type.INCOMING));
+
+            secondarySeat.receiveFiles(bridge, transferId);
         }
 
-        stopSession();
+        secondarySession.stop();
     }
 }
