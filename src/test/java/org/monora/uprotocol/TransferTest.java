@@ -4,24 +4,17 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.monora.uprotocol.core.CommunicationBridge;
-import org.monora.uprotocol.core.TransportSeat;
-import org.monora.uprotocol.core.TransportSession;
 import org.monora.uprotocol.core.network.Device;
 import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.persistence.StreamDescriptor;
-import org.monora.uprotocol.core.protocol.ConnectionProvider;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 import org.monora.uprotocol.core.protocol.communication.NotTrustedException;
-import org.monora.uprotocol.variant.DefaultConnectionProvider;
-import org.monora.uprotocol.variant.DefaultTransportSeat;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
 import org.monora.uprotocol.variant.holder.OwnedTransferHolder;
-import org.monora.uprotocol.variant.persistence.BasePersistenceProvider;
-import org.monora.uprotocol.variant.persistence.PrimaryPersistenceProvider;
-import org.monora.uprotocol.variant.persistence.SecondaryPersistenceProvider;
+import org.monora.uprotocol.variant.test.DefaultTestBase;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -34,16 +27,8 @@ import java.util.List;
  * Because we can't run two servers at the same time due to the static port being in use, we are starting one at a time
  * with the two sides having their own instances of objects separated as primary and secondary.
  */
-public class TransferTest
+public class TransferTest extends DefaultTestBase
 {
-    private final ConnectionProvider connectionProvider = new DefaultConnectionProvider();
-    private final BasePersistenceProvider primaryPersistence = new PrimaryPersistenceProvider();
-    private final BasePersistenceProvider secondaryPersistence = new SecondaryPersistenceProvider();
-    private final TransportSeat primarySeat = new DefaultTransportSeat(primaryPersistence);
-    private final TransportSeat secondarySeat = new DefaultTransportSeat(secondaryPersistence);
-    private final TransportSession primarySession = new TransportSession(primaryPersistence, primarySeat);
-    private final TransportSession secondarySession = new TransportSession(secondaryPersistence, secondarySeat);
-
     private DeviceAddress deviceAddress;
     private TransferItem demoTransfer1;
     private TransferItem demoTransfer2;
@@ -51,12 +36,6 @@ public class TransferTest
     private final static byte[] data1 = "This is the first demo data".getBytes();
     private final static byte[] data2 = "This is the second demo data".getBytes();
     private final long transferId = 1;
-
-    private CommunicationBridge openConnection(PersistenceProvider persistenceProvider) throws IOException,
-            CommunicationException
-    {
-        return CommunicationBridge.connect(connectionProvider, persistenceProvider, deviceAddress, null, 0);
-    }
 
     @Before
     public void setUp() throws IOException
@@ -84,7 +63,7 @@ public class TransferTest
         itemList.add(demoTransfer1);
         itemList.add(demoTransfer2);
 
-        try (CommunicationBridge bridge = openConnection(secondaryPersistence)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
             bridge.requestFileTransfer(transferId, itemList);
         }
 
@@ -96,7 +75,7 @@ public class TransferTest
     {
         secondarySession.start();
 
-        try (CommunicationBridge bridge = openConnection(primaryPersistence)) {
+        try (CommunicationBridge bridge = openConnection(primaryPersistence, deviceAddress)) {
             Assert.assertTrue("The result should be positive", bridge.requestFileTransferStart(transferId,
                     TransferItem.Type.INCOMING));
 
@@ -129,7 +108,7 @@ public class TransferTest
     {
         secondarySession.start();
 
-        try (CommunicationBridge bridge = openConnection(primaryPersistence)) {
+        try (CommunicationBridge bridge = openConnection(primaryPersistence, deviceAddress)) {
             bridge.requestFileTransferStart(transferId, TransferItem.Type.INCOMING);
             primarySeat.receiveFiles(bridge, transferId);
         }
@@ -155,7 +134,7 @@ public class TransferTest
     {
         primarySession.start();
 
-        try (CommunicationBridge bridge = openConnection(secondaryPersistence)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
             bridge.requestFileTransferStart(transferId, TransferItem.Type.OUTGOING);
             secondarySeat.receiveFiles(bridge, transferId);
         } finally {
@@ -174,7 +153,7 @@ public class TransferTest
 
         primarySession.start();
 
-        try (CommunicationBridge bridge = openConnection(secondaryPersistence)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
             bridge.requestFileTransferStart(transferId, TransferItem.Type.OUTGOING);
             secondarySeat.receiveFiles(bridge, transferId);
         }

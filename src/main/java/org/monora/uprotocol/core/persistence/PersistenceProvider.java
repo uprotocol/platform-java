@@ -68,6 +68,16 @@ public interface PersistenceProvider
     MimetypesFileTypeMap typeMap = new MimetypesFileTypeMap();
 
     /**
+     * Accept the key invalidation request sent by a device using {@link #saveKeyInvalidationRequest(String, int, int)}.
+     *
+     * @param device Of whose keys will be approved.
+     * @return True if there were a request and now approved, or false there were no request.
+     * @see #hasKeyInvalidationRequest(String)
+     * @see #saveKeyInvalidationRequest(String, int, int)
+     */
+    boolean approveKeyInvalidationRequest(Device device);
+
+    /**
      * Broadcast the awaiting operation reports.
      * <p>
      * This will be invoked whenever there is a change in the persistence database.
@@ -258,6 +268,16 @@ public interface PersistenceProvider
     int getNetworkPin();
 
     /**
+     * Check whether the given device had already sent a wrong key and has a pending key request to be approved.
+     *
+     * @param deviceId That sent the request.
+     * @return True if there is a pending request.
+     * @see #saveKeyInvalidationRequest(String, int, int)
+     * @see #approveKeyInvalidationRequest(Device)
+     */
+    boolean hasKeyInvalidationRequest(String deviceId);
+
+    /**
      * Load transfer item for the given parameters.
      *
      * @param deviceId   Owning the item.
@@ -340,6 +360,21 @@ public interface PersistenceProvider
      * @param bitmap   The bitmap data for the avatar.
      */
     void saveAvatar(String deviceId, byte[] bitmap);
+
+    /**
+     * This method call happens when a known device sends a wrong key and now cannot connect. To preserve the key sent
+     * by that device, and the key we generated for it and sent back to it, we will save it here and wait for the
+     * approval of the user in case there is a user.
+     * <p>
+     * You can always accept the new key without any notice, but doing so is considered insecure.
+     *
+     * @param deviceId    That wants key invalidation.
+     * @param receiverKey The remote device sent.
+     * @param senderKey   We generated.
+     * @see #hasKeyInvalidationRequest(String)
+     * @see #approveKeyInvalidationRequest(Device)
+     */
+    void saveKeyInvalidationRequest(String deviceId, int receiverKey, int senderKey);
 
     /**
      * Change the state of the given item.

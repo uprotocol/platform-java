@@ -21,7 +21,7 @@ package org.monora.uprotocol.core.protocol;
 import org.monora.uprotocol.core.network.Device;
 
 /**
- * Thrown when a device becomes due to a change on the security field.
+ * Thrown when a device becomes untrusted due to a change on the security field.
  */
 public class DeviceVerificationException extends DeviceInsecureException
 {

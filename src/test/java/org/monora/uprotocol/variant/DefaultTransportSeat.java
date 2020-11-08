@@ -15,6 +15,8 @@ public class DefaultTransportSeat implements TransportSeat
 {
     public final PersistenceProvider persistenceProvider;
 
+    private boolean autoAcceptNewKeys;
+
     public DefaultTransportSeat(PersistenceProvider persistenceProvider)
     {
         this.persistenceProvider = persistenceProvider;
@@ -71,6 +73,13 @@ public class DefaultTransportSeat implements TransportSeat
     @Override
     public void notifyDeviceKeyChanged(Device device, int receiverKey, int senderKey)
     {
+        if (autoAcceptNewKeys) {
+            persistenceProvider.approveKeyInvalidationRequest(device);
+        }
+    }
 
+    public void setAutoAcceptNewKeys(boolean autoAcceptNewKeys)
+    {
+        this.autoAcceptNewKeys = autoAcceptNewKeys;
     }
 }

@@ -262,7 +262,7 @@ public class CommunicationBridge implements Closeable
      * after making this request. If everything goes right, the remote will reach you using
      * {@link #requestFileTransferStart(long, TransferItem.Type)}, which will end up in your
      * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Device, long, TransferItem.Type)} method.
-     *
+     * <p>
      * If the initial response is positive, the items will be saved to the persistence provider using
      * {@link PersistenceProvider#save(String, List)}.
      *

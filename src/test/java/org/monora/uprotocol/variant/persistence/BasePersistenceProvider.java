@@ -10,6 +10,7 @@ import org.monora.uprotocol.variant.DefaultDevice;
 import org.monora.uprotocol.variant.DefaultDeviceAddress;
 import org.monora.uprotocol.variant.DefaultTransferItem;
 import org.monora.uprotocol.variant.holder.Avatar;
+import org.monora.uprotocol.variant.holder.KeyInvalidationRequest;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
 import org.monora.uprotocol.variant.holder.OwnedTransferHolder;
 
@@ -34,8 +35,35 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     private final List<OwnedTransferHolder> transferHolderList = new ArrayList<>();
     private final List<Avatar> avatarList = new ArrayList<>();
     private final List<MemoryStreamDescriptor> streamDescriptorList = new ArrayList<>();
+    private final List<KeyInvalidationRequest> invalidationRequestList = new ArrayList<>();
 
     private int networkPin;
+
+    @Override
+    public boolean approveKeyInvalidationRequest(Device device)
+    {
+        synchronized (invalidationRequestList) {
+            KeyInvalidationRequest matchingRequest = null;
+
+            for (KeyInvalidationRequest request : invalidationRequestList) {
+                if (!request.deviceId.equals(device.uid))
+                    continue;
+
+                matchingRequest = request;
+                break;
+            }
+
+            if (matchingRequest != null) {
+                device.receiverKey = matchingRequest.receiverKey;
+                device.senderKey = matchingRequest.senderKey;
+                save(device);
+                invalidationRequestList.remove(matchingRequest);
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     @Override
     public void broadcast()
@@ -152,6 +180,19 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
+    public boolean hasKeyInvalidationRequest(String deviceId)
+    {
+        synchronized (invalidationRequestList) {
+            for (KeyInvalidationRequest request : invalidationRequestList) {
+                if (request.deviceId.equals(deviceId))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
     public TransferItem loadTransferItem(String deviceId, long transferId, long id, TransferItem.Type type)
             throws PersistenceException
     {
@@ -237,6 +278,17 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     {
         synchronized (avatarList) {
             avatarList.add(new Avatar(deviceId, bitmap));
+        }
+    }
+
+    @Override
+    public void saveKeyInvalidationRequest(String deviceId, int receiverKey, int senderKey)
+    {
+        if (hasKeyInvalidationRequest(deviceId))
+            return;
+
+        synchronized (invalidationRequestList) {
+            invalidationRequestList.add(new KeyInvalidationRequest(deviceId, receiverKey, senderKey));
         }
     }
 

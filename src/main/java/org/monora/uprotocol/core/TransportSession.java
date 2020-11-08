@@ -73,6 +73,7 @@ public class TransportSession extends CoolSocket
             } catch (DeviceVerificationException e) {
                 int newSenderKey = persistenceProvider.generateKey();
 
+                persistenceProvider.saveKeyInvalidationRequest(device.uid, e.receiverKey, newSenderKey);
                 transportSeat.notifyDeviceKeyChanged(device, e.receiverKey, newSenderKey);
                 CommunicationBridge.sendSecure(activeConnection, true,
                         persistenceProvider.deviceAsJson(newSenderKey, 0));
@@ -93,7 +94,6 @@ public class TransportSession extends CoolSocket
             handleRequest(new CommunicationBridge(persistenceProvider, activeConnection, device, deviceAddress), device,
                     deviceAddress, hasPin, request);
         } catch (Exception e) {
-            e.printStackTrace();
             try {
                 CommunicationBridge.sendError(activeConnection, e);
             } catch (Exception ignored) {

@@ -66,12 +66,13 @@ public class DeviceLoader
                 device.senderKey = persistenceProvider.generateKey();
             }
 
+            boolean keyMismatch = receiverKey != device.receiverKey;
+
             if (hasPin) {
                 device.isBlocked = false;
-            } else if (device.isBlocked)
+            } else if (device.isBlocked || (keyMismatch && persistenceProvider.hasKeyInvalidationRequest(device.uid)))
                 throw new DeviceBlockedException("The device is blocked.", device);
-            else if (receiverKey != device.receiverKey) {
-                device.isBlocked = true;
+            else if (keyMismatch) {
                 throw new DeviceVerificationException("The device receiver key is different.", device, receiverKey);
             }
         } finally {
