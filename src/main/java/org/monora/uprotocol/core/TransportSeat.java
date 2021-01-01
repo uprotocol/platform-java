@@ -1,7 +1,7 @@
 package org.monora.uprotocol.core;
 
 import org.json.JSONObject;
-import org.monora.coolsocket.core.response.SizeLimitExceededException;
+import org.monora.coolsocket.core.response.SizeOverflowException;
 import org.monora.coolsocket.core.session.ActiveConnection;
 import org.monora.coolsocket.core.session.CancelledException;
 import org.monora.uprotocol.core.network.Device;
@@ -300,7 +300,7 @@ public interface TransportSeat
                                 }
 
                                 activeConnection.writeEnd(description);
-                            } catch (SizeLimitExceededException ignored) {
+                            } catch (SizeOverflowException ignored) {
                             }
 
                             completedBytes += currentBytes;
