@@ -147,6 +147,13 @@
             <artifactId>junit-vintage-engine</artifactId>
             <version>5.7.0</version>
         </dependency>
+        <dependency>
+            <!--For creating self-signed certificates-->
+            <groupId>com.madgag.spongycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <version>1.58.0.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <distributionManagement>

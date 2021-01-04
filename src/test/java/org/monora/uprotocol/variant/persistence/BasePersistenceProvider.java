@@ -13,14 +13,29 @@ import org.monora.uprotocol.variant.holder.Avatar;
 import org.monora.uprotocol.variant.holder.KeyInvalidationRequest;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
 import org.monora.uprotocol.variant.holder.OwnedTransferHolder;
+import org.spongycastle.asn1.x500.X500NameBuilder;
+import org.spongycastle.asn1.x500.style.BCStyle;
+import org.spongycastle.cert.X509v3CertificateBuilder;
+import org.spongycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.spongycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.spongycastle.jce.provider.BouncyCastleProvider;
+import org.spongycastle.operator.ContentSigner;
+import org.spongycastle.operator.jcajce.JcaContentSignerBuilder;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.net.InetAddress;
+import java.security.*;
+import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -37,7 +52,42 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     private final List<MemoryStreamDescriptor> streamDescriptorList = new ArrayList<>();
     private final List<KeyInvalidationRequest> invalidationRequestList = new ArrayList<>();
 
+    private final KeyPair keyPair;
+    private final X509Certificate certificate;
+
     private int networkPin;
+
+    public BasePersistenceProvider()
+    {
+        try {
+            keyPair = KeyPairGenerator.getInstance("RSA").genKeyPair();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Could not generate PKI key.");
+        }
+
+        try {
+            // don't forget to change Locale to English in production environments when it is set to Persian to fix the
+            // issue: https://issuetracker.google.com/issues/37095309
+
+            BouncyCastleProvider bouncyCastleProvider = new BouncyCastleProvider();
+            X500NameBuilder nameBuilder = new X500NameBuilder(BCStyle.INSTANCE);
+
+            nameBuilder.addRDN(BCStyle.CN, getDeviceUid());
+            nameBuilder.addRDN(BCStyle.OU, "uprotocol");
+            nameBuilder.addRDN(BCStyle.O, "monora");
+            final LocalDate localDate = LocalDate.now().minusYears(1);
+            final Instant notBefore = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
+            final Instant notAfter = localDate.plusYears(10).atStartOfDay(ZoneId.systemDefault()).toInstant();
+            X509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(nameBuilder.build(),
+                    BigInteger.ONE, Date.from(notBefore), Date.from(notAfter), nameBuilder.build(), getPublicKey());
+            ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
+                    .setProvider(bouncyCastleProvider).build(getPrivateKey());
+            certificate = new JcaX509CertificateConverter().setProvider(bouncyCastleProvider)
+                    .getCertificate(certificateBuilder.build(contentSigner));
+        } catch (Exception e) {
+            throw new RuntimeException("Could not generate the certificate for this client.");
+        }
+    }
 
     @Override
     public boolean approveKeyInvalidationRequest(Device device)
@@ -134,6 +184,12 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
+    public X509Certificate getCertificate()
+    {
+        return certificate;
+    }
+
+    @Override
     public StreamDescriptor getDescriptorFor(TransferItem transferItem)
     {
         synchronized (streamDescriptorList) {
@@ -167,6 +223,18 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         if (networkPin == 0)
             networkPin = generateKey();
         return networkPin;
+    }
+
+    @Override
+    public PrivateKey getPrivateKey()
+    {
+        return keyPair.getPrivate();
+    }
+
+    @Override
+    public PublicKey getPublicKey()
+    {
+        return keyPair.getPublic();
     }
 
     public List<MemoryStreamDescriptor> getStreamDescriptorList()

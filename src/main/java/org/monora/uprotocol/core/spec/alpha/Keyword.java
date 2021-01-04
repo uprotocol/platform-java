@@ -19,11 +19,6 @@
 package org.monora.uprotocol.core.spec.alpha;
 
 /**
- * Created by: veli
- * Date: 4/28/17 8:29 PM
- */
-
-/**
  * uprotocol keywords as constants.
  */
 public class Keyword

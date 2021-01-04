@@ -1,7 +1,7 @@
 package org.monora.uprotocol.core.persistence;
 
 /**
- * This represents an input or output stream depending on the use cases.
+ * This represents an input or output stream depending on the use case.
  * <p>
  * The difference from {@link org.monora.uprotocol.core.network.TransferItem} is that this keeps what the file is
  * whereas {@link org.monora.uprotocol.core.network.TransferItem} keeps what the file was before it was exchanged

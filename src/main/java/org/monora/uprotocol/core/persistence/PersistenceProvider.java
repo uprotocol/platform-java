@@ -15,6 +15,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -218,6 +221,15 @@ public interface PersistenceProvider
     byte[] getAvatarFor(Device device);
 
     /**
+     * Returns this client's certificate.
+     * <p>
+     * The returned value should stay persistent.
+     *
+     * @return This client's certificate.
+     */
+    X509Certificate getCertificate();
+
+    /**
      * This will return the descriptor that points to the file that is received or sent.
      * <p>
      * For instance, this can be a file descriptor or a network stream of which only the name, size and location are
@@ -266,6 +278,10 @@ public interface PersistenceProvider
      * @see #revokeNetworkPin()
      */
     int getNetworkPin();
+
+    PrivateKey getPrivateKey();
+
+    PublicKey getPublicKey();
 
     /**
      * Check whether the given device had already sent a wrong key and has a pending key request to be approved.
