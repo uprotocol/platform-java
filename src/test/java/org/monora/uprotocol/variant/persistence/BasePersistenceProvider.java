@@ -22,6 +22,7 @@ import org.spongycastle.jce.provider.BouncyCastleProvider;
 import org.spongycastle.operator.ContentSigner;
 import org.spongycastle.operator.jcajce.JcaContentSignerBuilder;
 
+import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,7 +30,11 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.security.*;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -51,6 +56,9 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     private final List<Avatar> avatarList = new ArrayList<>();
     private final List<MemoryStreamDescriptor> streamDescriptorList = new ArrayList<>();
     private final List<KeyInvalidationRequest> invalidationRequestList = new ArrayList<>();
+    private final BouncyCastleProvider bouncyCastleProvider = new BouncyCastleProvider();
+    private final SecureRandom secureRandom = new SecureRandom();
+    private final KeyFactory keyFactory;
 
     private final KeyPair keyPair;
     private final X509Certificate certificate;
@@ -66,10 +74,8 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         }
 
         try {
-            // don't forget to change Locale to English in production environments when it is set to Persian to fix the
-            // issue: https://issuetracker.google.com/issues/37095309
-
-            BouncyCastleProvider bouncyCastleProvider = new BouncyCastleProvider();
+            // don't forget to change the locale to English in production environments when it is set to Persian to fix
+            // the issue: https://issuetracker.google.com/issues/37095309
             X500NameBuilder nameBuilder = new X500NameBuilder(BCStyle.INSTANCE);
 
             nameBuilder.addRDN(BCStyle.CN, getDeviceUid());
@@ -79,13 +85,19 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
             final Instant notBefore = localDate.atStartOfDay(ZoneId.systemDefault()).toInstant();
             final Instant notAfter = localDate.plusYears(10).atStartOfDay(ZoneId.systemDefault()).toInstant();
             X509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(nameBuilder.build(),
-                    BigInteger.ONE, Date.from(notBefore), Date.from(notAfter), nameBuilder.build(), getPublicKey());
+                    BigInteger.ONE, Date.from(notBefore), Date.from(notAfter), nameBuilder.build(), keyPair.getPublic());
             ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
-                    .setProvider(bouncyCastleProvider).build(getPrivateKey());
+                    .setProvider(bouncyCastleProvider).build(keyPair.getPrivate());
             certificate = new JcaX509CertificateConverter().setProvider(bouncyCastleProvider)
                     .getCertificate(certificateBuilder.build(contentSigner));
         } catch (Exception e) {
-            throw new RuntimeException("Could not generate the certificate for this client.");
+            throw new RuntimeException("Could not generate the certificate for this client.", e);
+        }
+
+        try {
+            keyFactory = KeyFactory.getInstance("RSA");
+        } catch (Exception e) {
+            throw new RuntimeException("Could not create the key factory instance for RSA encoding.", e);
         }
     }
 
@@ -228,13 +240,75 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     @Override
     public PrivateKey getPrivateKey()
     {
-        return keyPair.getPrivate();
+        try {
+            return keyFactory.generatePrivate(new PKCS8EncodedKeySpec(keyPair.getPrivate().getEncoded()));
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException("Could not generate the encoded private key.", e);
+        }
     }
 
     @Override
     public PublicKey getPublicKey()
     {
-        return keyPair.getPublic();
+        try {
+            return keyFactory.generatePublic(new X509EncodedKeySpec(keyPair.getPublic().getEncoded()));
+        } catch (InvalidKeySpecException e) {
+            throw new RuntimeException("Could not generate the encoded public key.", e);
+        }
+    }
+
+    @Override
+    public SSLContext getSSLContextFor(Device device)
+    {
+        try {
+            // Get device private key
+            PrivateKey privateKey = getPrivateKey();
+
+            char[] password = new char[0];
+
+            // Setup keystore
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(null, null);
+            keyStore.setKeyEntry("key", privateKey, password, new Certificate[]{certificate});
+            keyStore.setCertificateEntry(device.uid, device.certificate);
+
+            // Setup key manager factory
+            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            keyManagerFactory.init(keyStore, password);
+
+            // Setup default trust manager
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
+                    TrustManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory.init(keyStore);
+
+            // Setup custom trust manager if device not trusted
+            TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager()
+            {
+                public java.security.cert.X509Certificate[] getAcceptedIssuers()
+                {
+                    return new X509Certificate[0];
+                }
+
+                @Override
+                public void checkClientTrusted(X509Certificate[] certs, String authType)
+                {
+                }
+
+                @Override
+                public void checkServerTrusted(X509Certificate[] certs, String authType)
+                {
+                }
+
+            }
+            };
+
+            SSLContext tlsContext = SSLContext.getInstance("TLSv1"); //Newer TLS versions are only supported on API 16+
+            tlsContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), secureRandom);
+            //tlsContext.init(keyManagerFactory.getKeyManagers(), trustAllCerts, secureRandom);
+            return tlsContext;
+        } catch (Exception e) {
+            throw new RuntimeException("Could not create a secure socket context.");
+        }
     }
 
     public List<MemoryStreamDescriptor> getStreamDescriptorList()

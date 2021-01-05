@@ -11,6 +11,7 @@ import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
 
 import javax.activation.MimetypesFileTypeMap;
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -282,6 +283,8 @@ public interface PersistenceProvider
     PrivateKey getPrivateKey();
 
     PublicKey getPublicKey();
+
+    SSLContext getSSLContextFor(Device device);
 
     /**
      * Check whether the given device had already sent a wrong key and has a pending key request to be approved.

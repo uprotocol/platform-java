@@ -2,6 +2,8 @@ package org.monora.uprotocol.core.network;
 
 import org.monora.uprotocol.core.protocol.ClientType;
 
+import java.security.cert.X509Certificate;
+
 /**
  * A device is a representation of a client using the latest information it has provided in a previous communication.
  */
@@ -70,6 +72,8 @@ public abstract class Device
      * The last timestamp that the device was used.
      */
     public long lastUsageTime;
+
+    public X509Certificate certificate;
 
     /**
      * This represents whether this device is trusted by this client. Trusted devices has more access

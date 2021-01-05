@@ -57,6 +57,8 @@ public class CommunicationBridge implements Closeable
 
     private final DeviceAddress deviceAddress;
 
+    private final boolean isClient;
+
     /**
      * Create a new instance.
      * <p>
@@ -66,14 +68,16 @@ public class CommunicationBridge implements Closeable
      * @param activeConnection    Represents a valid connection with the said device.
      * @param device              We are connected to.
      * @param deviceAddress       Where the device is located at.
+     * @param isClient            Whether the socket instance belongs to the client or server.
      */
     public CommunicationBridge(PersistenceProvider persistenceProvider, ActiveConnection activeConnection,
-                               Device device, DeviceAddress deviceAddress)
+                               Device device, DeviceAddress deviceAddress, boolean isClient)
     {
         this.persistenceProvider = persistenceProvider;
         this.activeConnection = activeConnection;
         this.device = device;
         this.deviceAddress = deviceAddress;
+        this.isClient = isClient;
     }
 
     /**
@@ -180,7 +184,7 @@ public class CommunicationBridge implements Closeable
         DeviceLoader.loadAsClient(persistenceProvider, receiveSecure(activeConnection, device), device);
         receiveResult(activeConnection, device);
 
-        return new CommunicationBridge(persistenceProvider, activeConnection, device, deviceAddress);
+        return new CommunicationBridge(persistenceProvider, activeConnection, device, deviceAddress, true);
     }
 
     /**

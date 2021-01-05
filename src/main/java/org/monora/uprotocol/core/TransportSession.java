@@ -58,7 +58,7 @@ public class TransportSession extends CoolSocket
 
             JSONObject response = activeConnection.receive().getAsJson();
             final int activePin = persistenceProvider.getNetworkPin();
-            final boolean hasPin = activePin != -1 && activePin == response.getInt(Keyword.DEVICE_PIN);
+            final boolean hasPin = activePin != 0 && activePin == response.getInt(Keyword.DEVICE_PIN);
             final Device device = persistenceProvider.createDevice();
             final DeviceAddress deviceAddress = persistenceProvider.createDeviceAddressFor(
                     activeConnection.getAddress());
@@ -91,8 +91,8 @@ public class TransportSession extends CoolSocket
             if (!CommunicationBridge.resultOf(request))
                 return;
 
-            handleRequest(new CommunicationBridge(persistenceProvider, activeConnection, device, deviceAddress), device,
-                    deviceAddress, hasPin, request);
+            handleRequest(new CommunicationBridge(persistenceProvider, activeConnection, device, deviceAddress,
+                            false), device, deviceAddress, hasPin, request);
         } catch (Exception e) {
             try {
                 CommunicationBridge.sendError(activeConnection, e);
