@@ -32,6 +32,7 @@ import org.monora.uprotocol.core.protocol.DeviceVerificationException;
 import org.monora.uprotocol.core.protocol.communication.*;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
 
+import javax.net.ssl.SSLSocket;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -183,6 +184,8 @@ public class CommunicationBridge implements Closeable
 
         DeviceLoader.loadAsClient(persistenceProvider, receiveSecure(activeConnection, device), device);
         receiveResult(activeConnection, device);
+
+        persistenceProvider.getSSLContextFor(device);
 
         return new CommunicationBridge(persistenceProvider, activeConnection, device, deviceAddress, true);
     }

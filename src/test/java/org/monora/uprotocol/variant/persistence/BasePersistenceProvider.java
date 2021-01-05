@@ -263,14 +263,16 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         try {
             // Get device private key
             PrivateKey privateKey = getPrivateKey();
-
             char[] password = new char[0];
 
             // Setup keystore
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             keyStore.load(null, null);
             keyStore.setKeyEntry("key", privateKey, password, new Certificate[]{certificate});
-            keyStore.setCertificateEntry(device.uid, device.certificate);
+            SSLContext tlsContext = SSLContext.getInstance("TLSv1");
+
+            if (device.certificate != null)
+                keyStore.setCertificateEntry(device.uid, device.certificate);
 
             // Setup key manager factory
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
@@ -282,29 +284,33 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
             trustManagerFactory.init(keyStore);
 
             // Setup custom trust manager if device not trusted
-            TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager()
-            {
-                public java.security.cert.X509Certificate[] getAcceptedIssuers()
+
+            if (device.certificate == null) {
+                TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager()
                 {
-                    return new X509Certificate[0];
+                    public java.security.cert.X509Certificate[] getAcceptedIssuers()
+                    {
+                        return new X509Certificate[0];
+                    }
+
+                    @Override
+                    public void checkClientTrusted(X509Certificate[] certs, String authType)
+                    {
+                    }
+
+                    @Override
+                    public void checkServerTrusted(X509Certificate[] certs, String authType)
+                    {
+                    }
+
                 }
+                };
 
-                @Override
-                public void checkClientTrusted(X509Certificate[] certs, String authType)
-                {
-                }
+                tlsContext.init(keyManagerFactory.getKeyManagers(), trustAllCerts, secureRandom);
+            } else
+                //Newer TLS versions are only supported on API 16+
+                tlsContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), secureRandom);
 
-                @Override
-                public void checkServerTrusted(X509Certificate[] certs, String authType)
-                {
-                }
-
-            }
-            };
-
-            SSLContext tlsContext = SSLContext.getInstance("TLSv1"); //Newer TLS versions are only supported on API 16+
-            tlsContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), secureRandom);
-            //tlsContext.init(keyManagerFactory.getKeyManagers(), trustAllCerts, secureRandom);
             return tlsContext;
         } catch (Exception e) {
             throw new RuntimeException("Could not create a secure socket context.");

@@ -15,6 +15,7 @@ public class PrimaryPersistenceProvider extends BasePersistenceProvider
     @Override
     public Device getDevice()
     {
-        return new DefaultDevice(getDeviceUid(), "Primo", 1, 1, "Abc", "Def");
+        return new DefaultDevice(getDeviceUid(), "Primo", 1, 1, "Abc", "Def",
+                getCertificate());
     }
 }

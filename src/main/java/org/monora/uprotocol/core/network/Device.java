@@ -114,12 +114,12 @@ public abstract class Device
     {
         from(device.username, device.senderKey, device.receiverKey, device.brand, device.model, device.clientType,
                 device.versionName, device.versionCode, device.protocolVersion, device.protocolVersionMin,
-                device.isTrusted, device.isBlocked);
+                device.isTrusted, device.isBlocked, device.certificate);
     }
 
     protected void from(String username, int senderKey, int receiverKey, String brand, String model,
                         ClientType clientType, String versionName, int versionCode, int protocolVersion,
-                        int protocolVersionMin, boolean isTrusted, boolean isBlocked)
+                        int protocolVersionMin, boolean isTrusted, boolean isBlocked, X509Certificate certificate)
     {
         this.username = username;
         this.senderKey = senderKey;
@@ -133,5 +133,6 @@ public abstract class Device
         this.protocolVersionMin = protocolVersionMin;
         this.isTrusted = isTrusted;
         this.isBlocked = isBlocked;
+        this.certificate = certificate;
     }
 }
