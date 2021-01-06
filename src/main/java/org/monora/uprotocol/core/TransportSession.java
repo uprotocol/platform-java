@@ -91,8 +91,11 @@ public class TransportSession extends CoolSocket
             if (!CommunicationBridge.resultOf(request))
                 return;
 
-            handleRequest(new CommunicationBridge(persistenceProvider, activeConnection, device, deviceAddress,
-                            false), device, deviceAddress, hasPin, request);
+            CommunicationBridge bridge = new CommunicationBridge(persistenceProvider, activeConnection, device,
+                    deviceAddress, false);
+            bridge.convertToSSL();
+
+            handleRequest(bridge, device, deviceAddress, hasPin, request);
         } catch (Exception e) {
             try {
                 CommunicationBridge.sendError(activeConnection, e);

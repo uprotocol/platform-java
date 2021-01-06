@@ -33,11 +33,14 @@ import org.monora.uprotocol.core.protocol.communication.*;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
 
 import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.monora.uprotocol.core.spec.alpha.Config.PORT_UPROTOCOL;
@@ -127,6 +130,9 @@ public class CommunicationBridge implements Closeable
                                               Device device, int pin) throws JSONException, IOException,
             CommunicationException
     {
+        if (addressList.size() < 1)
+            throw new IllegalArgumentException("The address list should contain at least one item.");
+
         for (DeviceAddress address : addressList) {
             try {
                 return connect(connectionProvider, persistenceProvider, address, device, pin);
@@ -135,6 +141,35 @@ public class CommunicationBridge implements Closeable
         }
 
         throw new SocketException("Failed to connect to the socket address.");
+    }
+
+    public void convertToSSL() throws IOException
+    {
+        Socket socket = activeConnection.getSocket();
+        SSLSocketFactory sslSocketFactory = persistenceProvider.getSSLContextFor(device).getSocketFactory();
+        SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket(socket, socket.getInetAddress().getHostAddress(),
+                activeConnection.getSocket().getPort(), true);
+        ArrayList<String> supportedCiphers = new ArrayList<>();
+
+        // TODO: 1/6/21 Remove this and allow the implementer to enable these ciphers.
+        supportedCiphers.add("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384");  // API 20+
+        supportedCiphers.add("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256");  // API 20+
+        supportedCiphers.add("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA");       // API 11+
+        sslSocket.setEnabledCipherSuites(supportedCiphers.toArray(new String[0]));
+
+        if (isClient) {
+            sslSocket.setUseClientMode(true);
+        } else {
+            sslSocket.setUseClientMode(false);
+
+            if (device.certificate == null) {
+                sslSocket.setWantClientAuth(true);
+            } else {
+                sslSocket.setNeedClientAuth(true);
+            }
+        }
+
+        activeConnection.setSocket(sslSocket);
     }
 
     /**
@@ -187,7 +222,10 @@ public class CommunicationBridge implements Closeable
 
         persistenceProvider.getSSLContextFor(device);
 
-        return new CommunicationBridge(persistenceProvider, activeConnection, device, deviceAddress, true);
+        CommunicationBridge bridge = new CommunicationBridge(persistenceProvider, activeConnection, device,
+                deviceAddress, true);
+        bridge.convertToSSL();
+        return bridge;
     }
 
     /**
