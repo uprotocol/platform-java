@@ -40,6 +40,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
+import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -170,6 +171,16 @@ public class CommunicationBridge implements Closeable
         }
 
         activeConnection.setSocket(sslSocket);
+
+        sslSocket.addHandshakeCompletedListener(event -> {
+            try {
+                Certificate certificate = event.getPeerCertificates()[0];
+            } catch (Exception e) {
+                device.certificate = null;
+                e.printStackTrace();
+            }
+        });
+        sslSocket.startHandshake();
     }
 
     /**
@@ -219,8 +230,6 @@ public class CommunicationBridge implements Closeable
 
         DeviceLoader.loadAsClient(persistenceProvider, receiveSecure(activeConnection, device), device);
         receiveResult(activeConnection, device);
-
-        persistenceProvider.getSSLContextFor(device);
 
         CommunicationBridge bridge = new CommunicationBridge(persistenceProvider, activeConnection, device,
                 deviceAddress, true);

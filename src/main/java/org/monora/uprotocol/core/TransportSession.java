@@ -83,17 +83,17 @@ public class TransportSession extends CoolSocket
                 persistenceProvider.broadcast();
             }
 
-            CommunicationBridge.sendResult(activeConnection, true);
+            CommunicationBridge bridge = new CommunicationBridge(persistenceProvider, activeConnection, device,
+                    deviceAddress, false);
+            bridge.sendResult(true);
+            //CommunicationBridge.sendResult(activeConnection, true);
+            bridge.convertToSSL();
 
             activeConnection.setInternalCacheLimit(1073741824); // 1MB
 
             JSONObject request = activeConnection.receive().getAsJson();
             if (!CommunicationBridge.resultOf(request))
                 return;
-
-            CommunicationBridge bridge = new CommunicationBridge(persistenceProvider, activeConnection, device,
-                    deviceAddress, false);
-            bridge.convertToSSL();
 
             handleRequest(bridge, device, deviceAddress, hasPin, request);
         } catch (Exception e) {
