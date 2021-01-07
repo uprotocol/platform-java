@@ -9,6 +9,7 @@ import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
+import org.monora.uprotocol.core.protocol.ConnectionFactory;
 import org.monora.uprotocol.core.protocol.DeviceVerificationException;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
@@ -31,6 +32,8 @@ import java.io.IOException;
  */
 public class TransportSession extends CoolSocket
 {
+    private final ConnectionFactory connectionFactory;
+
     private final PersistenceProvider persistenceProvider;
 
     private final TransportSeat transportSeat;
@@ -38,14 +41,17 @@ public class TransportSession extends CoolSocket
     /**
      * Create a new session instance.
      *
+     * @param connectionFactory   To start and set up connections with.
      * @param persistenceProvider Where persistent data will be stored.
      * @param transportSeat       Which will manage the requests and do appropriate actions.
      */
-    public TransportSession(PersistenceProvider persistenceProvider, TransportSeat transportSeat)
+    public TransportSession(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
+                            TransportSeat transportSeat)
     {
         super(Config.PORT_UPROTOCOL);
 
         getConfigFactory().setReadTimeout(Config.TIMEOUT_SOCKET_DEFAULT);
+        this.connectionFactory = connectionFactory;
         this.persistenceProvider = persistenceProvider;
         this.transportSeat = transportSeat;
     }
@@ -83,8 +89,8 @@ public class TransportSession extends CoolSocket
                 persistenceProvider.broadcast();
             }
 
-            CommunicationBridge bridge = new CommunicationBridge(persistenceProvider, activeConnection, device,
-                    deviceAddress, false);
+            CommunicationBridge bridge = new CommunicationBridge(connectionFactory, persistenceProvider,
+                    activeConnection, device, deviceAddress, false);
             bridge.sendResult(true);
             //CommunicationBridge.sendResult(activeConnection, true);
             bridge.convertToSSL();

@@ -112,16 +112,16 @@ public class DeviceLoader
     /**
      * Load a device using an internet address.
      *
-     * @param connectionProvider  That will set up the connection.
+     * @param connectionFactory  That will set up the connection.
      * @param persistenceProvider That stores the persistent data.
      * @param address             To connect to.
      * @param listener            That listens for successful attempts. Pass it as 'null' if unneeded.
      */
-    public static void load(ConnectionProvider connectionProvider, PersistenceProvider persistenceProvider,
+    public static void load(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
                             InetAddress address, OnDeviceResolvedListener listener)
     {
         new Thread(() -> {
-            try (CommunicationBridge bridge = CommunicationBridge.connect(connectionProvider, persistenceProvider,
+            try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, persistenceProvider,
                     persistenceProvider.createDeviceAddressFor(address), null, 0)) {
                 bridge.sendResult(false);
                 if (listener != null)

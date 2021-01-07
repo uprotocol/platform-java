@@ -1,11 +1,9 @@
 package org.monora.uprotocol;
 
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.network.Device;
-import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
@@ -13,28 +11,18 @@ import org.monora.uprotocol.core.protocol.communication.NotAllowedException;
 import org.monora.uprotocol.variant.test.DefaultTestBase;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RequestTest extends DefaultTestBase
 {
-    private DeviceAddress deviceAddress;
-
-    @Before
-    public void setUp() throws UnknownHostException
-    {
-        deviceAddress = primaryPersistence.createDeviceAddressFor(InetAddress.getLocalHost());
-    }
-
     @Test
     public void requestAcquaintanceTest() throws IOException, InterruptedException, CommunicationException,
             PersistenceException
     {
         primarySession.start();
 
-        try (CommunicationBridge bridge = CommunicationBridge.connect(connectionProvider, secondaryPersistence,
+        try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
                 deviceAddress, null, 0)) {
             Assert.assertTrue("Remote should send a positive message.", bridge.requestAcquaintance());
 

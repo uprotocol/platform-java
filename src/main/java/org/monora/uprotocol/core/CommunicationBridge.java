@@ -26,7 +26,7 @@ import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
-import org.monora.uprotocol.core.protocol.ConnectionProvider;
+import org.monora.uprotocol.core.protocol.ConnectionFactory;
 import org.monora.uprotocol.core.protocol.DeviceBlockedException;
 import org.monora.uprotocol.core.protocol.DeviceVerificationException;
 import org.monora.uprotocol.core.protocol.communication.*;
@@ -41,6 +41,8 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,6 +64,8 @@ public class CommunicationBridge implements Closeable
 
     private final DeviceAddress deviceAddress;
 
+    private final ConnectionFactory connectionFactory;
+
     private final boolean isClient;
 
     /**
@@ -69,15 +73,18 @@ public class CommunicationBridge implements Closeable
      * <p>
      * This assumes the connection is valid and open. If you need to open a connection, use {@link #connect}.
      *
+     * @param connectionFactory   To start and set up connections with.
      * @param persistenceProvider Where the persistent data is stored and queried.
      * @param activeConnection    Represents a valid connection with the said device.
      * @param device              We are connected to.
      * @param deviceAddress       Where the device is located at.
      * @param isClient            Whether the socket instance belongs to the client or server.
      */
-    public CommunicationBridge(PersistenceProvider persistenceProvider, ActiveConnection activeConnection,
-                               Device device, DeviceAddress deviceAddress, boolean isClient)
+    public CommunicationBridge(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
+                               ActiveConnection activeConnection, Device device, DeviceAddress deviceAddress,
+                               boolean isClient)
     {
+        this.connectionFactory = connectionFactory;
         this.persistenceProvider = persistenceProvider;
         this.activeConnection = activeConnection;
         this.device = device;
@@ -108,12 +115,12 @@ public class CommunicationBridge implements Closeable
      * try rest of the addresses.
      * <p>
      * If all addresses fail, this will still throw an error to simulate what
-     * {@link #connect(ConnectionProvider, PersistenceProvider, DeviceAddress, Device, int)} does.
+     * {@link #connect(ConnectionFactory, PersistenceProvider, DeviceAddress, Device, int)} does.
      * <p>
      * The rest of the behavior is the same with
-     * {@link #connect(ConnectionProvider, PersistenceProvider, DeviceAddress, Device, int)}.
+     * {@link #connect(ConnectionFactory, PersistenceProvider, DeviceAddress, Device, int)}.
      *
-     * @param connectionProvider  That will handle opening connections when there is a need to bypass firewalls/NAT.
+     * @param connectionFactory   To start and set up connections with.
      * @param persistenceProvider To store and query objects.
      * @param addressList         To try.
      * @param device              That we are going to open a connection with. If the connected device is different,
@@ -126,7 +133,7 @@ public class CommunicationBridge implements Closeable
      * @throws JSONException          If something goes wrong when creating JSON object.
      * @throws CommunicationException When there is a communication error due to misconfiguration.
      */
-    public static CommunicationBridge connect(ConnectionProvider connectionProvider,
+    public static CommunicationBridge connect(ConnectionFactory connectionFactory,
                                               PersistenceProvider persistenceProvider, List<DeviceAddress> addressList,
                                               Device device, int pin) throws JSONException, IOException,
             CommunicationException
@@ -136,7 +143,7 @@ public class CommunicationBridge implements Closeable
 
         for (DeviceAddress address : addressList) {
             try {
-                return connect(connectionProvider, persistenceProvider, address, device, pin);
+                return connect(connectionFactory, persistenceProvider, address, device, pin);
             } catch (IOException | DifferentClientException ignored) {
             }
         }
@@ -150,13 +157,11 @@ public class CommunicationBridge implements Closeable
         SSLSocketFactory sslSocketFactory = persistenceProvider.getSSLContextFor(device).getSocketFactory();
         SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket(socket, socket.getInetAddress().getHostAddress(),
                 activeConnection.getSocket().getPort(), true);
-        ArrayList<String> supportedCiphers = new ArrayList<>();
+        ArrayList<String> enabledCiphersSuites = new ArrayList<>();
 
-        // TODO: 1/6/21 Remove this and allow the implementer to enable these ciphers.
-        supportedCiphers.add("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384");  // API 20+
-        supportedCiphers.add("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256");  // API 20+
-        supportedCiphers.add("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA");       // API 11+
-        sslSocket.setEnabledCipherSuites(supportedCiphers.toArray(new String[0]));
+        enabledCiphersSuites.add("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA");
+        connectionFactory.enableCipherSuites(sslSocket.getSupportedCipherSuites(), enabledCiphersSuites);
+        sslSocket.setEnabledCipherSuites(enabledCiphersSuites.toArray(new String[0]));
 
         if (isClient) {
             sslSocket.setUseClientMode(true);
@@ -170,16 +175,23 @@ public class CommunicationBridge implements Closeable
             }
         }
 
-        activeConnection.setSocket(sslSocket);
-
         sslSocket.addHandshakeCompletedListener(event -> {
             try {
                 Certificate certificate = event.getPeerCertificates()[0];
+
+                if (certificate instanceof X509Certificate)
+                    device.certificate = (X509Certificate) certificate;
+                else
+                    throw new CertificateException("The certificate is not in X.509 format");
             } catch (Exception e) {
                 device.certificate = null;
                 e.printStackTrace();
             }
         });
+
+        activeConnection.setSocket(sslSocket);
+
+        // Throws when the peer has different credentials: sun.security.validator.ValidatorException
         sslSocket.startHandshake();
     }
 
@@ -188,7 +200,7 @@ public class CommunicationBridge implements Closeable
      * <p>
      * If connection opens but the remote rejects the communication request, this will throw that error.
      *
-     * @param connectionProvider  That will handle opening connections when there is a need to bypass firewalls/NAT.
+     * @param connectionFactory   To start and set up connections with.
      * @param persistenceProvider To store and query objects.
      * @param deviceAddress       To try.
      * @param device              That we are going to open a connection with. If the connected device is different,
@@ -201,12 +213,12 @@ public class CommunicationBridge implements Closeable
      * @throws JSONException          If something goes wrong when creating JSON object.
      * @throws CommunicationException When there is a communication error due to misconfiguration.
      */
-    public static CommunicationBridge connect(ConnectionProvider connectionProvider,
+    public static CommunicationBridge connect(ConnectionFactory connectionFactory,
                                               PersistenceProvider persistenceProvider, DeviceAddress deviceAddress,
                                               Device device, int pin)
             throws IOException, JSONException, CommunicationException
     {
-        ActiveConnection activeConnection = connectionProvider.openConnection(deviceAddress.inetAddress);
+        ActiveConnection activeConnection = connectionFactory.openConnection(deviceAddress.inetAddress);
         String remoteDeviceUid = activeConnection.receive().getAsString();
 
         deviceAddress.deviceUid = remoteDeviceUid;
@@ -231,8 +243,8 @@ public class CommunicationBridge implements Closeable
         DeviceLoader.loadAsClient(persistenceProvider, receiveSecure(activeConnection, device), device);
         receiveResult(activeConnection, device);
 
-        CommunicationBridge bridge = new CommunicationBridge(persistenceProvider, activeConnection, device,
-                deviceAddress, true);
+        CommunicationBridge bridge = new CommunicationBridge(connectionFactory, persistenceProvider, activeConnection,
+                device, deviceAddress, true);
         bridge.convertToSSL();
         return bridge;
     }

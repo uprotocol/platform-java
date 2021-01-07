@@ -60,17 +60,28 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     private final SecureRandom secureRandom = new SecureRandom();
     private final KeyFactory keyFactory;
 
-    private final KeyPair keyPair;
-    private final X509Certificate certificate;
+    private KeyPair keyPair;
+    private X509Certificate certificate;
 
     private int networkPin;
 
     public BasePersistenceProvider()
     {
+        regenerateSecrets();
+
+        try {
+            keyFactory = KeyFactory.getInstance("RSA");
+        } catch (Exception e) {
+            throw new RuntimeException("Could not create the key factory instance for RSA encoding.", e);
+        }
+    }
+
+    public void regenerateSecrets()
+    {
         try {
             keyPair = KeyPairGenerator.getInstance("RSA").genKeyPair();
         } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Could not generate PKI key.");
+            throw new RuntimeException("Could not generate PKI key pair.");
         }
 
         try {
@@ -92,12 +103,6 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
                     .getCertificate(certificateBuilder.build(contentSigner));
         } catch (Exception e) {
             throw new RuntimeException("Could not generate the certificate for this client.", e);
-        }
-
-        try {
-            keyFactory = KeyFactory.getInstance("RSA");
-        } catch (Exception e) {
-            throw new RuntimeException("Could not create the key factory instance for RSA encoding.", e);
         }
     }
 
@@ -269,7 +274,6 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             keyStore.load(null, null);
             keyStore.setKeyEntry("key", privateKey, password, new Certificate[]{certificate});
-            SSLContext tlsContext = SSLContext.getInstance("TLSv1");
 
             if (device.certificate != null)
                 keyStore.setCertificateEntry(device.uid, device.certificate);
@@ -278,15 +282,11 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             keyManagerFactory.init(keyStore, password);
 
-            // Setup default trust manager
-            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
-                    TrustManagerFactory.getDefaultAlgorithm());
-            trustManagerFactory.init(keyStore);
-
-            // Setup custom trust manager if device not trusted
+            TrustManager[] trustManagers;
 
             if (device.certificate == null) {
-                TrustManager[] trustAllCerts = new TrustManager[]{new X509TrustManager()
+                // Set up custom trust manager if we don't have the certificate for the peer.
+                X509TrustManager trustManager = new X509TrustManager()
                 {
                     public java.security.cert.X509Certificate[] getAcceptedIssuers()
                     {
@@ -302,17 +302,25 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
                     public void checkServerTrusted(X509Certificate[] certs, String authType)
                     {
                     }
-
-                }
                 };
 
-                tlsContext.init(keyManagerFactory.getKeyManagers(), trustAllCerts, secureRandom);
-            } else
-                //Newer TLS versions are only supported on API 16+
-                tlsContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), secureRandom);
+                trustManagers = new TrustManager[]{trustManager};
+            } else {
+                // Set up the default trust manager if we already have the certificate for the peer.
+                TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
+                        TrustManagerFactory.getDefaultAlgorithm());
+                trustManagerFactory.init(keyStore);
+
+                trustManagers = trustManagerFactory.getTrustManagers();
+            }
+
+            // Newer TLS versions are only supported on API 16+
+            SSLContext tlsContext = SSLContext.getInstance("TLSv1");
+            tlsContext.init(keyManagerFactory.getKeyManagers(), trustManagers, secureRandom);
 
             return tlsContext;
         } catch (Exception e) {
+            // TODO: 1/7/21 Should this throw custom exceptions?
             throw new RuntimeException("Could not create a secure socket context.");
         }
     }
@@ -371,6 +379,12 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
             return ((MemoryStreamDescriptor) descriptor).data;
 
         throw new IOException("Unknown descriptor type");
+    }
+
+    public void remove(Device device) {
+        synchronized (deviceList) {
+            deviceList.remove(device);
+        }
     }
 
     @Override
