@@ -7,7 +7,7 @@ public class OwnedTransferHolder
 {
     public TransferItem item;
 
-    public String deviceId;
+    public String deviceUid;
 
     public int state = PersistenceProvider.STATE_PENDING;
 
@@ -16,9 +16,9 @@ public class OwnedTransferHolder
         this.item = item;
     }
 
-    public OwnedTransferHolder(TransferItem item, String deviceId)
+    public OwnedTransferHolder(TransferItem item, String deviceUid)
     {
         this(item);
-        this.deviceId = deviceId;
+        this.deviceUid = deviceUid;
     }
 }

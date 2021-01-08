@@ -71,14 +71,14 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public void notifyDeviceKeyChanged(Device device, int receiverKey, int senderKey)
+    public void notifyDeviceCredentialsChanged(Device device)
     {
         if (autoAcceptNewKeys) {
-            persistenceProvider.approveKeyInvalidationRequest(device);
+            persistenceProvider.approveInvalidationOfCredentials(device);
         }
     }
 
-    public void setAutoAcceptNewKeys(boolean autoAcceptNewKeys)
+    public void setAutoInvalidationOfCredentials(boolean autoAcceptNewKeys)
     {
         this.autoAcceptNewKeys = autoAcceptNewKeys;
     }

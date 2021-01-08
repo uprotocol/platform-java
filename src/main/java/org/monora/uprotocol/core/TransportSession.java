@@ -10,9 +10,9 @@ import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
-import org.monora.uprotocol.core.protocol.DeviceVerificationException;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
+import org.monora.uprotocol.core.protocol.communication.SecureClientCommunicationException;
 import org.monora.uprotocol.core.spec.alpha.Config;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
 
@@ -74,26 +74,14 @@ public class TransportSession extends CoolSocket
 
             try {
                 DeviceLoader.loadAsServer(persistenceProvider, response, device, hasPin);
-                CommunicationBridge.sendSecure(activeConnection, true,
-                        persistenceProvider.deviceAsJson(device.senderKey, 0));
-            } catch (DeviceVerificationException e) {
-                int newSenderKey = persistenceProvider.generateKey();
-
-                persistenceProvider.saveKeyInvalidationRequest(device.uid, e.receiverKey, newSenderKey);
-                transportSeat.notifyDeviceKeyChanged(device, e.receiverKey, newSenderKey);
-                CommunicationBridge.sendSecure(activeConnection, true,
-                        persistenceProvider.deviceAsJson(newSenderKey, 0));
-
-                throw e;
+                CommunicationBridge.sendSecure(activeConnection, true, persistenceProvider.deviceAsJson(0));
             } finally {
                 persistenceProvider.broadcast();
             }
 
-            CommunicationBridge bridge = new CommunicationBridge(connectionFactory, persistenceProvider,
-                    activeConnection, device, deviceAddress, false);
-            bridge.sendResult(true);
-            //CommunicationBridge.sendResult(activeConnection, true);
-            bridge.convertToSSL();
+            CommunicationBridge.sendResult(activeConnection, true);
+            CommunicationBridge.convertToSSL(connectionFactory, persistenceProvider, activeConnection, device,
+                    false);
 
             activeConnection.setInternalCacheLimit(1073741824); // 1MB
 
@@ -101,7 +89,13 @@ public class TransportSession extends CoolSocket
             if (!CommunicationBridge.resultOf(request))
                 return;
 
-            handleRequest(bridge, device, deviceAddress, hasPin, request);
+            handleRequest(new CommunicationBridge(persistenceProvider, activeConnection, device, deviceAddress),
+                    device, deviceAddress, hasPin, request);
+        } catch (SecureClientCommunicationException e) {
+            if (!persistenceProvider.hasRequestForInvalidationOfCredentials(e.device.uid)) {
+                persistenceProvider.saveRequestForInvalidationOfCredentials(e.device.uid);
+                transportSeat.notifyDeviceCredentialsChanged(e.device);
+            }
         } catch (Exception e) {
             try {
                 CommunicationBridge.sendError(activeConnection, e);

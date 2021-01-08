@@ -6,7 +6,9 @@ import org.monora.uprotocol.core.network.Device;
 import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
-import org.monora.uprotocol.core.protocol.*;
+import org.monora.uprotocol.core.protocol.ClientType;
+import org.monora.uprotocol.core.protocol.ConnectionFactory;
+import org.monora.uprotocol.core.protocol.communication.ClientBlockedException;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
 
 import java.net.InetAddress;
@@ -31,7 +33,6 @@ public class DeviceLoader
             throws JSONException
     {
         device.isBlocked = false;
-        device.receiverKey = object.getInt(Keyword.DEVICE_KEY);
         loadFrom(persistenceProvider, object, device);
     }
 
@@ -44,37 +45,26 @@ public class DeviceLoader
      * @param hasPin              True will mean this device has a valid PIN and this will escalate the privileges it
      *                            will have. For instance, it will be unblocked if blocked and it will be flagged as
      *                            trusted.
-     * @throws JSONException           If something goes wrong when inflating the JSON data.* @throws DeviceInsecureException
-     * @throws DeviceInsecureException If remote sends invalid credentials and has no valid PIN.
+     * @throws JSONException          If something goes wrong when inflating the JSON data.* @throws DeviceInsecureException
+     * @throws ClientBlockedException If remote is blocked and has no valid PIN.
      */
     public static void loadAsServer(PersistenceProvider persistenceProvider, JSONObject object, Device device,
-                                    boolean hasPin) throws JSONException, DeviceInsecureException
+                                    boolean hasPin) throws JSONException, ClientBlockedException
     {
         device.uid = object.getString(Keyword.DEVICE_UID);
-        int receiverKey = object.getInt(Keyword.DEVICE_KEY);
         if (hasPin)
             device.isTrusted = true;
 
         try {
             try {
                 persistenceProvider.sync(device);
-
-                if (hasPin && receiverKey != device.receiverKey)
-                    throw new PersistenceException("Generate new keys.");
-            } catch (PersistenceException e) {
-                device.receiverKey = receiverKey;
-                device.senderKey = persistenceProvider.generateKey();
+            } catch (PersistenceException ignored) {
             }
-
-            boolean keyMismatch = receiverKey != device.receiverKey;
 
             if (hasPin) {
                 device.isBlocked = false;
-            } else if (device.isBlocked || (keyMismatch && persistenceProvider.hasKeyInvalidationRequest(device.uid)))
-                throw new DeviceBlockedException("The device is blocked.", device);
-            else if (keyMismatch) {
-                throw new DeviceVerificationException("The device receiver key is different.", device, receiverKey);
-            }
+            } else if (device.isBlocked)
+                throw new ClientBlockedException(device);
         } finally {
             loadFrom(persistenceProvider, object, device);
         }
@@ -112,7 +102,7 @@ public class DeviceLoader
     /**
      * Load a device using an internet address.
      *
-     * @param connectionFactory  That will set up the connection.
+     * @param connectionFactory   That will set up the connection.
      * @param persistenceProvider That stores the persistent data.
      * @param address             To connect to.
      * @param listener            That listens for successful attempts. Pass it as 'null' if unneeded.

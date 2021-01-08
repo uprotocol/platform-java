@@ -120,18 +120,18 @@ public interface TransportSeat
     boolean hasOngoingIndexingFor(long transferId);
 
     /**
-     * A device that was previously known accessed the server with a different key.
+     * A known device could not connect due to sending different credentials.
      * <p>
      * This is a suspicious event that should be handled in cooperation with user.
-     * <p>
-     * The next requests from this client will be blocked until this is resolved. You will need to unblock the device
-     * {@link Device#isBlocked} if user approves of the new key.
      *
-     * @param device      That has accessed the server.
-     * @param receiverKey That the device sent but doesn't match.
-     * @param senderKey   The new sender key that we want to use if user accepts the new receiver key from the remote.
+     * This request will occur only once unless {@link PersistenceProvider#saveRequestForInvalidationOfCredentials(String)}
+     * doesn't save the request and {@link PersistenceProvider#hasRequestForInvalidationOfCredentials(String)} returns
+     * {@code true}.
+     *
+     * @param device That has accessed the server.
+     * @see PersistenceProvider#saveRequestForInvalidationOfCredentials(String)
      */
-    void notifyDeviceKeyChanged(Device device, int receiverKey, int senderKey);
+    void notifyDeviceCredentialsChanged(Device device);
 
     /**
      * Handle the receive process. You can invoke this method in the {@link #beginFileTransfer} method when the type is

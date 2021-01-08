@@ -27,8 +27,6 @@ import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
-import org.monora.uprotocol.core.protocol.DeviceBlockedException;
-import org.monora.uprotocol.core.protocol.DeviceVerificationException;
 import org.monora.uprotocol.core.protocol.communication.*;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
 
@@ -64,32 +62,23 @@ public class CommunicationBridge implements Closeable
 
     private final DeviceAddress deviceAddress;
 
-    private final ConnectionFactory connectionFactory;
-
-    private final boolean isClient;
-
     /**
      * Create a new instance.
      * <p>
      * This assumes the connection is valid and open. If you need to open a connection, use {@link #connect}.
      *
-     * @param connectionFactory   To start and set up connections with.
      * @param persistenceProvider Where the persistent data is stored and queried.
      * @param activeConnection    Represents a valid connection with the said device.
      * @param device              We are connected to.
      * @param deviceAddress       Where the device is located at.
-     * @param isClient            Whether the socket instance belongs to the client or server.
      */
-    public CommunicationBridge(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
-                               ActiveConnection activeConnection, Device device, DeviceAddress deviceAddress,
-                               boolean isClient)
+    public CommunicationBridge(PersistenceProvider persistenceProvider, ActiveConnection activeConnection,
+                               Device device, DeviceAddress deviceAddress)
     {
-        this.connectionFactory = connectionFactory;
         this.persistenceProvider = persistenceProvider;
         this.activeConnection = activeConnection;
         this.device = device;
         this.deviceAddress = deviceAddress;
-        this.isClient = isClient;
     }
 
     /**
@@ -144,14 +133,68 @@ public class CommunicationBridge implements Closeable
         for (DeviceAddress address : addressList) {
             try {
                 return connect(connectionFactory, persistenceProvider, address, device, pin);
-            } catch (IOException | DifferentClientException ignored) {
+            } catch (IOException | ClientMismatchException ignored) {
             }
         }
 
         throw new SocketException("Failed to connect to the socket address.");
     }
 
-    public void convertToSSL() throws IOException
+    /**
+     * Open a connection using the given {@link DeviceAddress}.
+     * <p>
+     * If connection opens but the remote rejects the communication request, this will throw that error.
+     *
+     * @param connectionFactory   To start and set up connections with.
+     * @param persistenceProvider To store and query objects.
+     * @param deviceAddress       To try.
+     * @param device              That we are going to open a connection with. If the connected device is different,
+     *                            this will throw error. If you don't know who you are connecting to, just leave
+     *                            this field as 'null'.
+     * @param pin                 To bypass errors (i.e. you are blocked on the other device), and to be flagged as
+     *                            trusted. Pass '0' if you don't have a PIN.
+     * @return The communication bridge to communicate with the remote.
+     * @throws IOException                        If an IO error occurs.
+     * @throws JSONException                      If something goes wrong when creating JSON object.
+     * @throws CommunicationException             When there is a communication error due to misconfiguration.
+     * @throws SecureClientCommunicationException If something goes wrong while establishing a secure connection.
+     */
+    public static CommunicationBridge connect(ConnectionFactory connectionFactory,
+                                              PersistenceProvider persistenceProvider, DeviceAddress deviceAddress,
+                                              Device device, int pin)
+            throws IOException, JSONException, CommunicationException
+    {
+        ActiveConnection activeConnection = connectionFactory.openConnection(deviceAddress.inetAddress);
+        String remoteDeviceUid = activeConnection.receive().getAsString();
+
+        deviceAddress.deviceUid = remoteDeviceUid;
+        persistenceProvider.save(deviceAddress);
+
+        if (device != null && device.uid != null && !device.uid.equals(remoteDeviceUid)) {
+            activeConnection.closeSafely();
+            throw new ClientMismatchException(device, remoteDeviceUid);
+        }
+
+        if (device == null)
+            device = persistenceProvider.createDeviceFor(remoteDeviceUid);
+
+        try {
+            persistenceProvider.sync(device);
+        } catch (PersistenceException ignored) {
+        }
+
+        activeConnection.reply(persistenceProvider.deviceAsJson(pin));
+
+        DeviceLoader.loadAsClient(persistenceProvider, receiveSecure(activeConnection, device), device);
+        receiveResult(activeConnection, device);
+        convertToSSL(connectionFactory, persistenceProvider, activeConnection, device, true);
+
+        return new CommunicationBridge(persistenceProvider, activeConnection, device, deviceAddress);
+    }
+
+    protected static void convertToSSL(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
+                                       ActiveConnection activeConnection, Device device, boolean isClient)
+            throws IOException, ClientCommunicationException
     {
         Socket socket = activeConnection.getSocket();
         SSLSocketFactory sslSocketFactory = persistenceProvider.getSSLContextFor(device).getSocketFactory();
@@ -191,62 +234,11 @@ public class CommunicationBridge implements Closeable
 
         activeConnection.setSocket(sslSocket);
 
-        // Throws when the peer has different credentials: sun.security.validator.ValidatorException
-        sslSocket.startHandshake();
-    }
-
-    /**
-     * Open a connection using the given {@link DeviceAddress}.
-     * <p>
-     * If connection opens but the remote rejects the communication request, this will throw that error.
-     *
-     * @param connectionFactory   To start and set up connections with.
-     * @param persistenceProvider To store and query objects.
-     * @param deviceAddress       To try.
-     * @param device              That we are going to open a connection with. If the connected device is different,
-     *                            this will throw error. If you don't know who you are connecting to, just leave
-     *                            this field as 'null'.
-     * @param pin                 To bypass errors (i.e. you are blocked on the other device), and to be flagged as
-     *                            trusted. Pass '0' if you don't have a PIN.
-     * @return The communication bridge to communicate with the remote.
-     * @throws IOException            If an IO error occurs.
-     * @throws JSONException          If something goes wrong when creating JSON object.
-     * @throws CommunicationException When there is a communication error due to misconfiguration.
-     */
-    public static CommunicationBridge connect(ConnectionFactory connectionFactory,
-                                              PersistenceProvider persistenceProvider, DeviceAddress deviceAddress,
-                                              Device device, int pin)
-            throws IOException, JSONException, CommunicationException
-    {
-        ActiveConnection activeConnection = connectionFactory.openConnection(deviceAddress.inetAddress);
-        String remoteDeviceUid = activeConnection.receive().getAsString();
-
-        deviceAddress.deviceUid = remoteDeviceUid;
-        persistenceProvider.save(deviceAddress);
-
-        if (device != null && device.uid != null && !device.uid.equals(remoteDeviceUid)) {
-            activeConnection.closeSafely();
-            throw new DifferentClientException(device, remoteDeviceUid);
-        }
-
-        if (device == null)
-            device = persistenceProvider.createDeviceFor(remoteDeviceUid);
-
         try {
-            persistenceProvider.sync(device);
-        } catch (PersistenceException e) {
-            device.senderKey = persistenceProvider.generateKey();
+            sslSocket.startHandshake();
+        } catch (Exception e) {
+            throw new SecureClientCommunicationException(device, e);
         }
-
-        activeConnection.reply(persistenceProvider.deviceAsJson(device.senderKey, pin));
-
-        DeviceLoader.loadAsClient(persistenceProvider, receiveSecure(activeConnection, device), device);
-        receiveResult(activeConnection, device);
-
-        CommunicationBridge bridge = new CommunicationBridge(connectionFactory, persistenceProvider, activeConnection,
-                device, deviceAddress, true);
-        bridge.convertToSSL();
-        return bridge;
     }
 
     /**
@@ -438,9 +430,9 @@ public class CommunicationBridge implements Closeable
             final String errorCode = jsonObject.getString(Keyword.ERROR);
             switch (errorCode) {
                 case Keyword.ERROR_NOT_ALLOWED:
-                    throw new NotAllowedException(device);
+                    throw new ClientAuthorizationException(device);
                 case Keyword.ERROR_NOT_TRUSTED:
-                    throw new NotTrustedException(device);
+                    throw new ClientTrustException(device);
                 case Keyword.ERROR_NOT_ACCESSIBLE:
                     throw new ContentException(ContentException.Error.NotAccessible);
                 case Keyword.ERROR_ALREADY_EXISTS:
@@ -532,19 +524,19 @@ public class CommunicationBridge implements Closeable
      *
      * @param activeConnection The active connection instance.
      * @param exception        With which this will decide which error code to send.
-     * @throws IOException                     If an IO error occurs.
-     * @throws JSONException                   If something goes wrong when creating JSON object.
-     * @throws UnhandledCommunicationException If the exception is not known.
+     * @throws IOException            If an IO error occurs.
+     * @throws JSONException          If something goes wrong when creating JSON object.
+     * @throws CommunicationException With the cause exception if the error is not known.
      * @see #receiveSecure(ActiveConnection, Device)
      */
     public static void sendError(ActiveConnection activeConnection, Exception exception) throws IOException,
-            JSONException, UnhandledCommunicationException
+            JSONException, CommunicationException
     {
         try {
             throw exception;
-        } catch (NotTrustedException e) {
+        } catch (ClientTrustException e) {
             sendError(activeConnection, Keyword.ERROR_NOT_TRUSTED);
-        } catch (DeviceBlockedException | DeviceVerificationException e) {
+        } catch (ClientAuthorizationException e) {
             sendError(activeConnection, Keyword.ERROR_NOT_ALLOWED);
         } catch (PersistenceException e) {
             sendError(activeConnection, Keyword.ERROR_NOT_FOUND);
@@ -563,7 +555,7 @@ public class CommunicationBridge implements Closeable
                     sendError(activeConnection, Keyword.ERROR_UNKNOWN);
             }
         } catch (Exception e) {
-            throw new UnhandledCommunicationException("An unknown error was thrown during the communication", e);
+            throw new CommunicationException("An unknown error was thrown during the communication", e);
         }
     }
 
@@ -587,12 +579,12 @@ public class CommunicationBridge implements Closeable
      * The active connection defaults to {@link #getActiveConnection()}.
      *
      * @param exception With which this will decide which error code to send.
-     * @throws IOException                     If an IO error occurs.
-     * @throws JSONException                   If something goes wrong when creating JSON object.
-     * @throws UnhandledCommunicationException If the exception is not known.
+     * @throws IOException            If an IO error occurs.
+     * @throws JSONException          If something goes wrong when creating JSON object.
+     * @throws CommunicationException With the cause exception if the error is not known.
      * @see #receiveSecure(ActiveConnection, Device)
      */
-    public void sendError(Exception exception) throws IOException, JSONException, UnhandledCommunicationException
+    public void sendError(Exception exception) throws IOException, JSONException, CommunicationException
     {
         sendError(getActiveConnection(), exception);
     }

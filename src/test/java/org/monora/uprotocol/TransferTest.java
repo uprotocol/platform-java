@@ -11,7 +11,7 @@ import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.persistence.StreamDescriptor;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
-import org.monora.uprotocol.core.protocol.communication.NotTrustedException;
+import org.monora.uprotocol.core.protocol.communication.ClientTrustException;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
 import org.monora.uprotocol.variant.holder.OwnedTransferHolder;
 import org.monora.uprotocol.variant.test.DefaultTestBase;
@@ -128,7 +128,7 @@ public class TransferTest extends DefaultTestBase
         }
     }
 
-    @Test(expected = NotTrustedException.class)
+    @Test(expected = ClientTrustException.class)
     public void senderFailsToStartTransferIfNotTrusted() throws IOException, InterruptedException,
             CommunicationException
     {

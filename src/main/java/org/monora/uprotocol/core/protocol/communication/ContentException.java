@@ -18,6 +18,9 @@
 
 package org.monora.uprotocol.core.protocol.communication;
 
+/**
+ * Thrown when the remote faces an error with the content that this client wants to work with.
+ */
 public class ContentException extends CommunicationException
 {
     public final Error error;

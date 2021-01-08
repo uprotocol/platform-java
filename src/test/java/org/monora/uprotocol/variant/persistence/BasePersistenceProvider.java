@@ -10,7 +10,6 @@ import org.monora.uprotocol.variant.DefaultDevice;
 import org.monora.uprotocol.variant.DefaultDeviceAddress;
 import org.monora.uprotocol.variant.DefaultTransferItem;
 import org.monora.uprotocol.variant.holder.Avatar;
-import org.monora.uprotocol.variant.holder.KeyInvalidationRequest;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
 import org.monora.uprotocol.variant.holder.OwnedTransferHolder;
 import org.spongycastle.asn1.x500.X500NameBuilder;
@@ -55,13 +54,17 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     private final List<OwnedTransferHolder> transferHolderList = new ArrayList<>();
     private final List<Avatar> avatarList = new ArrayList<>();
     private final List<MemoryStreamDescriptor> streamDescriptorList = new ArrayList<>();
-    private final List<KeyInvalidationRequest> invalidationRequestList = new ArrayList<>();
+    private final List<String> invalidationRequestList = new ArrayList<>();
     private final BouncyCastleProvider bouncyCastleProvider = new BouncyCastleProvider();
     private final SecureRandom secureRandom = new SecureRandom();
     private final KeyFactory keyFactory;
 
     private KeyPair keyPair;
     private X509Certificate certificate;
+
+    private KeyPair keyPairBackup;
+    private X509Certificate certificateBackup;
+
 
     private int networkPin;
 
@@ -78,6 +81,12 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
 
     public void regenerateSecrets()
     {
+        if (keyPairBackup == null)
+            keyPairBackup = keyPair;
+
+        if (certificateBackup == null)
+            certificateBackup = certificate;
+
         try {
             keyPair = KeyPairGenerator.getInstance("RSA").genKeyPair();
         } catch (NoSuchAlgorithmException e) {
@@ -106,30 +115,30 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         }
     }
 
-    @Override
-    public boolean approveKeyInvalidationRequest(Device device)
+    public void restoreSecrets()
     {
-        synchronized (invalidationRequestList) {
-            KeyInvalidationRequest matchingRequest = null;
-
-            for (KeyInvalidationRequest request : invalidationRequestList) {
-                if (!request.deviceId.equals(device.uid))
-                    continue;
-
-                matchingRequest = request;
-                break;
-            }
-
-            if (matchingRequest != null) {
-                device.receiverKey = matchingRequest.receiverKey;
-                device.senderKey = matchingRequest.senderKey;
-                save(device);
-                invalidationRequestList.remove(matchingRequest);
-                return true;
-            }
+        if (keyPairBackup != null) {
+            keyPair = keyPairBackup;
+            keyPairBackup = null;
         }
 
-        return false;
+        if (certificateBackup != null) {
+            certificate = certificateBackup;
+            certificateBackup = null;
+        }
+    }
+
+    @Override
+    public boolean approveInvalidationOfCredentials(Device device)
+    {
+        synchronized (invalidationRequestList) {
+            if (!invalidationRequestList.remove(device.uid))
+                return false;
+        }
+
+        device.certificate = null;
+        save(device);
+        return true;
     }
 
     @Override
@@ -174,12 +183,6 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
                                               String directory, TransferItem.Type type)
     {
         return new DefaultTransferItem(transferId, id, name, mimeType, size, directory, type);
-    }
-
-    @Override
-    public int generateKey()
-    {
-        return (int) (Integer.MAX_VALUE * Math.random());
     }
 
     @Override
@@ -238,7 +241,8 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     public int getNetworkPin()
     {
         if (networkPin == 0)
-            networkPin = generateKey();
+            networkPin = (int) (Integer.MAX_VALUE * Math.random());
+
         return networkPin;
     }
 
@@ -336,26 +340,21 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public boolean hasKeyInvalidationRequest(String deviceId)
+    public boolean hasRequestForInvalidationOfCredentials(String deviceUid)
     {
         synchronized (invalidationRequestList) {
-            for (KeyInvalidationRequest request : invalidationRequestList) {
-                if (request.deviceId.equals(deviceId))
-                    return true;
-            }
+            return invalidationRequestList.contains(deviceUid);
         }
-
-        return false;
     }
 
     @Override
-    public TransferItem loadTransferItem(String deviceId, long transferId, long id, TransferItem.Type type)
+    public TransferItem loadTransferItem(String deviceUid, long transferId, long id, TransferItem.Type type)
             throws PersistenceException
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {
                 if (holder.item.transferId == transferId && holder.item.id == id && holder.item.type.equals(type)
-                        && holder.deviceId.equals(deviceId))
+                        && holder.deviceUid.equals(deviceUid))
                     return holder.item;
             }
         }
@@ -381,7 +380,8 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         throw new IOException("Unknown descriptor type");
     }
 
-    public void remove(Device device) {
+    public void remove(Device device)
+    {
         synchronized (deviceList) {
             deviceList.remove(device);
         }
@@ -412,54 +412,54 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void save(String deviceId, TransferItem item)
+    public void save(String deviceUid, TransferItem item)
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {
                 if (holder.item.equals(item)) {
                     holder.item = item;
-                    holder.deviceId = deviceId;
+                    holder.deviceUid = deviceUid;
                     return;
                 }
             }
 
-            transferHolderList.add(new OwnedTransferHolder(item, deviceId));
+            transferHolderList.add(new OwnedTransferHolder(item, deviceUid));
         }
     }
 
     @Override
-    public void save(String deviceId, List<? extends TransferItem> itemList)
+    public void save(String deviceUid, List<? extends TransferItem> itemList)
     {
         for (TransferItem item : itemList) {
-            save(deviceId, item);
+            save(deviceUid, item);
         }
     }
 
     @Override
-    public void saveAvatar(String deviceId, byte[] bitmap)
+    public void saveAvatar(String deviceUid, byte[] bitmap)
     {
         synchronized (avatarList) {
-            avatarList.add(new Avatar(deviceId, bitmap));
+            avatarList.add(new Avatar(deviceUid, bitmap));
         }
     }
 
     @Override
-    public void saveKeyInvalidationRequest(String deviceId, int receiverKey, int senderKey)
+    public void saveRequestForInvalidationOfCredentials(String deviceUid)
     {
-        if (hasKeyInvalidationRequest(deviceId))
+        if (hasRequestForInvalidationOfCredentials(deviceUid))
             return;
 
         synchronized (invalidationRequestList) {
-            invalidationRequestList.add(new KeyInvalidationRequest(deviceId, receiverKey, senderKey));
+            invalidationRequestList.add(deviceUid);
         }
     }
 
     @Override
-    public void setState(String deviceId, TransferItem item, int state, Exception e)
+    public void setState(String deviceUid, TransferItem item, int state, Exception e)
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {
-                if (deviceId.equals(holder.deviceId) && item.equals(holder.item))
+                if (deviceUid.equals(holder.deviceUid) && item.equals(holder.item))
                     holder.state = state;
             }
         }

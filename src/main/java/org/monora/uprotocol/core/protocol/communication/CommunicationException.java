@@ -18,6 +18,9 @@
 
 package org.monora.uprotocol.core.protocol.communication;
 
+/**
+ * This is the parent error that concerns the protocol and happens within it.
+ */
 public class CommunicationException extends Exception
 {
     public CommunicationException()

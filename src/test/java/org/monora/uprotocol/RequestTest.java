@@ -7,9 +7,10 @@ import org.monora.uprotocol.core.network.Device;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
-import org.monora.uprotocol.core.protocol.communication.NotAllowedException;
+import org.monora.uprotocol.core.protocol.communication.SecureClientCommunicationException;
 import org.monora.uprotocol.variant.test.DefaultTestBase;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,9 +61,8 @@ public class RequestTest extends DefaultTestBase
         }
     }
 
-    @Test(expected = NotAllowedException.class)
-    public void failsWithKeyMismatchTest() throws IOException, InterruptedException, CommunicationException,
-            PersistenceException
+    @Test(expected = SecureClientCommunicationException.class)
+    public void failsWithKeyMismatchTest() throws IOException, InterruptedException, CommunicationException
     {
         primarySession.start();
 
@@ -70,10 +70,7 @@ public class RequestTest extends DefaultTestBase
             bridge.requestAcquaintance();
         }
 
-        Device primaryOnSecondary = secondaryPersistence.createDeviceFor(primaryPersistence.getDeviceUid());
-        secondaryPersistence.sync(primaryOnSecondary);
-        primaryOnSecondary.senderKey = 1;
-        secondaryPersistence.save(primaryOnSecondary);
+        primaryPersistence.regenerateSecrets();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
             bridge.requestAcquaintance();
@@ -83,8 +80,7 @@ public class RequestTest extends DefaultTestBase
     }
 
     @Test
-    public void connectsAfterKeyMismatchWithRightKey() throws IOException, CommunicationException, InterruptedException,
-            PersistenceException
+    public void connectsAfterKeyMismatchWithRightKey() throws IOException, CommunicationException, InterruptedException
     {
         primarySession.start();
 
@@ -92,19 +88,14 @@ public class RequestTest extends DefaultTestBase
             bridge.requestAcquaintance();
         }
 
-        Device primaryOnSecondary = secondaryPersistence.createDeviceFor(primaryPersistence.getDeviceUid());
-        secondaryPersistence.sync(primaryOnSecondary);
-        int originalKey = primaryOnSecondary.senderKey;
-        primaryOnSecondary.senderKey = 1;
-        secondaryPersistence.save(primaryOnSecondary);
+        primaryPersistence.regenerateSecrets();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
             bridge.requestAcquaintance();
-        } catch (NotAllowedException ignored) {
+        } catch (SecureClientCommunicationException ignored) {
         }
 
-        primaryOnSecondary.senderKey = originalKey;
-        secondaryPersistence.save(primaryOnSecondary);
+        primaryPersistence.restoreSecrets();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
             bridge.requestAcquaintance();
@@ -114,8 +105,7 @@ public class RequestTest extends DefaultTestBase
     }
 
     @Test
-    public void acceptNewKeysTest() throws IOException, InterruptedException, CommunicationException,
-            PersistenceException
+    public void acceptNewKeysTest() throws IOException, InterruptedException, CommunicationException
     {
         primarySession.start();
 
@@ -123,16 +113,17 @@ public class RequestTest extends DefaultTestBase
             bridge.requestAcquaintance();
         }
 
-        primarySeat.setAutoAcceptNewKeys(true);
-
-        Device primaryOnSecondary = secondaryPersistence.createDeviceFor(primaryPersistence.getDeviceUid());
-        secondaryPersistence.sync(primaryOnSecondary);
-        primaryOnSecondary.senderKey = 1;
-        secondaryPersistence.save(primaryOnSecondary);
+        primarySeat.setAutoInvalidationOfCredentials(true);
+        primaryPersistence.regenerateSecrets();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
             bridge.requestAcquaintance();
-        } catch (NotAllowedException ignored) {
+        } catch (SecureClientCommunicationException e) {
+            if (e.getCause() instanceof SSLHandshakeException) {
+                e.device.certificate = null;
+                secondaryPersistence.save(e.device);
+            } else
+                throw e;
         }
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {

@@ -16,31 +16,20 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-package org.monora.uprotocol.core.protocol;
+package org.monora.uprotocol.core.protocol.communication;
 
 import org.monora.uprotocol.core.network.Device;
 
-// TODO: 9/8/20 DeviceInsecureException was targeting ReconstructionFailedException. What now?
-
 /**
- * Thrown when a known device connects with a different key.
+ * Thrown when the remote has a {@link Device#uid} different from the one that was targeted.
  */
-public class DeviceInsecureException extends Exception
+public class ClientMismatchException extends ClientAuthorizationException
 {
-    /**
-     * The insecure device.
-     */
-    public final Device device;
+    public final String gotUid;
 
-    /**
-     * Create a new instance.
-     *
-     * @param message The reason for this error.
-     * @param device  The insecure device.
-     */
-    public DeviceInsecureException(String message, Device device)
+    public ClientMismatchException(Device expected, String gotUid)
     {
-        super(message);
-        this.device = device;
+        super(expected);
+        this.gotUid = gotUid;
     }
 }

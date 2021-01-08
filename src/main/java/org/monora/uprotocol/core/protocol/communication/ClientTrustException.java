@@ -20,13 +20,13 @@ package org.monora.uprotocol.core.protocol.communication;
 
 import org.monora.uprotocol.core.network.Device;
 
-public class DifferentClientException extends NotAllowedException
+/**
+ * Thrown when the client is not trusted {@link Device#isTrusted} but wants to do an action that requires trust.
+ */
+public class ClientTrustException extends ClientAuthorizationException
 {
-    public final String gotUid;
-
-    public DifferentClientException(Device expected, String gotUid)
+    public ClientTrustException(Device device)
     {
-        super(expected);
-        this.gotUid = gotUid;
+        super(device);
     }
 }

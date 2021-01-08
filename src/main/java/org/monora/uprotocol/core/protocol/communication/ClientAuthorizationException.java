@@ -16,27 +16,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-package org.monora.uprotocol.core.protocol;
+package org.monora.uprotocol.core.protocol.communication;
 
 import org.monora.uprotocol.core.network.Device;
 
 /**
- * Thrown when a device becomes untrusted due to a change on the security field.
+ * This error occurs when the remote requests an operation that it cannot perform.
  */
-public class DeviceVerificationException extends DeviceInsecureException
+public class ClientAuthorizationException extends ClientCommunicationException
 {
-    public final int receiverKey;
-
-    /**
-     * Create a new instance.
-     *
-     * @param message     The reason for this error.
-     * @param device      That has a key mismatch.
-     * @param receiverKey The wrong key it sent.
-     */
-    public DeviceVerificationException(String message, Device device, int receiverKey)
+    public ClientAuthorizationException(Device device)
     {
-        super(message, device);
-        this.receiverKey = receiverKey;
+        super(device);
     }
 }

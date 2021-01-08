@@ -14,7 +14,6 @@ public class SecondaryPersistenceProvider extends BasePersistenceProvider
     @Override
     public Device getDevice()
     {
-        return new DefaultDevice(getDeviceUid(), "Sec", 100, 100, "Xyz", "Tuv",
-                getCertificate());
+        return new DefaultDevice(getDeviceUid(), "Sec", "Xyz", "Tuv", getCertificate());
     }
 }

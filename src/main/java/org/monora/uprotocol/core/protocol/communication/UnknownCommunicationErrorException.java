@@ -18,6 +18,9 @@
 
 package org.monora.uprotocol.core.protocol.communication;
 
+/**
+ * Thrown when remote notifies this client of a failure not defined by the protocol.
+ */
 public class UnknownCommunicationErrorException extends CommunicationException
 {
     public final String errorCode;

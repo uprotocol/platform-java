@@ -40,20 +40,6 @@ public abstract class Device
     public ClientType clientType;
 
     /**
-     * The key that we will send to the remote when we are the one who is initiating the communication.
-     *
-     * @see #receiverKey
-     */
-    public int senderKey;
-
-    /**
-     * The key that the remote will send us when it is the one initiating the communication.
-     *
-     * @see #senderKey
-     */
-    public int receiverKey;
-
-    /**
      * The version code for the client running on the device.
      */
     public int versionCode;
@@ -112,18 +98,15 @@ public abstract class Device
      */
     public void from(Device device)
     {
-        from(device.username, device.senderKey, device.receiverKey, device.brand, device.model, device.clientType,
-                device.versionName, device.versionCode, device.protocolVersion, device.protocolVersionMin,
-                device.isTrusted, device.isBlocked, device.certificate);
+        from(device.username, device.brand, device.model, device.clientType, device.versionName, device.versionCode,
+                device.protocolVersion, device.protocolVersionMin, device.isTrusted, device.isBlocked, device.certificate);
     }
 
-    protected void from(String username, int senderKey, int receiverKey, String brand, String model,
-                        ClientType clientType, String versionName, int versionCode, int protocolVersion,
-                        int protocolVersionMin, boolean isTrusted, boolean isBlocked, X509Certificate certificate)
+    protected void from(String username, String brand, String model, ClientType clientType, String versionName,
+                        int versionCode, int protocolVersion, int protocolVersionMin, boolean isTrusted,
+                        boolean isBlocked, X509Certificate certificate)
     {
         this.username = username;
-        this.senderKey = senderKey;
-        this.receiverKey = receiverKey;
         this.brand = brand;
         this.model = model;
         this.clientType = clientType;

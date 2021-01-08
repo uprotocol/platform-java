@@ -72,14 +72,17 @@ public interface PersistenceProvider
     MimetypesFileTypeMap typeMap = new MimetypesFileTypeMap();
 
     /**
-     * Accept the key invalidation request sent by a device using {@link #saveKeyInvalidationRequest(String, int, int)}.
+     * Accept the request for invalidation of credentials of a device.
+     * <p>
+     * Removing the certificate for the given device should be enough.
      *
      * @param device Of whose keys will be approved.
      * @return True if there were a request and now approved, or false there were no request.
-     * @see #hasKeyInvalidationRequest(String)
-     * @see #saveKeyInvalidationRequest(String, int, int)
+     * @see Device#certificate
+     * @see #hasRequestForInvalidationOfCredentials(String)
+     * @see #saveRequestForInvalidationOfCredentials(String)
      */
-    boolean approveKeyInvalidationRequest(Device device);
+    boolean approveInvalidationOfCredentials(Device device);
 
     /**
      * Broadcast the awaiting operation reports.
@@ -147,18 +150,8 @@ public interface PersistenceProvider
      * <p>
      * This should only be invoked when communicating with remote.
      * <p>
-     * The sender key and the PIN are special to the client that you are sending your details to.
-     * <p>
      * Because this is either invoked by the {@link TransportSession} or {@link CommunicationBridge}, you should already
      * know the client that you are talking to.
-     * <p>
-     * The sender key should be gathered from the persistence database and assigned to {@link Device#senderKey}.
-     * <p>
-     * Keys should be persistent. They should never be random, and saving them as '0' should result in "error". These
-     * keys are mutually held by you and the remote. Here is a graph representing how the keys correspond to each other:
-     * <p>
-     * Us {@link Device#receiverKey} == Remote {@link Device#senderKey}
-     * Us {@link Device#senderKey} == Remote {@link Device#receiverKey}
      * <p>
      * The PIN will usually be unavailable, so it is okay to provide '0'. It should be available through connectionless
      * means like QR Code or manual-entry. It is used to bypass the security mechanisms so the communication can happen
@@ -168,12 +161,11 @@ public interface PersistenceProvider
      * same until the remote invokes {@link PersistenceProvider#revokeNetworkPin()}, corresponding you sending the
      * right PIN and consuming it.
      *
-     * @param senderKey The key which is known by the remote as {@link Device#receiverKey}.
-     * @param pin       The PIN to bypass errors like not matching keys. This will also flag this client as trusted.
+     * @param pin The PIN to bypass errors like not matching keys. This will also flag this client as trusted.
      * @return The JSON object
      * @throws JSONException If the creation of the JSON object fails for some reason.
      */
-    default JSONObject deviceAsJson(int senderKey, int pin) throws JSONException
+    default JSONObject deviceAsJson(int pin) throws JSONException
     {
         Device device = getDevice();
         JSONObject object = new JSONObject()
@@ -186,7 +178,6 @@ public interface PersistenceProvider
                 .put(Keyword.DEVICE_VERSION_NAME, device.versionName)
                 .put(Keyword.DEVICE_PROTOCOL_VERSION, device.protocolVersion)
                 .put(Keyword.DEVICE_PROTOCOL_VERSION_MIN, device.protocolVersionMin)
-                .put(Keyword.DEVICE_KEY, senderKey)
                 .put(Keyword.DEVICE_PIN, pin);
 
         byte[] deviceAvatar = getAvatar();
@@ -195,13 +186,6 @@ public interface PersistenceProvider
 
         return object;
     }
-
-    /**
-     * Generate a unique 32-bit signed integer to use as a key.
-     *
-     * @return The generated key.
-     */
-    int generateKey();
 
     /**
      * Returns the avatar for this client.
@@ -289,24 +273,24 @@ public interface PersistenceProvider
     /**
      * Check whether the given device had already sent a wrong key and has a pending key request to be approved.
      *
-     * @param deviceId That sent the request.
+     * @param deviceUid That sent the request.
      * @return True if there is a pending request.
-     * @see #saveKeyInvalidationRequest(String, int, int)
-     * @see #approveKeyInvalidationRequest(Device)
+     * @see #saveRequestForInvalidationOfCredentials(String)
+     * @see #approveInvalidationOfCredentials(Device)
      */
-    boolean hasKeyInvalidationRequest(String deviceId);
+    boolean hasRequestForInvalidationOfCredentials(String deviceUid);
 
     /**
      * Load transfer item for the given parameters.
      *
-     * @param deviceId   Owning the item.
+     * @param deviceUid   Owning the item.
      * @param transferId Points to {@link TransferItem#transferId}
      * @param id         Points to {@link TransferItem#id}.
      * @param type       Specifying whether this is an incoming or outgoing operation.
      * @return The transfer item that points to the given parameters or null if there is no match.
      * @throws PersistenceException When the given parameters don't point to a valid item.
      */
-    TransferItem loadTransferItem(String deviceId, long transferId, long id, TransferItem.Type type)
+    TransferItem loadTransferItem(String deviceUid, long transferId, long id, TransferItem.Type type)
             throws PersistenceException;
 
     /**
@@ -357,43 +341,41 @@ public interface PersistenceProvider
      * <p>
      * Note: ensure there are no duplicates.
      *
-     * @param deviceId That owns the item.
+     * @param deviceUid That owns the item.
      * @param item     To save.
      */
-    void save(String deviceId, TransferItem item);
+    void save(String deviceUid, TransferItem item);
 
     /**
      * Save all the items in the given list.
      *
-     * @param deviceId That owns the items.
+     * @param deviceUid That owns the items.
      * @param itemList To save.
      */
-    void save(String deviceId, List<? extends TransferItem> itemList);
+    void save(String deviceUid, List<? extends TransferItem> itemList);
 
     /**
      * Save the avatar for the given device.
      * <p>
      * This will be invoked both when the device has an avatar and when it doesn't.
      *
-     * @param deviceId The device that the avatar belongs to.
+     * @param deviceUid The device that the avatar belongs to.
      * @param bitmap   The bitmap data for the avatar.
      */
-    void saveAvatar(String deviceId, byte[] bitmap);
+    void saveAvatar(String deviceUid, byte[] bitmap);
 
     /**
-     * This method call happens when a known device sends a wrong key and now cannot connect. To preserve the key sent
-     * by that device, and the key we generated for it and sent back to it, we will save it here and wait for the
-     * approval of the user in case there is a user.
+     * This method call happens when a known device sends different credentials and now cannot connect.
      * <p>
-     * You can always accept the new key without any notice, but doing so is considered insecure.
+     * You can show the error to the user so that they can decide for themselves.
+     * <p>
+     * At the end, you should remove the existing certificate for the given device id.
      *
-     * @param deviceId    That wants key invalidation.
-     * @param receiverKey The remote device sent.
-     * @param senderKey   We generated.
-     * @see #hasKeyInvalidationRequest(String)
-     * @see #approveKeyInvalidationRequest(Device)
+     * @param deviceUid That wants key invalidation.
+     * @see #hasRequestForInvalidationOfCredentials(String)
+     * @see #approveInvalidationOfCredentials(Device)
      */
-    void saveKeyInvalidationRequest(String deviceId, int receiverKey, int senderKey);
+    void saveRequestForInvalidationOfCredentials(String deviceUid);
 
     /**
      * Change the state of the given item.
@@ -401,7 +383,7 @@ public interface PersistenceProvider
      * Note: this should set the state but should not save it since saving it is spared for
      * {@link #save(String, TransferItem)}.
      *
-     * @param deviceId That owns the copy of the 'item'.
+     * @param deviceUid That owns the copy of the 'item'.
      * @param item     Of which the given state will be applied.
      * @param state    The level of invalidation.
      * @param e        The nullable additional exception cause this state.
@@ -411,7 +393,7 @@ public interface PersistenceProvider
      * @see #STATE_IN_PROGRESS
      * @see #STATE_DONE
      */
-    void setState(String deviceId, TransferItem item, int state, Exception e);
+    void setState(String deviceUid, TransferItem item, int state, Exception e);
 
     /**
      * Sync the device with the persistence database.

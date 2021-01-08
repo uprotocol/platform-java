@@ -20,19 +20,17 @@ public class DefaultDevice extends Device
         this.uid = uid;
     }
 
-    public DefaultDevice(String uid, String username, int senderKey, int receiverKey, String brand, String model,
-                         ClientType type, String versionName, int versionCode, int protocolVersion,
-                         int protocolVersionMin, X509Certificate certificate)
+    public DefaultDevice(String uid, String username, String brand, String model, ClientType type, String versionName,
+                         int versionCode, int protocolVersion, int protocolVersionMin, X509Certificate certificate)
     {
         this(uid);
-        from(username, senderKey, receiverKey, brand, model, type, versionName, versionCode, protocolVersion,
+        from(username, brand, model, type, versionName, versionCode, protocolVersion,
                 protocolVersionMin, false, false, certificate);
     }
 
-    public DefaultDevice(String uid, String username, int senderKey, int receiverKey, String brand, String model,
-                         X509Certificate certificate)
+    public DefaultDevice(String uid, String username, String brand, String model, X509Certificate certificate)
     {
-        this(uid, username, senderKey, receiverKey, brand, model, ClientType.Desktop, "1.0", 1,
+        this(uid, username, brand, model, ClientType.Desktop, "1.0", 1,
                 VERSION_UPROTOCOL, VERSION_UPROTOCOL_MIN, certificate);
     }
 }
