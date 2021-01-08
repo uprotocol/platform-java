@@ -10,8 +10,8 @@ import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.persistence.StreamDescriptor;
-import org.monora.uprotocol.core.protocol.communication.CommunicationException;
-import org.monora.uprotocol.core.protocol.communication.ClientTrustException;
+import org.monora.uprotocol.core.protocol.communication.ProtocolException;
+import org.monora.uprotocol.core.protocol.communication.client.UntrustedClientException;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
 import org.monora.uprotocol.variant.holder.OwnedTransferHolder;
 import org.monora.uprotocol.variant.test.DefaultTestBase;
@@ -55,7 +55,7 @@ public class TransferTest extends DefaultTestBase
     }
 
     @Before
-    public void setUpInitialTransferItems() throws IOException, InterruptedException, CommunicationException
+    public void setUpInitialTransferItems() throws IOException, InterruptedException, ProtocolException
     {
         primarySession.start();
 
@@ -71,7 +71,7 @@ public class TransferTest extends DefaultTestBase
     }
 
     @Test
-    public void sendFilesTest() throws IOException, InterruptedException, CommunicationException
+    public void sendFilesTest() throws IOException, InterruptedException, ProtocolException
     {
         secondarySession.start();
 
@@ -104,7 +104,7 @@ public class TransferTest extends DefaultTestBase
     }
 
     @Test
-    public void flagItemAsDoneTest() throws IOException, InterruptedException, CommunicationException
+    public void flagItemAsDoneTest() throws IOException, InterruptedException, ProtocolException
     {
         secondarySession.start();
 
@@ -128,9 +128,9 @@ public class TransferTest extends DefaultTestBase
         }
     }
 
-    @Test(expected = ClientTrustException.class)
+    @Test(expected = UntrustedClientException.class)
     public void senderFailsToStartTransferIfNotTrusted() throws IOException, InterruptedException,
-            CommunicationException
+            ProtocolException
     {
         primarySession.start();
 
@@ -143,7 +143,7 @@ public class TransferTest extends DefaultTestBase
     }
 
     @Test
-    public void senderStartsTransferIfTrusted() throws IOException, InterruptedException, CommunicationException,
+    public void senderStartsTransferIfTrusted() throws IOException, InterruptedException, ProtocolException,
             PersistenceException
     {
         Device secondaryOnPrimary = primaryPersistence.createDeviceFor(secondaryPersistence.getDeviceUid());

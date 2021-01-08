@@ -16,24 +16,17 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-package org.monora.uprotocol.core.protocol.communication;
+package org.monora.uprotocol.core.protocol.communication.client;
+
+import org.monora.uprotocol.core.network.Device;
 
 /**
- * Thrown when the remote faces an error with the content that this client wants to work with.
+ * This error concerns this client and is thrown when it requests an operation that requires trust on the peer side.
  */
-public class ContentException extends ProtocolException
+public class UntrustedClientException extends UnauthorizedClientException
 {
-    public final Error error;
-
-    public ContentException(Error error)
+    public UntrustedClientException(Device device)
     {
-        this.error = error;
-    }
-
-    public enum Error
-    {
-        NotFound,
-        NotAccessible,
-        AlreadyExists
+        super(device);
     }
 }

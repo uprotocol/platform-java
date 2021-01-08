@@ -16,18 +16,23 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-package org.monora.uprotocol.core.protocol.communication;
+package org.monora.uprotocol.core.protocol.communication.peer;
+
+import org.monora.uprotocol.core.CommunicationBridge;
+import org.monora.uprotocol.core.network.Device;
+import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 
 /**
- * Thrown when remote notifies this client of a failure not defined by the protocol.
+ * This error concerns peers and is thrown when {@link CommunicationBridge} communicates with a peer that has a
+ * different {@link Device#uid} mismatching with the one that it intends to connect to.
  */
-public class UnknownCommunicationErrorException extends CommunicationException
+public class DifferentPeerException extends CommunicationException
 {
-    public final String errorCode;
+    public final String gotUid;
 
-    public UnknownCommunicationErrorException(String errorCode)
+    public DifferentPeerException(Device expected, String gotUid)
     {
-        super();
-        this.errorCode = errorCode;
+        super(expected);
+        this.gotUid = gotUid;
     }
 }

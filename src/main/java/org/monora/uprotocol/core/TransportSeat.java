@@ -10,7 +10,7 @@ import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.persistence.StreamDescriptor;
-import org.monora.uprotocol.core.protocol.communication.CommunicationException;
+import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
 import org.monora.uprotocol.core.transfer.ItemPointer;
@@ -43,10 +43,10 @@ public interface TransportSeat
      * @param type       Of the transfer.
      * @throws PersistenceException   If some of the data is missing for this transfer (i.e., the remote doesn't have
      *                                some permissions enabled in the database).
-     * @throws CommunicationException If the remote doesn't have satisfactory permissions or sent invalid values.
+     * @throws ProtocolException If the remote doesn't have satisfactory permissions or sent invalid values.
      */
     void beginFileTransfer(CommunicationBridge bridge, Device device, long transferId, TransferItem.Type type)
-            throws PersistenceException, CommunicationException;
+            throws PersistenceException, ProtocolException;
 
     /**
      * The remote wants us to notice it.
@@ -73,10 +73,10 @@ public interface TransportSeat
      * @param transferId The unique transfer id to mention a group of items.
      * @param jsonArray  The transfer item data.
      * @throws PersistenceException   If anything related to handling of the persistent data goes wrong.
-     * @throws CommunicationException If something related to permissions or similar goes wrong.
+     * @throws ProtocolException If something related to permissions or similar goes wrong.
      */
     void handleFileTransferRequest(Device device, boolean hasPin, long transferId, String jsonArray)
-            throws PersistenceException, CommunicationException;
+            throws PersistenceException, ProtocolException;
 
     /**
      * The remote has returned the answer to the file transfer request we made with

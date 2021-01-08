@@ -5,7 +5,7 @@ import org.monora.uprotocol.core.TransportSession;
 import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
-import org.monora.uprotocol.core.protocol.communication.CommunicationException;
+import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.variant.DefaultConnectionFactory;
 import org.monora.uprotocol.variant.DefaultTransportSeat;
 import org.monora.uprotocol.variant.persistence.BasePersistenceProvider;
@@ -39,7 +39,7 @@ public class DefaultTestBase
     }
 
     protected CommunicationBridge openConnection(PersistenceProvider persistenceProvider, DeviceAddress address)
-            throws IOException, CommunicationException
+            throws IOException, ProtocolException
     {
         return CommunicationBridge.connect(connectionFactory, persistenceProvider, address, null, 0);
     }

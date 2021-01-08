@@ -4,7 +4,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.network.TransferItem;
-import org.monora.uprotocol.core.protocol.communication.CommunicationException;
+import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
 
 import java.io.IOException;
@@ -38,10 +38,10 @@ public class Transfers
      * @return True if the remote approved of the request.
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
-     * @throws CommunicationException When there is a communication error due to misconfiguration.
+     * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
     public static boolean requestItem(CommunicationBridge bridge, long itemId, long currentPosition) throws IOException,
-            JSONException, CommunicationException
+            JSONException, ProtocolException
     {
         bridge.sendSecure(true, new JSONObject()
                 .put(Keyword.TRANSFER_ITEM_ID, itemId)

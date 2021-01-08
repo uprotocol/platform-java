@@ -8,7 +8,7 @@ import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.ClientType;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
-import org.monora.uprotocol.core.protocol.communication.ClientBlockedException;
+import org.monora.uprotocol.core.protocol.communication.peer.BlockedPeerException;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
 
 import java.net.InetAddress;
@@ -46,10 +46,10 @@ public class DeviceLoader
      *                            will have. For instance, it will be unblocked if blocked and it will be flagged as
      *                            trusted.
      * @throws JSONException          If something goes wrong when inflating the JSON data.* @throws DeviceInsecureException
-     * @throws ClientBlockedException If remote is blocked and has no valid PIN.
+     * @throws BlockedPeerException If remote is blocked and has no valid PIN.
      */
     public static void loadAsServer(PersistenceProvider persistenceProvider, JSONObject object, Device device,
-                                    boolean hasPin) throws JSONException, ClientBlockedException
+                                    boolean hasPin) throws JSONException, BlockedPeerException
     {
         device.uid = object.getString(Keyword.DEVICE_UID);
         if (hasPin)
@@ -64,7 +64,7 @@ public class DeviceLoader
             if (hasPin) {
                 device.isBlocked = false;
             } else if (device.isBlocked)
-                throw new ClientBlockedException(device);
+                throw new BlockedPeerException(device);
         } finally {
             loadFrom(persistenceProvider, object, device);
         }

@@ -7,7 +7,7 @@ import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
-import org.monora.uprotocol.core.protocol.communication.CommunicationException;
+import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 
 import java.util.List;
 
@@ -24,7 +24,7 @@ public class DefaultTransportSeat implements TransportSeat
 
     @Override
     public void beginFileTransfer(CommunicationBridge bridge, Device device, long transferId, TransferItem.Type type)
-            throws PersistenceException, CommunicationException
+            throws PersistenceException, ProtocolException
     {
         if (type.equals(TransferItem.Type.INCOMING))
             receiveFiles(bridge, transferId);
@@ -40,7 +40,7 @@ public class DefaultTransportSeat implements TransportSeat
 
     @Override
     public void handleFileTransferRequest(Device device, boolean hasPin, long transferId, String jsonArray)
-            throws PersistenceException, CommunicationException
+            throws PersistenceException, ProtocolException
     {
         List<TransferItem> itemList = persistenceProvider.toTransferItemList(transferId, jsonArray);
         persistenceProvider.save(device.uid, itemList);

@@ -3,13 +3,13 @@ package org.monora.uprotocol.core.protocol.communication;
 import org.monora.uprotocol.core.network.Device;
 
 /**
- * Thrown when an error related to SSL occurs.
+ * Thrown when an SSL-related error occurs.
  * <p>
- * The cause should reflect what exactly went wrong.
+ * The cause reflects what exactly went wrong.
  */
-public class SecureClientCommunicationException extends ClientCommunicationException
+public class SecurityException extends CommunicationException
 {
-    public SecureClientCommunicationException(Device device, Throwable cause)
+    public SecurityException(Device device, Throwable cause)
     {
         super(device, cause);
 

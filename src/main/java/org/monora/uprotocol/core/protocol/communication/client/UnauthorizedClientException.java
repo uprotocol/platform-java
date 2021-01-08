@@ -16,16 +16,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-package org.monora.uprotocol.core.protocol.communication;
+package org.monora.uprotocol.core.protocol.communication.client;
 
 import org.monora.uprotocol.core.network.Device;
+import org.monora.uprotocol.core.protocol.communication.CommunicationException;
+import org.monora.uprotocol.core.protocol.communication.peer.BlockedPeerException;
 
 /**
- * Thrown when the client is not trusted {@link Device#isTrusted} but wants to do an action that requires trust.
+ * Concerning this client, this error is thrown when it requests operation it is not allowed to perform.
+ *
+ * If this device is blocked on the peer side, still this error will be thrown.
+ *
+ * @see BlockedPeerException
  */
-public class ClientTrustException extends ClientAuthorizationException
+public class UnauthorizedClientException extends CommunicationException
 {
-    public ClientTrustException(Device device)
+    public UnauthorizedClientException(Device device)
     {
         super(device);
     }

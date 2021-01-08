@@ -6,8 +6,8 @@ import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.network.Device;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
-import org.monora.uprotocol.core.protocol.communication.CommunicationException;
-import org.monora.uprotocol.core.protocol.communication.SecureClientCommunicationException;
+import org.monora.uprotocol.core.protocol.communication.ProtocolException;
+import org.monora.uprotocol.core.protocol.communication.SecurityException;
 import org.monora.uprotocol.variant.test.DefaultTestBase;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -18,7 +18,7 @@ import java.util.List;
 public class RequestTest extends DefaultTestBase
 {
     @Test
-    public void requestAcquaintanceTest() throws IOException, InterruptedException, CommunicationException,
+    public void requestAcquaintanceTest() throws IOException, InterruptedException, ProtocolException,
             PersistenceException
     {
         primarySession.start();
@@ -39,7 +39,7 @@ public class RequestTest extends DefaultTestBase
     }
 
     @Test
-    public void requestFileTransferTest() throws IOException, InterruptedException, CommunicationException
+    public void requestFileTransferTest() throws IOException, InterruptedException, ProtocolException
     {
         primarySession.start();
 
@@ -61,8 +61,8 @@ public class RequestTest extends DefaultTestBase
         }
     }
 
-    @Test(expected = SecureClientCommunicationException.class)
-    public void failsWithKeyMismatchTest() throws IOException, InterruptedException, CommunicationException
+    @Test(expected = SecurityException.class)
+    public void failsWithKeyMismatchTest() throws IOException, InterruptedException, ProtocolException
     {
         primarySession.start();
 
@@ -80,7 +80,7 @@ public class RequestTest extends DefaultTestBase
     }
 
     @Test
-    public void connectsAfterKeyMismatchWithRightKey() throws IOException, CommunicationException, InterruptedException
+    public void connectsAfterKeyMismatchWithRightKey() throws IOException, ProtocolException, InterruptedException
     {
         primarySession.start();
 
@@ -92,7 +92,7 @@ public class RequestTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
             bridge.requestAcquaintance();
-        } catch (SecureClientCommunicationException ignored) {
+        } catch (SecurityException ignored) {
         }
 
         primaryPersistence.restoreSecrets();
@@ -105,7 +105,7 @@ public class RequestTest extends DefaultTestBase
     }
 
     @Test
-    public void acceptNewKeysTest() throws IOException, InterruptedException, CommunicationException
+    public void acceptNewKeysTest() throws IOException, InterruptedException, ProtocolException
     {
         primarySession.start();
 
@@ -118,7 +118,7 @@ public class RequestTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
             bridge.requestAcquaintance();
-        } catch (SecureClientCommunicationException e) {
+        } catch (SecurityException e) {
             if (e.getCause() instanceof SSLHandshakeException) {
                 e.device.certificate = null;
                 secondaryPersistence.save(e.device);

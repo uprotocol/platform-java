@@ -18,15 +18,16 @@
 
 package org.monora.uprotocol.core.protocol.communication;
 
-import org.monora.uprotocol.core.network.Device;
-
 /**
- * This error occurs when the remote requests an operation that it cannot perform.
+ * Thrown when remote sends an undefined error code.
  */
-public class ClientAuthorizationException extends ClientCommunicationException
+public class UndefinedErrorCodeException extends ProtocolException
 {
-    public ClientAuthorizationException(Device device)
+    public final String errorCode;
+
+    public UndefinedErrorCodeException(String errorCode)
     {
-        super(device);
+        super();
+        this.errorCode = errorCode;
     }
 }

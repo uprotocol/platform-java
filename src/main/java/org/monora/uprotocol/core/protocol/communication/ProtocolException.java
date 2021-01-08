@@ -18,18 +18,28 @@
 
 package org.monora.uprotocol.core.protocol.communication;
 
-import org.monora.uprotocol.core.network.Device;
-
 /**
- * Thrown when the remote has a {@link Device#uid} different from the one that was targeted.
+ * Thrown when any error that
  */
-public class ClientMismatchException extends ClientAuthorizationException
+public class ProtocolException extends Exception
 {
-    public final String gotUid;
-
-    public ClientMismatchException(Device expected, String gotUid)
+    public ProtocolException()
     {
-        super(expected);
-        this.gotUid = gotUid;
+        super();
+    }
+
+    public ProtocolException(String message)
+    {
+        super(message);
+    }
+
+    public ProtocolException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
+
+    public ProtocolException(Throwable cause)
+    {
+        super(cause);
     }
 }

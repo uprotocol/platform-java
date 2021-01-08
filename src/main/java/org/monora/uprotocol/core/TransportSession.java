@@ -10,9 +10,9 @@ import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
-import org.monora.uprotocol.core.protocol.communication.CommunicationException;
+import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
-import org.monora.uprotocol.core.protocol.communication.SecureClientCommunicationException;
+import org.monora.uprotocol.core.protocol.communication.SecurityException;
 import org.monora.uprotocol.core.spec.alpha.Config;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
 
@@ -91,7 +91,7 @@ public class TransportSession extends CoolSocket
 
             handleRequest(new CommunicationBridge(persistenceProvider, activeConnection, device, deviceAddress),
                     device, deviceAddress, hasPin, request);
-        } catch (SecureClientCommunicationException e) {
+        } catch (SecurityException e) {
             if (!persistenceProvider.hasRequestForInvalidationOfCredentials(e.device.uid)) {
                 persistenceProvider.saveRequestForInvalidationOfCredentials(e.device.uid);
                 transportSeat.notifyDeviceCredentialsChanged(e.device);
@@ -106,7 +106,7 @@ public class TransportSession extends CoolSocket
 
     private void handleRequest(CommunicationBridge bridge, Device device, DeviceAddress deviceAddress,
                                boolean hasPin, JSONObject response) throws JSONException, IOException,
-            PersistenceException, CommunicationException
+            PersistenceException, ProtocolException
     {
         switch (response.getString(Keyword.REQUEST)) {
             case (Keyword.REQUEST_TRANSFER): {

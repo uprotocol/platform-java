@@ -28,6 +28,11 @@ import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
 import org.monora.uprotocol.core.protocol.communication.*;
+import org.monora.uprotocol.core.protocol.communication.SecurityException;
+import org.monora.uprotocol.core.protocol.communication.CommunicationException;
+import org.monora.uprotocol.core.protocol.communication.client.UnauthorizedClientException;
+import org.monora.uprotocol.core.protocol.communication.client.UntrustedClientException;
+import org.monora.uprotocol.core.protocol.communication.peer.DifferentPeerException;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
 
 import javax.net.ssl.SSLSocket;
@@ -120,12 +125,12 @@ public class CommunicationBridge implements Closeable
      * @return The communication bridge to communicate with the remote.
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
-     * @throws CommunicationException When there is a communication error due to misconfiguration.
+     * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
     public static CommunicationBridge connect(ConnectionFactory connectionFactory,
                                               PersistenceProvider persistenceProvider, List<DeviceAddress> addressList,
                                               Device device, int pin) throws JSONException, IOException,
-            CommunicationException
+            ProtocolException
     {
         if (addressList.size() < 1)
             throw new IllegalArgumentException("The address list should contain at least one item.");
@@ -133,7 +138,7 @@ public class CommunicationBridge implements Closeable
         for (DeviceAddress address : addressList) {
             try {
                 return connect(connectionFactory, persistenceProvider, address, device, pin);
-            } catch (IOException | ClientMismatchException ignored) {
+            } catch (IOException | DifferentPeerException ignored) {
             }
         }
 
@@ -156,13 +161,13 @@ public class CommunicationBridge implements Closeable
      * @return The communication bridge to communicate with the remote.
      * @throws IOException                        If an IO error occurs.
      * @throws JSONException                      If something goes wrong when creating JSON object.
-     * @throws CommunicationException             When there is a communication error due to misconfiguration.
-     * @throws SecureClientCommunicationException If something goes wrong while establishing a secure connection.
+     * @throws ProtocolException             When there is a communication error due to misconfiguration.
+     * @throws SecurityException If something goes wrong while establishing a secure connection.
      */
     public static CommunicationBridge connect(ConnectionFactory connectionFactory,
                                               PersistenceProvider persistenceProvider, DeviceAddress deviceAddress,
                                               Device device, int pin)
-            throws IOException, JSONException, CommunicationException
+            throws IOException, JSONException, ProtocolException
     {
         ActiveConnection activeConnection = connectionFactory.openConnection(deviceAddress.inetAddress);
         String remoteDeviceUid = activeConnection.receive().getAsString();
@@ -172,7 +177,7 @@ public class CommunicationBridge implements Closeable
 
         if (device != null && device.uid != null && !device.uid.equals(remoteDeviceUid)) {
             activeConnection.closeSafely();
-            throw new ClientMismatchException(device, remoteDeviceUid);
+            throw new DifferentPeerException(device, remoteDeviceUid);
         }
 
         if (device == null)
@@ -194,7 +199,7 @@ public class CommunicationBridge implements Closeable
 
     protected static void convertToSSL(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
                                        ActiveConnection activeConnection, Device device, boolean isClient)
-            throws IOException, ClientCommunicationException
+            throws IOException, CommunicationException
     {
         Socket socket = activeConnection.getSocket();
         SSLSocketFactory sslSocketFactory = persistenceProvider.getSSLContextFor(device).getSocketFactory();
@@ -237,14 +242,14 @@ public class CommunicationBridge implements Closeable
         try {
             sslSocket.startHandshake();
         } catch (Exception e) {
-            throw new SecureClientCommunicationException(device, e);
+            throw new SecurityException(device, e);
         }
     }
 
     /**
      * Returns the active connection instance.
      * <p>
-     * Even though this is available to use, the recommend approach is to use the available features.
+     * Even though this is available to use, the recommended approach is to use the available features.
      *
      * @return The active connection instance.
      */
@@ -305,9 +310,9 @@ public class CommunicationBridge implements Closeable
      * @return True if successful.
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
-     * @throws CommunicationException When there is a communication error due to misconfiguration.
+     * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public boolean requestAcquaintance() throws JSONException, IOException, CommunicationException
+    public boolean requestAcquaintance() throws JSONException, IOException, ProtocolException
     {
         sendSecure(true, new JSONObject().put(Keyword.REQUEST, Keyword.REQUEST_ACQUAINTANCE));
         return receiveResult();
@@ -329,10 +334,10 @@ public class CommunicationBridge implements Closeable
      * @return True if successful.
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
-     * @throws CommunicationException When there is a communication error due to misconfiguration.
+     * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
     public boolean requestFileTransfer(long transferId, List<TransferItem> itemList) throws JSONException, IOException,
-            CommunicationException
+            ProtocolException
     {
         sendSecure(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER)
@@ -357,10 +362,10 @@ public class CommunicationBridge implements Closeable
      * @return True if successful.
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
-     * @throws CommunicationException When there is a communication error due to misconfiguration.
+     * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
     public boolean requestFileTransferStart(long transferId, TransferItem.Type type) throws JSONException, IOException,
-            CommunicationException
+            ProtocolException
     {
         sendSecure(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER_JOB)
@@ -377,10 +382,10 @@ public class CommunicationBridge implements Closeable
      * @return True if the request was processed successfully.
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
-     * @throws CommunicationException When there is a communication error due to misconfiguration.
+     * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
     public boolean requestNotifyTransferState(long transferId, boolean accepted) throws JSONException, IOException,
-            CommunicationException
+            ProtocolException
     {
         sendSecure(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_NOTIFY_TRANSFER_STATE)
@@ -396,9 +401,9 @@ public class CommunicationBridge implements Closeable
      * @return True if the request was processed successfully.
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
-     * @throws CommunicationException When there is a communication error due to misconfiguration.
+     * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public boolean requestTextTransfer(String text) throws JSONException, IOException, CommunicationException
+    public boolean requestTextTransfer(String text) throws JSONException, IOException, ProtocolException
     {
         sendSecure(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER_TEXT)
@@ -418,21 +423,21 @@ public class CommunicationBridge implements Closeable
      * @return The JSON data that doesn't seem to contain an error.
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
-     * @throws CommunicationException When there is a communication error due to misconfiguration.
+     * @throws ProtocolException When there is a communication error due to misconfiguration.
      * @see #receiveSecure()
      * @see #sendError(ActiveConnection, String)
      */
     public static JSONObject receiveSecure(ActiveConnection activeConnection, Device device) throws IOException,
-            JSONException, CommunicationException
+            JSONException, ProtocolException
     {
         JSONObject jsonObject = activeConnection.receive().getAsJson();
         if (jsonObject.has(Keyword.ERROR)) {
             final String errorCode = jsonObject.getString(Keyword.ERROR);
             switch (errorCode) {
                 case Keyword.ERROR_NOT_ALLOWED:
-                    throw new ClientAuthorizationException(device);
+                    throw new UnauthorizedClientException(device);
                 case Keyword.ERROR_NOT_TRUSTED:
-                    throw new ClientTrustException(device);
+                    throw new UntrustedClientException(device);
                 case Keyword.ERROR_NOT_ACCESSIBLE:
                     throw new ContentException(ContentException.Error.NotAccessible);
                 case Keyword.ERROR_ALREADY_EXISTS:
@@ -440,9 +445,9 @@ public class CommunicationBridge implements Closeable
                 case Keyword.ERROR_NOT_FOUND:
                     throw new ContentException(ContentException.Error.NotFound);
                 case Keyword.ERROR_UNKNOWN:
-                    throw new CommunicationException();
+                    throw new ProtocolException();
                 default:
-                    throw new UnknownCommunicationErrorException(errorCode);
+                    throw new UndefinedErrorCodeException(errorCode);
             }
         }
         return jsonObject;
@@ -462,11 +467,11 @@ public class CommunicationBridge implements Closeable
      * @return The JSON data that doesn't seem to contain an error.
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
-     * @throws CommunicationException When there is a communication error due to misconfiguration.
+     * @throws ProtocolException When there is a communication error due to misconfiguration.
      * @see #receiveSecure(ActiveConnection, Device)
      * @see #sendError(ActiveConnection, String)
      */
-    public JSONObject receiveSecure() throws IOException, JSONException, CommunicationException
+    public JSONObject receiveSecure() throws IOException, JSONException, ProtocolException
     {
         return receiveSecure(getActiveConnection(), getDevice());
     }
@@ -479,11 +484,11 @@ public class CommunicationBridge implements Closeable
      * @return True if the result is positive.
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
-     * @throws CommunicationException When there is a communication error due to misconfiguration.
+     * @throws ProtocolException When there is a communication error due to misconfiguration.
      * @see #sendResult(ActiveConnection, boolean)
      */
     public static boolean receiveResult(ActiveConnection activeConnection, Device device) throws IOException,
-            JSONException, CommunicationException
+            JSONException, ProtocolException
     {
         return resultOf(receiveSecure(activeConnection, device));
     }
@@ -498,10 +503,10 @@ public class CommunicationBridge implements Closeable
      * @return True if the result is positive.
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
-     * @throws CommunicationException When there is a communication error due to misconfiguration.
+     * @throws ProtocolException When there is a communication error due to misconfiguration.
      * @see #sendResult(ActiveConnection, boolean)
      */
-    public boolean receiveResult() throws IOException, JSONException, CommunicationException
+    public boolean receiveResult() throws IOException, JSONException, ProtocolException
     {
         return receiveResult(getActiveConnection(), getDevice());
     }
@@ -526,17 +531,17 @@ public class CommunicationBridge implements Closeable
      * @param exception        With which this will decide which error code to send.
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
-     * @throws CommunicationException With the cause exception if the error is not known.
+     * @throws ProtocolException With the cause exception if the error is not known.
      * @see #receiveSecure(ActiveConnection, Device)
      */
     public static void sendError(ActiveConnection activeConnection, Exception exception) throws IOException,
-            JSONException, CommunicationException
+            JSONException, ProtocolException
     {
         try {
             throw exception;
-        } catch (ClientTrustException e) {
+        } catch (UntrustedClientException e) {
             sendError(activeConnection, Keyword.ERROR_NOT_TRUSTED);
-        } catch (ClientAuthorizationException e) {
+        } catch (UnauthorizedClientException e) {
             sendError(activeConnection, Keyword.ERROR_NOT_ALLOWED);
         } catch (PersistenceException e) {
             sendError(activeConnection, Keyword.ERROR_NOT_FOUND);
@@ -555,7 +560,7 @@ public class CommunicationBridge implements Closeable
                     sendError(activeConnection, Keyword.ERROR_UNKNOWN);
             }
         } catch (Exception e) {
-            throw new CommunicationException("An unknown error was thrown during the communication", e);
+            throw new ProtocolException("An unknown error was thrown during the communication", e);
         }
     }
 
@@ -581,10 +586,10 @@ public class CommunicationBridge implements Closeable
      * @param exception With which this will decide which error code to send.
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
-     * @throws CommunicationException With the cause exception if the error is not known.
+     * @throws ProtocolException With the cause exception if the error is not known.
      * @see #receiveSecure(ActiveConnection, Device)
      */
-    public void sendError(Exception exception) throws IOException, JSONException, CommunicationException
+    public void sendError(Exception exception) throws IOException, JSONException, ProtocolException
     {
         sendError(getActiveConnection(), exception);
     }

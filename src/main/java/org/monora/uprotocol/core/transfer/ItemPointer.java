@@ -3,7 +3,7 @@ package org.monora.uprotocol.core.transfer;
 import org.monora.uprotocol.core.network.TransferItem;
 
 /**
- * Hols the details for a requested {@link TransferItem}.
+ * Holds the details for a requested {@link TransferItem}.
  */
 public class ItemPointer
 {
