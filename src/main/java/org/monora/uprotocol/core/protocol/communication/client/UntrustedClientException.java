@@ -21,7 +21,8 @@ package org.monora.uprotocol.core.protocol.communication.client;
 import org.monora.uprotocol.core.network.Client;
 
 /**
- * This error concerns this client and is thrown when it requests an operation that requires trust on the peer side.
+ * This error concerns this client and is thrown when it requests an operation that requires trust on the remote client
+ * side.
  */
 public class UntrustedClientException extends UnauthorizedClientException
 {

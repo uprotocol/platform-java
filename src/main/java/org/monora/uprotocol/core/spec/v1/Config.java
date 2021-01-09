@@ -9,7 +9,7 @@ public class Config
 
     public static final int PORT_UPROTOCOL = 1128;
 
-    public static final int LENGTH_DEVICE_USERNAME = 32;
+    public static final int LENGTH_CLIENT_USERNAME = 32;
 
     public static final int VERSION_UPROTOCOL = 1;
 

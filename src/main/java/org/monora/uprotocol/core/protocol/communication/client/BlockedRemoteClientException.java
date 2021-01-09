@@ -4,9 +4,9 @@ import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 
 /**
- * This error concerns the peer and is thrown when it reaches this client while it is blocked.
+ * This error concerns a remote client and is thrown when it reaches this client while it is blocked.
  * <p>
- * If this clients connects to a blocked peer, the blocked status will be removed.
+ * If this client connects to a blocked remote client, the blocked status will be removed.
  */
 public class BlockedRemoteClientException extends CommunicationException
 {

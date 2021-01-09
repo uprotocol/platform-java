@@ -24,7 +24,7 @@
     <artifactId>core</artifactId>
     <version>0.1-ALPHA04</version>
     <name>UProtocol</name>
-    <description>Specification for peer-to-peer content exchange that aims to unify existing solutions.</description>
+    <description>Java implementation of uprotocol, an open specification for p2p content exchange</description>
     <licenses>
         <license>
             <name>MIT License</name>

@@ -14,7 +14,7 @@ import org.monora.uprotocol.core.spec.v1.Keyword;
 import java.net.InetAddress;
 import java.util.Base64;
 
-import static org.monora.uprotocol.core.spec.v1.Config.LENGTH_DEVICE_USERNAME;
+import static org.monora.uprotocol.core.spec.v1.Config.LENGTH_CLIENT_USERNAME;
 
 /**
  * Handles loading details of remote.
@@ -83,8 +83,8 @@ public class ClientLoader
         client.protocolVersion = object.getInt(Keyword.CLIENT_PROTOCOL_VERSION);
         client.protocolVersionMin = object.getInt(Keyword.CLIENT_PROTOCOL_VERSION_MIN);
 
-        if (client.username.length() > LENGTH_DEVICE_USERNAME)
-            client.username = client.username.substring(0, LENGTH_DEVICE_USERNAME);
+        if (client.username.length() > LENGTH_CLIENT_USERNAME)
+            client.username = client.username.substring(0, LENGTH_CLIENT_USERNAME);
 
         persistenceProvider.save(client);
 

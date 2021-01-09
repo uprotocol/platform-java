@@ -3,7 +3,7 @@ package org.monora.uprotocol.core.protocol.communication;
 import org.monora.uprotocol.core.network.Client;
 
 /**
- * This is a high-level error that is thrown when communication with a peer fails in some way.
+ * This is a high-level error that is thrown when communication with a remote client fails in some way.
  * <p>
  * The main difference from {@link ProtocolException} is this exception also shows with which client it occurred.
  */

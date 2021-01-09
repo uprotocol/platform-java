@@ -204,10 +204,10 @@ public interface PersistenceProvider
     byte[] getClientPicture();
 
     /**
-     * Returns the avatar for the given device.
+     * Returns the given client's picture.
      * <p>
-     * If the given device's {@link Client#uid} is equal to {@link #getClientUid()}, this should return the avatar
-     * for this client.
+     * If the given client's {@link Client#uid} is equal to {@link #getClientUid()}, this should return this client's
+     * picture.
      *
      * @param client For which the avatar will be provided.
      * @return The bitmap data for the avatar if exists, or zero-length byte array if it doesn't.
@@ -357,8 +357,8 @@ public interface PersistenceProvider
      * <p>
      * This will always be invoked whether or not the bitmap is empty.
      *
-     * @param clientUid The device that the avatar belongs to.
-     * @param bitmap    The bitmap data for the avatar.
+     * @param clientUid The client that the picture belongs to.
+     * @param bitmap    The bitmap data for the picture.
      */
     void saveClientPicture(String clientUid, byte[] bitmap);
 
@@ -367,7 +367,7 @@ public interface PersistenceProvider
      * <p>
      * You can show the error to the user so that they can decide for themselves.
      * <p>
-     * At the end, you should remove the existing certificate for the given device id.
+     * Finally, you should remove the existing certificate for the given client uid.
      *
      * @param clientUid That wants key invalidation.
      * @see #hasRequestForInvalidationOfCredentials(String)

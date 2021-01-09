@@ -104,7 +104,7 @@ public interface TransportSeat
      *
      * @param transferId The transfer id as in {@link TransferItem#transferId}
      * @param clientUid  The {@link Client#uid} if this needs to concern only the given client, or null
-     *                   you need check any transfer process for any device.
+     *                   you need check all transfer processes.
      * @param type       To limit the type of the transfer as in {@link TransferItem#type}.
      * @return True if there is an ongoing transfer for the given parameters.
      */

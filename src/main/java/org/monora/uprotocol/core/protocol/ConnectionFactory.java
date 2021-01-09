@@ -25,7 +25,7 @@ public interface ConnectionFactory
     ActiveConnection openConnection(InetAddress address) throws IOException;
 
     /**
-     * Invoked before establishing a secure connection with a peer.
+     * Invoked before establishing a secure connection with a remote client.
      * <p>
      * The cipher suites enabled by default can be found in the cipher list parameter.
      * <p>
