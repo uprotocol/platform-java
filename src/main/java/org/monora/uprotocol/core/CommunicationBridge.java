@@ -190,6 +190,7 @@ public class CommunicationBridge implements Closeable
 
         activeConnection.reply(persistenceProvider.deviceAsJson(pin));
 
+
         DeviceLoader.loadAsClient(persistenceProvider, receiveSecure(activeConnection, device), device);
         receiveResult(activeConnection, device);
         convertToSSL(connectionFactory, persistenceProvider, activeConnection, device, true);
@@ -227,9 +228,12 @@ public class CommunicationBridge implements Closeable
             try {
                 Certificate certificate = event.getPeerCertificates()[0];
 
-                if (certificate instanceof X509Certificate)
-                    device.certificate = (X509Certificate) certificate;
-                else
+                if (certificate instanceof X509Certificate) {
+                    if (!certificate.equals(device.certificate)) {
+                        device.certificate = (X509Certificate) certificate;
+                        persistenceProvider.save(device);
+                    }
+                } else
                     throw new CertificateException("The certificate is not in X.509 format");
             } catch (Exception e) {
                 device.certificate = null;
