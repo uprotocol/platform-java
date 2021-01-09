@@ -78,7 +78,7 @@ public interface PersistenceProvider
      *
      * @param client Of whose keys will be approved.
      * @return True if there were a request and now approved, or false there were no request.
-     * @see Client#certificate
+     * @see Client#getClientCertificate()
      * @see #hasRequestForInvalidationOfCredentials(String)
      * @see #saveRequestForInvalidationOfCredentials(String)
      */
@@ -121,15 +121,15 @@ public interface PersistenceProvider
     {
         Client client = getClient();
         JSONObject object = new JSONObject()
-                .put(Keyword.CLIENT_UID, client.uid)
-                .put(Keyword.CLIENT_MANUFACTURER, client.brand)
-                .put(Keyword.CLIENT_PRODUCT, client.model)
-                .put(Keyword.CLIENT_USERNAME, client.username)
-                .put(Keyword.CLIENT_TYPE, client.clientType)
-                .put(Keyword.CLIENT_VERSION_CODE, client.versionCode)
-                .put(Keyword.CLIENT_VERSION_NAME, client.versionName)
-                .put(Keyword.CLIENT_PROTOCOL_VERSION, client.protocolVersion)
-                .put(Keyword.CLIENT_PROTOCOL_VERSION_MIN, client.protocolVersionMin)
+                .put(Keyword.CLIENT_UID, client.getClientUid())
+                .put(Keyword.CLIENT_MANUFACTURER, client.getClientManufacturer())
+                .put(Keyword.CLIENT_PRODUCT, client.getClientProduct())
+                .put(Keyword.CLIENT_NICKNAME, client.getClientNickname())
+                .put(Keyword.CLIENT_TYPE, client.getClientType())
+                .put(Keyword.CLIENT_VERSION_CODE, client.getClientVersionCode())
+                .put(Keyword.CLIENT_VERSION_NAME, client.getClientVersionName())
+                .put(Keyword.CLIENT_PROTOCOL_VERSION, client.getClientProtocolVersion())
+                .put(Keyword.CLIENT_PROTOCOL_VERSION_MIN, client.getClientProtocolVersionMin())
                 .put(Keyword.CLIENT_PIN, pin);
 
         byte[] clientAvatar = getClientPicture();
@@ -206,8 +206,8 @@ public interface PersistenceProvider
     /**
      * Returns the given client's picture.
      * <p>
-     * If the given client's {@link Client#uid} is equal to {@link #getClientUid()}, this should return this client's
-     * picture.
+     * If the given client's {@link Client#getClientUid()} is equal to {@link #getClientUid()}, this should return this
+     * client's picture.
      *
      * @param client For which the avatar will be provided.
      * @return The bitmap data for the avatar if exists, or zero-length byte array if it doesn't.
@@ -321,7 +321,7 @@ public interface PersistenceProvider
     /**
      * Save this client in the persistence database.
      * <p>
-     * Do not hold any duplicates, and verify it using the {@link Client#uid} field.
+     * Do not hold any duplicates, and verify it using the {@link Client#getClientUid()} field.
      *
      * @param client To save.
      */
@@ -397,7 +397,8 @@ public interface PersistenceProvider
      * Sync the client with the persistence database.
      *
      * @param client To sync.
-     * @throws PersistenceException When there is no client associated with the unique identifier {@link Client#uid}.
+     * @throws PersistenceException When there is no client associated with the unique identifier
+     *                              {@link Client#getClientUid()}.
      */
     void sync(Client client) throws PersistenceException;
 

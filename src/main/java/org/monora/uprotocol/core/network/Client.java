@@ -5,118 +5,251 @@ import org.monora.uprotocol.core.protocol.ClientType;
 import java.security.cert.X509Certificate;
 
 /**
- * A client is a representation of a uprotocol client using the latest information it has provided in a previous
- * communication.
+ * This interface helps generate client specific information.
+ *
+ * @see Clients
  */
-public abstract class Client
+public interface Client
 {
     /**
-     * Represents the unique identifier for the device.
-     */
-    public String uid;
-
-    /**
-     * The user-preferred username representing the device.
-     */
-    public String username;
-
-    /**
-     * The version name for the client running on the device.
-     */
-    public String versionName;
-
-    /**
-     * The brand/manufacturer of the device.
-     */
-    public String brand;
-
-    /**
-     * The model name of the device.
-     */
-    public String model;
-
-    /**
-     * The client type.
-     */
-    public ClientType clientType;
-
-    /**
-     * The version code for the client running on the device.
-     */
-    public int versionCode;
-
-    /**
-     * The latest uprotocol version supported by the client.
-     */
-    public int protocolVersion;
-
-    /**
-     * Minimum supported uprotocol version for this client.
-     */
-    public int protocolVersionMin;
-
-    /**
-     * The last timestamp that the device was used.
-     */
-    public long lastUsageTime;
-
-    public X509Certificate certificate;
-
-    /**
-     * This represents whether this device is trusted by this client. Trusted devices has more access
-     * rights than those who don't.
+     * This certificate helps secure the communication between two or more devices.
      *
-     * @see #isBlocked
+     * @return The client's X.509 certificate used for authentication and encryption.
+     * @see #setClientCertificate(X509Certificate)
      */
-    public boolean isTrusted;
+    X509Certificate getClientCertificate();
 
     /**
-     * This represents whether this device is blocked on this client. When devices are blocked they
-     * cannot access unless the user for this client unblocks it.
+     * The last time contacted with this client.
      *
-     * @see #isTrusted
+     * @return The time in UNIX epoch format.
+     * @see #setClientLastUsageTime(long)
      */
-    public boolean isBlocked;
+    long getClientLastUsageTime();
 
     /**
-     * Determine whether this device instance belongs to this client (us).
-     */
-    public boolean isLocal;
-
-    @Override
-    public boolean equals(Object obj)
-    {
-        if (obj instanceof Client) {
-            return uid != null && uid.equals(((Client) obj).uid);
-        }
-        return super.equals(obj);
-    }
-
-    /**
-     * Load the details for this instance from another instance.
+     * The manufacturer of the client specifies the specific environment.
      *
-     * @param client To load from.
+     * @return The manufacturer of the client.
+     * @see #setClientManufacturer(String)
+     * @see #getClientProduct()
      */
-    public void from(Client client)
-    {
-        from(client.username, client.brand, client.model, client.clientType, client.versionName, client.versionCode,
-                client.protocolVersion, client.protocolVersionMin, client.isTrusted, client.isBlocked, client.certificate);
-    }
+    String getClientManufacturer();
 
-    protected void from(String username, String brand, String model, ClientType clientType, String versionName,
-                        int versionCode, int protocolVersion, int protocolVersionMin, boolean isTrusted,
-                        boolean isBlocked, X509Certificate certificate)
-    {
-        this.username = username;
-        this.brand = brand;
-        this.model = model;
-        this.clientType = clientType;
-        this.versionName = versionName;
-        this.versionCode = versionCode;
-        this.protocolVersion = protocolVersion;
-        this.protocolVersionMin = protocolVersionMin;
-        this.isTrusted = isTrusted;
-        this.isBlocked = isBlocked;
-        this.certificate = certificate;
-    }
+    /**
+     * The preferred nickname for the client.
+     *
+     * @return The client's nickname of choice.
+     * @see #setClientNickname(String)
+     */
+    String getClientNickname();
+
+    /**
+     * The product is an extra information under {@link #getClientManufacturer()}.
+     *
+     * @return The product name of the client (sub-brand).
+     * @see #setClientProduct(String)
+     * @see #getClientManufacturer()
+     */
+    String getClientProduct();
+
+    /**
+     * The protocol version the specific version that the client was designed to work with.
+     *
+     * @return The target protocol (uprotocol specification) version.
+     * @see #setClientProtocolVersion(int)
+     * @see #getClientProtocolVersionMin()
+     */
+    int getClientProtocolVersion();
+
+    /**
+     * The minimum supported protocol version shows the oldest generation of protocol that the client can work with.
+     *
+     * @return The minimum supported protocol by the client.
+     * @see #setClientProtocolVersionMin(int)
+     * @see #getClientProtocolVersion()
+     */
+    int getClientProtocolVersionMin();
+
+    /**
+     * This tells on which type of device that the client runs on.
+     *
+     * @return The type of device that the client runs on.
+     * @see #setClientType(ClientType)
+     */
+    ClientType getClientType();
+
+    /**
+     * Represents the unique identifier for the client.
+     *
+     * @return The unique identifier of the client.
+     * @see #setClientUid(String)
+     */
+    String getClientUid();
+
+    /**
+     * The client specific version code.
+     * <p>
+     * This shouldn't tell anything about the protocol itself.
+     *
+     * @return The client's version code.
+     * @see #setClientVersionCode(int)
+     * @see #getClientProtocolVersion()
+     */
+    int getClientVersionCode();
+
+    /**
+     * The client specific version name.
+     * <p>
+     * This shouldn't tell anything about the protocol itself.
+     *
+     * @return The client's version name.
+     * @see #setClientVersionName(String)
+     * @see #getClientProtocolVersion()
+     */
+    String getClientVersionName();
+
+    /**
+     * Whether or not the (remote) client is blocked on this client.
+     *
+     * @return True if the client is blocked or false if not.
+     * @see #setClientBlocked(boolean)
+     */
+    boolean isClientBlocked();
+
+    /**
+     * Whether or not this client instance points to the client itself.
+     *
+     * @return True if this is a loopback client.
+     * @see #setClientLocal(boolean)
+     */
+    boolean isClientLocal();
+
+    /**
+     * Whether or not the (remote) client is trusted on this client.
+     * <p>
+     * Trusted devices has more access rights than those who don't.
+     *
+     * @return True if this client is trusted.
+     * @see #setClientTrusted(boolean)
+     */
+    boolean isClientTrusted();
+
+    /**
+     * Set whether or not this client is blocked.
+     *
+     * @param blocked True if blocked or false if otherwise.
+     * @see #isClientBlocked()
+     */
+    void setClientBlocked(boolean blocked);
+
+    /**
+     * Set the client trust certificate.
+     *
+     * @param certificate The certificate.
+     * @see #getClientCertificate()
+     */
+    void setClientCertificate(X509Certificate certificate);
+
+    /**
+     * Set the last usage time of this client.
+     *
+     * @param lastUsageTime The last usage time in UNIX epoch time format.
+     * @see #getClientLastUsageTime()
+     */
+    void setClientLastUsageTime(long lastUsageTime);
+
+    /**
+     * Set whether or not this client is a loopback instance.
+     *
+     * @param local True if this is a loopback client representing itself or false if otherwise.
+     * @see #isClientLocal()
+     */
+    void setClientLocal(boolean local);
+
+    /**
+     * Set the client's manufacturer.
+     *
+     * @param manufacturer The manufacturer.
+     * @see #getClientManufacturer()
+     * @see #setClientProduct(String)
+     */
+    void setClientManufacturer(String manufacturer);
+
+    /**
+     * Set the nickname of this client.
+     *
+     * @param nickname To be set.
+     * @see #getClientNickname()
+     */
+    void setClientNickname(String nickname);
+
+    /**
+     * Set the product name of this client (sub-brand)
+     *
+     * @param product The name.
+     * @see #getClientProduct()
+     * @see #setClientManufacturer(String)
+     */
+    void setClientProduct(String product);
+
+    /**
+     * Set the target protocol version of the client.
+     *
+     * @param protocolVersion That the client is targeting.
+     * @see #getClientProtocolVersion()
+     * @see #setClientProtocolVersionMin(int)
+     */
+    void setClientProtocolVersion(int protocolVersion);
+
+    /**
+     * Set the minimum protocol version supported by the client.
+     *
+     * @param protocolVersionMin That the client supports.
+     * @see #getClientProtocolVersionMin()
+     * @see #setClientProtocolVersion(int)
+     */
+    void setClientProtocolVersionMin(int protocolVersionMin);
+
+    /**
+     * Set whether or not this client is trusted.
+     *
+     * @param trusted True if trusted or false if otherwise.
+     * @see #isClientTrusted()
+     */
+    void setClientTrusted(boolean trusted);
+
+    /**
+     * Set the type of the client (the type of device that the client runs on).
+     *
+     * @param type That the client runs on.
+     * @see #getClientType()
+     */
+    void setClientType(ClientType type);
+
+    /**
+     * Set the client's unique identifier.
+     *
+     * @param uid To be set.
+     * @see #getClientUid()
+     */
+    void setClientUid(String uid);
+
+    /**
+     * Set the client's version code.
+     *
+     * @param versionCode To be set.
+     * @see #getClientVersionCode()
+     * @see #setClientVersionName(String)
+     */
+    void setClientVersionCode(int versionCode);
+
+    /**
+     * Set the client's version name.
+     *
+     * @param versionName To be set.
+     * @see #getClientVersionName()
+     * @see #setClientVersionCode(int)
+     */
+    void setClientVersionName(String versionName);
 }

@@ -25,6 +25,7 @@ public class Keyword
 {
     public static final String
             CLIENT_MANUFACTURER = "manufacturer",
+            CLIENT_NICKNAME = "nickname",
             CLIENT_PICTURE = "picture",
             CLIENT_PIN = "pin",
             CLIENT_PRODUCT = "product",
@@ -32,7 +33,6 @@ public class Keyword
             CLIENT_PROTOCOL_VERSION_MIN = "minimumProtocolVersion",
             CLIENT_TYPE = "clientType",
             CLIENT_UID = "clientUid",
-            CLIENT_USERNAME = "user",
             CLIENT_VERSION_NAME = "versionName",
             CLIENT_VERSION_CODE = "versionCode",
             ERROR = "error",

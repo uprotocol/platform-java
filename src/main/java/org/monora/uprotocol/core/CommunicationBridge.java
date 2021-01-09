@@ -177,7 +177,7 @@ public class CommunicationBridge implements Closeable
         clientAddress.clientUid = remoteClientUid;
         persistenceProvider.save(clientAddress);
 
-        if (client != null && client.uid != null && !client.uid.equals(remoteClientUid)) {
+        if (client != null && client.getClientUid() != null && !client.getClientUid().equals(remoteClientUid)) {
             activeConnection.closeSafely();
             throw new DifferentRemoteClientException(client, remoteClientUid);
         }
@@ -218,7 +218,7 @@ public class CommunicationBridge implements Closeable
         } else {
             sslSocket.setUseClientMode(false);
 
-            if (client.certificate == null) {
+            if (client.getClientCertificate() == null) {
                 sslSocket.setWantClientAuth(true);
             } else {
                 sslSocket.setNeedClientAuth(true);
@@ -230,14 +230,14 @@ public class CommunicationBridge implements Closeable
                 Certificate certificate = event.getPeerCertificates()[0];
 
                 if (certificate instanceof X509Certificate) {
-                    if (!certificate.equals(client.certificate)) {
-                        client.certificate = (X509Certificate) certificate;
+                    if (!certificate.equals(client.getClientCertificate())) {
+                        client.setClientCertificate((X509Certificate) certificate);
                         persistenceProvider.save(client);
                     }
                 } else
                     throw new CertificateException("The certificate is not in X.509 format");
             } catch (Exception e) {
-                client.certificate = null;
+                client.setClientCertificate(null);
                 e.printStackTrace();
             }
         });
@@ -352,7 +352,7 @@ public class CommunicationBridge implements Closeable
         boolean result = receiveResult();
 
         if (result)
-            getPersistenceProvider().save(getRemoteClient().uid, itemList);
+            getPersistenceProvider().save(getRemoteClient().getClientUid(), itemList);
 
         return result;
     }

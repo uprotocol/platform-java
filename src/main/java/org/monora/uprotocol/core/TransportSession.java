@@ -10,8 +10,8 @@ import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
-import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
+import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
 import org.monora.uprotocol.core.spec.v1.Config;
 import org.monora.uprotocol.core.spec.v1.Keyword;
@@ -92,11 +92,12 @@ public class TransportSession extends CoolSocket
             handleRequest(new CommunicationBridge(persistenceProvider, activeConnection, client, clientAddress),
                     client, clientAddress, hasPin, request);
         } catch (SecurityException e) {
-            if (!persistenceProvider.hasRequestForInvalidationOfCredentials(e.client.uid)) {
-                persistenceProvider.saveRequestForInvalidationOfCredentials(e.client.uid);
+            if (!persistenceProvider.hasRequestForInvalidationOfCredentials(e.client.getClientUid())) {
+                persistenceProvider.saveRequestForInvalidationOfCredentials(e.client.getClientUid());
                 transportSeat.notifyClientCredentialsChanged(e.client);
             }
         } catch (Exception e) {
+            // TODO: 1/10/21 Should it print errors?
             try {
                 CommunicationBridge.sendError(activeConnection, e);
             } catch (Exception ignored) {
@@ -147,9 +148,9 @@ public class TransportSession extends CoolSocket
                 else if (TransferItem.Type.OUTGOING.equals(type))
                     type = TransferItem.Type.INCOMING;
 
-                if (TransferItem.Type.INCOMING.equals(type) && !client.isTrusted)
+                if (TransferItem.Type.INCOMING.equals(type) && !client.isClientTrusted())
                     bridge.sendError(Keyword.ERROR_NOT_TRUSTED);
-                else if (transportSeat.hasOngoingTransferFor(transferId, client.uid, type))
+                else if (transportSeat.hasOngoingTransferFor(transferId, client.getClientUid(), type))
                     throw new ContentException(ContentException.Error.NotAccessible);
                 else {
                     bridge.sendResult(true);

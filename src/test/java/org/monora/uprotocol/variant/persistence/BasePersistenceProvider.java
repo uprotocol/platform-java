@@ -2,6 +2,7 @@ package org.monora.uprotocol.variant.persistence;
 
 import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.network.ClientAddress;
+import org.monora.uprotocol.core.network.Clients;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
@@ -132,11 +133,11 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     public boolean approveInvalidationOfCredentials(Client client)
     {
         synchronized (invalidationRequestList) {
-            if (!invalidationRequestList.remove(client.uid))
+            if (!invalidationRequestList.remove(client.getClientUid()))
                 return false;
         }
 
-        client.certificate = null;
+        client.setClientCertificate(null);
         save(client);
         return true;
     }
@@ -196,7 +197,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     {
         synchronized (clientPictureList) {
             for (ClientPicture clientPicture : clientPictureList) {
-                if (clientPicture.clientUid.equals(client.uid))
+                if (clientPicture.clientUid.equals(client.getClientUid()))
                     return clientPicture.data;
             }
         }
@@ -279,8 +280,8 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
             keyStore.load(null, null);
             keyStore.setKeyEntry("key", privateKey, password, new Certificate[]{certificate});
 
-            if (client.certificate != null)
-                keyStore.setCertificateEntry(client.uid, client.certificate);
+            if (client.getClientCertificate() != null)
+                keyStore.setCertificateEntry(client.getClientUid(), client.getClientCertificate());
 
             // Setup key manager factory
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
@@ -288,7 +289,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
 
             TrustManager[] trustManagers;
 
-            if (client.certificate == null) {
+            if (client.getClientCertificate() == null) {
                 // Set up custom trust manager if we don't have the certificate for the peer.
                 X509TrustManager trustManager = new X509TrustManager()
                 {
@@ -471,7 +472,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         synchronized (clientList) {
             for (Client persistentClient : clientList) {
                 if (client.equals(persistentClient)) {
-                    client.from(persistentClient);
+                    Clients.copy(persistentClient, client);
                     return;
                 }
             }

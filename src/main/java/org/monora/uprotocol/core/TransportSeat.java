@@ -103,8 +103,8 @@ public interface TransportSeat
      * Check whether there is an ongoing transfer for the given parameters.
      *
      * @param transferId The transfer id as in {@link TransferItem#transferId}
-     * @param clientUid  The {@link Client#uid} if this needs to concern only the given client, or null
-     *                   you need check all transfer processes.
+     * @param clientUid  The {@link Client#getClientUid()} if this needs to concern only the given client, or null you
+     *                   need check all transfer processes.
      * @param type       To limit the type of the transfer as in {@link TransferItem#type}.
      * @return True if there is an ongoing transfer for the given parameters.
      */
@@ -182,7 +182,8 @@ public interface TransportSeat
                         }
 
                         outputStream.flush();
-                        persistenceProvider.setState(client.uid, item, PersistenceProvider.STATE_DONE, null);
+                        persistenceProvider.setState(client.getClientUid(), item, PersistenceProvider.STATE_DONE,
+                                null);
                         completedBytes += currentBytes;
                         completedCount++;
                         lastItem = item;
@@ -191,27 +192,28 @@ public interface TransportSeat
                     }
                 } catch (CancelledException e) {
                     // The task is cancelled. We reset the state of this item to 'pending'.
-                    persistenceProvider.setState(client.uid, item, PersistenceProvider.STATE_PENDING, e);
+                    persistenceProvider.setState(client.getClientUid(), item, PersistenceProvider.STATE_PENDING, e);
                     throw e;
                 } catch (FileNotFoundException e) {
                     throw e;
                 } catch (ContentException e) {
                     switch (e.error) {
                         case NotFound:
-                            persistenceProvider.setState(client.uid, item,
+                            persistenceProvider.setState(client.getClientUid(), item,
                                     PersistenceProvider.STATE_INVALIDATED_STICKY, e);
                             break;
                         case AlreadyExists:
                         case NotAccessible:
                         default:
-                            persistenceProvider.setState(client.uid, item,
+                            persistenceProvider.setState(client.getClientUid(), item,
                                     PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
                     }
                 } catch (Exception e) {
-                    persistenceProvider.setState(client.uid, item, PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
+                    persistenceProvider.setState(client.getClientUid(), item,
+                            PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
                     throw e;
                 } finally {
-                    persistenceProvider.save(client.uid, item);
+                    persistenceProvider.save(client.getClientUid(), item);
                     item = null;
                 }
             }
@@ -263,7 +265,7 @@ public interface TransportSeat
 
                 try {
                     final ItemPointer itemPointer = Transfers.getItemRequest(request);
-                    item = persistenceProvider.loadTransferItem(client.uid, transferId, itemPointer.itemId,
+                    item = persistenceProvider.loadTransferItem(client.getClientUid(), transferId, itemPointer.itemId,
                             TransferItem.Type.OUTGOING);
                     currentBytes = itemPointer.position;
 
@@ -282,8 +284,9 @@ public interface TransportSeat
 
                             bridge.sendResult(true);
 
-                            persistenceProvider.setState(client.uid, item, PersistenceProvider.STATE_IN_PROGRESS, null);
-                            persistenceProvider.save(client.uid, item);
+                            persistenceProvider.setState(client.getClientUid(), item,
+                                    PersistenceProvider.STATE_IN_PROGRESS, null);
+                            persistenceProvider.save(client.getClientUid(), item);
 
                             ActiveConnection.Description description = activeConnection.writeBegin(0,
                                     item.size - currentBytes);
@@ -306,20 +309,22 @@ public interface TransportSeat
 
                             completedBytes += currentBytes;
                             completedCount++;
-                            persistenceProvider.setState(client.uid, item, PersistenceProvider.STATE_DONE, null);
+                            persistenceProvider.setState(client.getClientUid(), item, PersistenceProvider.STATE_DONE,
+                                    null);
                         }
                     } catch (CancelledException e) {
-                        persistenceProvider.setState(client.uid, item, PersistenceProvider.STATE_PENDING, e);
+                        persistenceProvider.setState(client.getClientUid(), item, PersistenceProvider.STATE_PENDING, e);
                         throw e;
                     } catch (FileNotFoundException e) {
-                        persistenceProvider.setState(client.uid, item, PersistenceProvider.STATE_INVALIDATED_STICKY, e);
+                        persistenceProvider.setState(client.getClientUid(), item,
+                                PersistenceProvider.STATE_INVALIDATED_STICKY, e);
                         throw e;
                     } catch (Exception e) {
-                        persistenceProvider.setState(client.uid, item,
+                        persistenceProvider.setState(client.getClientUid(), item,
                                 PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
                         throw e;
                     } finally {
-                        persistenceProvider.save(client.uid, item);
+                        persistenceProvider.save(client.getClientUid(), item);
                         item = null;
                     }
                 } catch (CancelledException e) {

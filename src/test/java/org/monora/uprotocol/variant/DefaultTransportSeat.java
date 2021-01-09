@@ -43,7 +43,7 @@ public class DefaultTransportSeat implements TransportSeat
             throws PersistenceException, ProtocolException
     {
         List<TransferItem> itemList = persistenceProvider.toTransferItemList(transferId, jsonArray);
-        persistenceProvider.save(client.uid, itemList);
+        persistenceProvider.save(client.getClientUid(), itemList);
     }
 
     @Override

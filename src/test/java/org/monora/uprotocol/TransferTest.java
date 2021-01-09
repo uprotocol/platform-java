@@ -148,7 +148,7 @@ public class TransferTest extends DefaultTestBase
     {
         Client secondaryOnPrimary = primaryPersistence.createClientFor(secondaryPersistence.getClientUid());
         primaryPersistence.sync(secondaryOnPrimary);
-        secondaryOnPrimary.isTrusted = true;
+        secondaryOnPrimary.setClientTrusted(true);
         primaryPersistence.save(secondaryOnPrimary);
 
         primarySession.start();

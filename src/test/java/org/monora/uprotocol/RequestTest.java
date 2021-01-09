@@ -27,12 +27,12 @@ public class RequestTest extends DefaultTestBase
                 clientAddress, null, 0)) {
             Assert.assertTrue("Remote should send a positive message.", bridge.requestAcquaintance());
 
-            Client persistentClient = secondaryPersistence.createClientFor(bridge.getRemoteClient().uid);
+            Client persistentClient = secondaryPersistence.createClientFor(bridge.getRemoteClient().getClientUid());
             secondaryPersistence.sync(persistentClient);
 
             Assert.assertEquals("Clients should be same.", bridge.getRemoteClient(), persistentClient);
-            Assert.assertEquals("Clients should have the same username.", bridge.getRemoteClient().username,
-                    persistentClient.username);
+            Assert.assertEquals("Clients should have the same username.", bridge.getRemoteClient().getClientNickname(),
+                    persistentClient.getClientNickname());
         } finally {
             primarySession.stop();
         }
@@ -120,7 +120,7 @@ public class RequestTest extends DefaultTestBase
             bridge.requestAcquaintance();
         } catch (SecurityException e) {
             if (e.getCause() instanceof SSLHandshakeException) {
-                e.client.certificate = null;
+                e.client.setClientCertificate(null);
                 secondaryPersistence.save(e.client);
             } else
                 throw e;
