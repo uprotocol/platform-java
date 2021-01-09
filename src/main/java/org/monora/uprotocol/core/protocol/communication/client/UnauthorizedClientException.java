@@ -18,7 +18,7 @@
 
 package org.monora.uprotocol.core.protocol.communication.client;
 
-import org.monora.uprotocol.core.network.Device;
+import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 import org.monora.uprotocol.core.protocol.communication.peer.BlockedPeerException;
 
@@ -31,8 +31,8 @@ import org.monora.uprotocol.core.protocol.communication.peer.BlockedPeerExceptio
  */
 public class UnauthorizedClientException extends CommunicationException
 {
-    public UnauthorizedClientException(Device device)
+    public UnauthorizedClientException(Client client)
     {
-        super(device);
+        super(client);
     }
 }

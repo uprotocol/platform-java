@@ -1,6 +1,6 @@
 package org.monora.uprotocol.core.protocol.communication;
 
-import org.monora.uprotocol.core.network.Device;
+import org.monora.uprotocol.core.network.Client;
 
 /**
  * Thrown when an SSL-related error occurs.
@@ -9,9 +9,9 @@ import org.monora.uprotocol.core.network.Device;
  */
 public class SecurityException extends CommunicationException
 {
-    public SecurityException(Device device, Throwable cause)
+    public SecurityException(Client client, Throwable cause)
     {
-        super(device, cause);
+        super(client, cause);
 
         if (cause == null)
             throw new NullPointerException("The cause cannot be null.");

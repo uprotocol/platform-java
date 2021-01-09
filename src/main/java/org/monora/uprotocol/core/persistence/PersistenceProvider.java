@@ -5,7 +5,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSession;
-import org.monora.uprotocol.core.network.Device;
+import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
@@ -76,13 +76,13 @@ public interface PersistenceProvider
      * <p>
      * Removing the certificate for the given device should be enough.
      *
-     * @param device Of whose keys will be approved.
+     * @param client Of whose keys will be approved.
      * @return True if there were a request and now approved, or false there were no request.
-     * @see Device#certificate
+     * @see Client#certificate
      * @see #hasRequestForInvalidationOfCredentials(String)
      * @see #saveRequestForInvalidationOfCredentials(String)
      */
-    boolean approveInvalidationOfCredentials(Device device);
+    boolean approveInvalidationOfCredentials(Client client);
 
     /**
      * Broadcast the awaiting operation reports.
@@ -114,21 +114,21 @@ public interface PersistenceProvider
     DeviceAddress createDeviceAddressFor(InetAddress address);
 
     /**
-     * Request from the factory to create an empty {@link Device} instance.
+     * Request from the factory to create an empty {@link Client} instance.
      *
      * @return The device instance.
      */
-    Device createDevice();
+    Client createDevice();
 
     /**
      * Create a device instance using the given unique identifier.
      * <p>
-     * The resulting {@link Device} instance is not ready for use. To make it so, call {@link #sync(Device)}.
+     * The resulting {@link Client} instance is not ready for use. To make it so, call {@link #sync(Client)}.
      *
      * @param uid The unique identifier for the device.
      * @return The device instance.
      */
-    Device createDeviceFor(String uid);
+    Client createDeviceFor(String uid);
 
     /**
      * Create a transfer item instance for the given parameters.
@@ -167,17 +167,17 @@ public interface PersistenceProvider
      */
     default JSONObject deviceAsJson(int pin) throws JSONException
     {
-        Device device = getDevice();
+        Client client = getDevice();
         JSONObject object = new JSONObject()
-                .put(Keyword.DEVICE_UID, device.uid)
-                .put(Keyword.DEVICE_BRAND, device.brand)
-                .put(Keyword.DEVICE_MODEL, device.model)
-                .put(Keyword.DEVICE_USERNAME, device.username)
-                .put(Keyword.DEVICE_CLIENT_TYPE, device.clientType)
-                .put(Keyword.DEVICE_VERSION_CODE, device.versionCode)
-                .put(Keyword.DEVICE_VERSION_NAME, device.versionName)
-                .put(Keyword.DEVICE_PROTOCOL_VERSION, device.protocolVersion)
-                .put(Keyword.DEVICE_PROTOCOL_VERSION_MIN, device.protocolVersionMin)
+                .put(Keyword.DEVICE_UID, client.uid)
+                .put(Keyword.DEVICE_BRAND, client.brand)
+                .put(Keyword.DEVICE_MODEL, client.model)
+                .put(Keyword.DEVICE_USERNAME, client.username)
+                .put(Keyword.DEVICE_CLIENT_TYPE, client.clientType)
+                .put(Keyword.DEVICE_VERSION_CODE, client.versionCode)
+                .put(Keyword.DEVICE_VERSION_NAME, client.versionName)
+                .put(Keyword.DEVICE_PROTOCOL_VERSION, client.protocolVersion)
+                .put(Keyword.DEVICE_PROTOCOL_VERSION_MIN, client.protocolVersionMin)
                 .put(Keyword.DEVICE_PIN, pin);
 
         byte[] deviceAvatar = getAvatar();
@@ -197,13 +197,13 @@ public interface PersistenceProvider
     /**
      * Returns the avatar for the given device.
      * <p>
-     * If the given device's {@link Device#uid} is equal to {@link #getDeviceUid()}, this should return the avatar
+     * If the given device's {@link Client#uid} is equal to {@link #getDeviceUid()}, this should return the avatar
      * for this client.
      *
-     * @param device For which the avatar will be provided.
+     * @param client For which the avatar will be provided.
      * @return The bitmap data for the avatar if exists, or zero-length byte array if it doesn't.
      */
-    byte[] getAvatarFor(Device device);
+    byte[] getAvatarFor(Client client);
 
     /**
      * Returns this client's certificate.
@@ -237,11 +237,11 @@ public interface PersistenceProvider
     String getDeviceUid();
 
     /**
-     * This will return the {@link Device} instance representing this client.
+     * This will return the {@link Client} instance representing this client.
      *
      * @return The device instance.
      */
-    Device getDevice();
+    Client getDevice();
 
     /**
      * This will return the first valid item that that this side can receive.
@@ -268,7 +268,7 @@ public interface PersistenceProvider
 
     PublicKey getPublicKey();
 
-    SSLContext getSSLContextFor(Device device);
+    SSLContext getSSLContextFor(Client client);
 
     /**
      * Check whether the given device had already sent a wrong key and has a pending key request to be approved.
@@ -276,7 +276,7 @@ public interface PersistenceProvider
      * @param deviceUid That sent the request.
      * @return True if there is a pending request.
      * @see #saveRequestForInvalidationOfCredentials(String)
-     * @see #approveInvalidationOfCredentials(Device)
+     * @see #approveInvalidationOfCredentials(Client)
      */
     boolean hasRequestForInvalidationOfCredentials(String deviceUid);
 
@@ -321,11 +321,11 @@ public interface PersistenceProvider
     /**
      * Save this device in the persistence database.
      * <p>
-     * Do not hold any duplicates, and verify it using the {@link Device#uid} field.
+     * Do not hold any duplicates, and verify it using the {@link Client#uid} field.
      *
-     * @param device To save.
+     * @param client To save.
      */
-    void save(Device device);
+    void save(Client client);
 
     /**
      * Save this device address in the persistence database.
@@ -373,7 +373,7 @@ public interface PersistenceProvider
      *
      * @param deviceUid That wants key invalidation.
      * @see #hasRequestForInvalidationOfCredentials(String)
-     * @see #approveInvalidationOfCredentials(Device)
+     * @see #approveInvalidationOfCredentials(Client)
      */
     void saveRequestForInvalidationOfCredentials(String deviceUid);
 
@@ -398,10 +398,10 @@ public interface PersistenceProvider
     /**
      * Sync the device with the persistence database.
      *
-     * @param device To sync.
-     * @throws PersistenceException When there is no device associated with the unique identifier {@link Device#uid}.
+     * @param client To sync.
+     * @throws PersistenceException When there is no device associated with the unique identifier {@link Client#uid}.
      */
-    void sync(Device device) throws PersistenceException;
+    void sync(Client client) throws PersistenceException;
 
     /**
      * Transform a given {@link TransferItem} list into its {@link JSONArray} equivalent.

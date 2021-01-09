@@ -1,12 +1,12 @@
 package org.monora.uprotocol.variant.persistence;
 
-import org.monora.uprotocol.core.network.Device;
+import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.persistence.StreamDescriptor;
-import org.monora.uprotocol.variant.DefaultDevice;
+import org.monora.uprotocol.variant.DefaultClient;
 import org.monora.uprotocol.variant.DefaultDeviceAddress;
 import org.monora.uprotocol.variant.DefaultTransferItem;
 import org.monora.uprotocol.variant.holder.Avatar;
@@ -49,7 +49,7 @@ import java.util.List;
  */
 public abstract class BasePersistenceProvider implements PersistenceProvider
 {
-    private final List<Device> deviceList = new ArrayList<>();
+    private final List<Client> clientList = new ArrayList<>();
     private final List<DeviceAddress> deviceAddressList = new ArrayList<>();
     private final List<OwnedTransferHolder> transferHolderList = new ArrayList<>();
     private final List<Avatar> avatarList = new ArrayList<>();
@@ -129,15 +129,15 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public boolean approveInvalidationOfCredentials(Device device)
+    public boolean approveInvalidationOfCredentials(Client client)
     {
         synchronized (invalidationRequestList) {
-            if (!invalidationRequestList.remove(device.uid))
+            if (!invalidationRequestList.remove(client.uid))
                 return false;
         }
 
-        device.certificate = null;
-        save(device);
+        client.certificate = null;
+        save(client);
         return true;
     }
 
@@ -167,15 +167,15 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public DefaultDevice createDevice()
+    public DefaultClient createDevice()
     {
-        return new DefaultDevice();
+        return new DefaultClient();
     }
 
     @Override
-    public DefaultDevice createDeviceFor(String uid)
+    public DefaultClient createDeviceFor(String uid)
     {
-        return new DefaultDevice(uid);
+        return new DefaultClient(uid);
     }
 
     @Override
@@ -192,11 +192,11 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public byte[] getAvatarFor(Device device)
+    public byte[] getAvatarFor(Client client)
     {
         synchronized (avatarList) {
             for (Avatar avatar : avatarList) {
-                if (avatar.deviceUid.equals(device.uid))
+                if (avatar.deviceUid.equals(client.uid))
                     return avatar.data;
             }
         }
@@ -267,7 +267,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public SSLContext getSSLContextFor(Device device)
+    public SSLContext getSSLContextFor(Client client)
     {
         try {
             // Get device private key
@@ -279,8 +279,8 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
             keyStore.load(null, null);
             keyStore.setKeyEntry("key", privateKey, password, new Certificate[]{certificate});
 
-            if (device.certificate != null)
-                keyStore.setCertificateEntry(device.uid, device.certificate);
+            if (client.certificate != null)
+                keyStore.setCertificateEntry(client.uid, client.certificate);
 
             // Setup key manager factory
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
@@ -288,7 +288,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
 
             TrustManager[] trustManagers;
 
-            if (device.certificate == null) {
+            if (client.certificate == null) {
                 // Set up custom trust manager if we don't have the certificate for the peer.
                 X509TrustManager trustManager = new X509TrustManager()
                 {
@@ -380,10 +380,10 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         throw new IOException("Unknown descriptor type");
     }
 
-    public void remove(Device device)
+    public void remove(Client client)
     {
-        synchronized (deviceList) {
-            deviceList.remove(device);
+        synchronized (clientList) {
+            clientList.remove(client);
         }
     }
 
@@ -394,11 +394,11 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void save(Device device)
+    public void save(Client client)
     {
-        synchronized (deviceList) {
-            deviceList.remove(device);
-            deviceList.add(device);
+        synchronized (clientList) {
+            clientList.remove(client);
+            clientList.add(client);
         }
     }
 
@@ -466,12 +466,12 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void sync(Device device) throws PersistenceException
+    public void sync(Client client) throws PersistenceException
     {
-        synchronized (deviceList) {
-            for (Device persistentDevice : deviceList) {
-                if (device.equals(persistentDevice)) {
-                    device.from(persistentDevice);
+        synchronized (clientList) {
+            for (Client persistentClient : clientList) {
+                if (client.equals(persistentClient)) {
+                    client.from(persistentClient);
                     return;
                 }
             }

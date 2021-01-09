@@ -1,6 +1,6 @@
 package org.monora.uprotocol.core.protocol.communication;
 
-import org.monora.uprotocol.core.network.Device;
+import org.monora.uprotocol.core.network.Client;
 
 /**
  * This is a high-level error that is thrown when communication with a peer fails in some way.
@@ -9,17 +9,17 @@ import org.monora.uprotocol.core.network.Device;
  */
 public class CommunicationException extends ProtocolException
 {
-    public final Device device;
+    public final Client client;
 
-    public CommunicationException(Device device)
+    public CommunicationException(Client client)
     {
         super();
-        this.device = device;
+        this.client = client;
     }
 
-    public CommunicationException(Device device, Throwable cause)
+    public CommunicationException(Client client, Throwable cause)
     {
         super(cause);
-        this.device = device;
+        this.client = client;
     }
 }

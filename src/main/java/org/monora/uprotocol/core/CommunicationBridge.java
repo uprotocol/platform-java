@@ -21,7 +21,7 @@ package org.monora.uprotocol.core;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.session.ActiveConnection;
-import org.monora.uprotocol.core.network.Device;
+import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
@@ -63,7 +63,7 @@ public class CommunicationBridge implements Closeable
 
     private final ActiveConnection activeConnection;
 
-    private final Device device;
+    private final Client client;
 
     private final DeviceAddress deviceAddress;
 
@@ -74,15 +74,15 @@ public class CommunicationBridge implements Closeable
      *
      * @param persistenceProvider Where the persistent data is stored and queried.
      * @param activeConnection    Represents a valid connection with the said device.
-     * @param device              We are connected to.
+     * @param client              We are connected to.
      * @param deviceAddress       Where the device is located at.
      */
     public CommunicationBridge(PersistenceProvider persistenceProvider, ActiveConnection activeConnection,
-                               Device device, DeviceAddress deviceAddress)
+                               Client client, DeviceAddress deviceAddress)
     {
         this.persistenceProvider = persistenceProvider;
         this.activeConnection = activeConnection;
-        this.device = device;
+        this.client = client;
         this.deviceAddress = deviceAddress;
     }
 
@@ -109,15 +109,15 @@ public class CommunicationBridge implements Closeable
      * try rest of the addresses.
      * <p>
      * If all addresses fail, this will still throw an error to simulate what
-     * {@link #connect(ConnectionFactory, PersistenceProvider, DeviceAddress, Device, int)} does.
+     * {@link #connect(ConnectionFactory, PersistenceProvider, DeviceAddress, Client, int)} does.
      * <p>
      * The rest of the behavior is the same with
-     * {@link #connect(ConnectionFactory, PersistenceProvider, DeviceAddress, Device, int)}.
+     * {@link #connect(ConnectionFactory, PersistenceProvider, DeviceAddress, Client, int)}.
      *
      * @param connectionFactory   To start and set up connections with.
      * @param persistenceProvider To store and query objects.
      * @param addressList         To try.
-     * @param device              That we are going to open a connection with. If the connected device is different,
+     * @param client              That we are going to open a connection with. If the connected device is different,
      *                            it will try other connections. If you don't know who you are connecting to, just leave
      *                            this field null.
      * @param pin                 To bypass errors (i.e. you are blocked on the other device), and to be flagged as
@@ -129,7 +129,7 @@ public class CommunicationBridge implements Closeable
      */
     public static CommunicationBridge connect(ConnectionFactory connectionFactory,
                                               PersistenceProvider persistenceProvider, List<DeviceAddress> addressList,
-                                              Device device, int pin) throws JSONException, IOException,
+                                              Client client, int pin) throws JSONException, IOException,
             ProtocolException
     {
         if (addressList.size() < 1)
@@ -137,7 +137,7 @@ public class CommunicationBridge implements Closeable
 
         for (DeviceAddress address : addressList) {
             try {
-                return connect(connectionFactory, persistenceProvider, address, device, pin);
+                return connect(connectionFactory, persistenceProvider, address, client, pin);
             } catch (IOException | DifferentPeerException ignored) {
             }
         }
@@ -153,7 +153,7 @@ public class CommunicationBridge implements Closeable
      * @param connectionFactory   To start and set up connections with.
      * @param persistenceProvider To store and query objects.
      * @param deviceAddress       To try.
-     * @param device              That we are going to open a connection with. If the connected device is different,
+     * @param client              That we are going to open a connection with. If the connected device is different,
      *                            this will throw error. If you don't know who you are connecting to, just leave
      *                            this field as 'null'.
      * @param pin                 To bypass errors (i.e. you are blocked on the other device), and to be flagged as
@@ -166,7 +166,7 @@ public class CommunicationBridge implements Closeable
      */
     public static CommunicationBridge connect(ConnectionFactory connectionFactory,
                                               PersistenceProvider persistenceProvider, DeviceAddress deviceAddress,
-                                              Device device, int pin)
+                                              Client client, int pin)
             throws IOException, JSONException, ProtocolException
     {
         ActiveConnection activeConnection = connectionFactory.openConnection(deviceAddress.inetAddress);
@@ -175,35 +175,35 @@ public class CommunicationBridge implements Closeable
         deviceAddress.deviceUid = remoteDeviceUid;
         persistenceProvider.save(deviceAddress);
 
-        if (device != null && device.uid != null && !device.uid.equals(remoteDeviceUid)) {
+        if (client != null && client.uid != null && !client.uid.equals(remoteDeviceUid)) {
             activeConnection.closeSafely();
-            throw new DifferentPeerException(device, remoteDeviceUid);
+            throw new DifferentPeerException(client, remoteDeviceUid);
         }
 
-        if (device == null)
-            device = persistenceProvider.createDeviceFor(remoteDeviceUid);
+        if (client == null)
+            client = persistenceProvider.createDeviceFor(remoteDeviceUid);
 
         try {
-            persistenceProvider.sync(device);
+            persistenceProvider.sync(client);
         } catch (PersistenceException ignored) {
         }
 
         activeConnection.reply(persistenceProvider.deviceAsJson(pin));
 
 
-        DeviceLoader.loadAsClient(persistenceProvider, receiveSecure(activeConnection, device), device);
-        receiveResult(activeConnection, device);
-        convertToSSL(connectionFactory, persistenceProvider, activeConnection, device, true);
+        DeviceLoader.loadAsClient(persistenceProvider, receiveSecure(activeConnection, client), client);
+        receiveResult(activeConnection, client);
+        convertToSSL(connectionFactory, persistenceProvider, activeConnection, client, true);
 
-        return new CommunicationBridge(persistenceProvider, activeConnection, device, deviceAddress);
+        return new CommunicationBridge(persistenceProvider, activeConnection, client, deviceAddress);
     }
 
     protected static void convertToSSL(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
-                                       ActiveConnection activeConnection, Device device, boolean isClient)
+                                       ActiveConnection activeConnection, Client client, boolean isClient)
             throws IOException, CommunicationException
     {
         Socket socket = activeConnection.getSocket();
-        SSLSocketFactory sslSocketFactory = persistenceProvider.getSSLContextFor(device).getSocketFactory();
+        SSLSocketFactory sslSocketFactory = persistenceProvider.getSSLContextFor(client).getSocketFactory();
         SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket(socket, socket.getInetAddress().getHostAddress(),
                 activeConnection.getSocket().getPort(), true);
         ArrayList<String> enabledCiphersSuites = new ArrayList<>();
@@ -217,7 +217,7 @@ public class CommunicationBridge implements Closeable
         } else {
             sslSocket.setUseClientMode(false);
 
-            if (device.certificate == null) {
+            if (client.certificate == null) {
                 sslSocket.setWantClientAuth(true);
             } else {
                 sslSocket.setNeedClientAuth(true);
@@ -229,14 +229,14 @@ public class CommunicationBridge implements Closeable
                 Certificate certificate = event.getPeerCertificates()[0];
 
                 if (certificate instanceof X509Certificate) {
-                    if (!certificate.equals(device.certificate)) {
-                        device.certificate = (X509Certificate) certificate;
-                        persistenceProvider.save(device);
+                    if (!certificate.equals(client.certificate)) {
+                        client.certificate = (X509Certificate) certificate;
+                        persistenceProvider.save(client);
                     }
                 } else
                     throw new CertificateException("The certificate is not in X.509 format");
             } catch (Exception e) {
-                device.certificate = null;
+                client.certificate = null;
                 e.printStackTrace();
             }
         });
@@ -246,7 +246,7 @@ public class CommunicationBridge implements Closeable
         try {
             sslSocket.startHandshake();
         } catch (Exception e) {
-            throw new SecurityException(device, e);
+            throw new SecurityException(client, e);
         }
     }
 
@@ -267,9 +267,9 @@ public class CommunicationBridge implements Closeable
      *
      * @return The connected device.
      */
-    public Device getDevice()
+    public Client getDevice()
     {
-        return device;
+        return client;
     }
 
     /**
@@ -308,7 +308,7 @@ public class CommunicationBridge implements Closeable
      * Inform the remote that it should choose you (this client) if it's about to choose a device.
      * <p>
      * For instance, the remote is setting up a file transfer request and is about to pick a device. If you make this
-     * request in that timespan, this will invoke {@link TransportSeat#handleAcquaintanceRequest(Device, DeviceAddress)}
+     * request in that timespan, this will invoke {@link TransportSeat#handleAcquaintanceRequest(Client, DeviceAddress)}
      * method on the remote and it will choose you.
      *
      * @return True if successful.
@@ -328,7 +328,7 @@ public class CommunicationBridge implements Closeable
      * This request doesn't guarantee that the request will be processed immediately. You should close the connection
      * after making this request. If everything goes right, the remote will reach you using
      * {@link #requestFileTransferStart(long, TransferItem.Type)}, which will end up in your
-     * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Device, long, TransferItem.Type)} method.
+     * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Client, long, TransferItem.Type)} method.
      * <p>
      * If the initial response is positive, the items will be saved to the persistence provider using
      * {@link PersistenceProvider#save(String, List)}.
@@ -423,7 +423,7 @@ public class CommunicationBridge implements Closeable
      * The error messages are sent using {@link #sendError}.
      *
      * @param activeConnection The active connection instance.
-     * @param device           That we are receiving the response from.
+     * @param client           That we are receiving the response from.
      * @return The JSON data that doesn't seem to contain an error.
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
@@ -431,7 +431,7 @@ public class CommunicationBridge implements Closeable
      * @see #receiveSecure()
      * @see #sendError(ActiveConnection, String)
      */
-    public static JSONObject receiveSecure(ActiveConnection activeConnection, Device device) throws IOException,
+    public static JSONObject receiveSecure(ActiveConnection activeConnection, Client client) throws IOException,
             JSONException, ProtocolException
     {
         JSONObject jsonObject = activeConnection.receive().getAsJson();
@@ -439,9 +439,9 @@ public class CommunicationBridge implements Closeable
             final String errorCode = jsonObject.getString(Keyword.ERROR);
             switch (errorCode) {
                 case Keyword.ERROR_NOT_ALLOWED:
-                    throw new UnauthorizedClientException(device);
+                    throw new UnauthorizedClientException(client);
                 case Keyword.ERROR_NOT_TRUSTED:
-                    throw new UntrustedClientException(device);
+                    throw new UntrustedClientException(client);
                 case Keyword.ERROR_NOT_ACCESSIBLE:
                     throw new ContentException(ContentException.Error.NotAccessible);
                 case Keyword.ERROR_ALREADY_EXISTS:
@@ -472,7 +472,7 @@ public class CommunicationBridge implements Closeable
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
-     * @see #receiveSecure(ActiveConnection, Device)
+     * @see #receiveSecure(ActiveConnection, Client)
      * @see #sendError(ActiveConnection, String)
      */
     public JSONObject receiveSecure() throws IOException, JSONException, ProtocolException
@@ -484,17 +484,17 @@ public class CommunicationBridge implements Closeable
      * Receive and validate a response. If it doesn't contain an error, get the result.
      *
      * @param activeConnection The active connection instance.
-     * @param device           That we are receiving the response from.
+     * @param client           That we are receiving the response from.
      * @return True if the result is positive.
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      * @see #sendResult(ActiveConnection, boolean)
      */
-    public static boolean receiveResult(ActiveConnection activeConnection, Device device) throws IOException,
+    public static boolean receiveResult(ActiveConnection activeConnection, Client client) throws IOException,
             JSONException, ProtocolException
     {
-        return resultOf(receiveSecure(activeConnection, device));
+        return resultOf(receiveSecure(activeConnection, client));
     }
 
     /**
@@ -536,7 +536,7 @@ public class CommunicationBridge implements Closeable
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
      * @throws ProtocolException With the cause exception if the error is not known.
-     * @see #receiveSecure(ActiveConnection, Device)
+     * @see #receiveSecure(ActiveConnection, Client)
      */
     public static void sendError(ActiveConnection activeConnection, Exception exception) throws IOException,
             JSONException, ProtocolException
@@ -575,7 +575,7 @@ public class CommunicationBridge implements Closeable
      * @param errorCode        To send.
      * @throws IOException   If an IO error occurs.
      * @throws JSONException If something goes wrong when creating JSON object.
-     * @see #receiveSecure(ActiveConnection, Device)
+     * @see #receiveSecure(ActiveConnection, Client)
      */
     public static void sendError(ActiveConnection activeConnection, String errorCode) throws IOException, JSONException
     {
@@ -591,7 +591,7 @@ public class CommunicationBridge implements Closeable
      * @throws IOException            If an IO error occurs.
      * @throws JSONException          If something goes wrong when creating JSON object.
      * @throws ProtocolException With the cause exception if the error is not known.
-     * @see #receiveSecure(ActiveConnection, Device)
+     * @see #receiveSecure(ActiveConnection, Client)
      */
     public void sendError(Exception exception) throws IOException, JSONException, ProtocolException
     {
@@ -606,7 +606,7 @@ public class CommunicationBridge implements Closeable
      * @param errorCode To send.
      * @throws IOException   If an IO error occurs.
      * @throws JSONException If something goes wrong when creating JSON object.
-     * @see #receiveSecure(ActiveConnection, Device)
+     * @see #receiveSecure(ActiveConnection, Client)
      */
     public void sendError(String errorCode) throws IOException, JSONException
     {
@@ -620,7 +620,7 @@ public class CommunicationBridge implements Closeable
      * @param result           True if positive.
      * @throws IOException   If an IO error occurs.
      * @throws JSONException If something goes wrong when creating JSON object.
-     * @see #receiveResult(ActiveConnection, Device)
+     * @see #receiveResult(ActiveConnection, Client)
      */
     public static void sendResult(ActiveConnection activeConnection, boolean result) throws IOException, JSONException
     {
@@ -635,7 +635,7 @@ public class CommunicationBridge implements Closeable
      * @param result True if positive.
      * @throws IOException   If an IO error occurs.
      * @throws JSONException If something goes wrong when creating JSON object.
-     * @see #receiveResult(ActiveConnection, Device)
+     * @see #receiveResult(ActiveConnection, Client)
      */
     public void sendResult(boolean result) throws IOException, JSONException
     {
@@ -650,7 +650,7 @@ public class CommunicationBridge implements Closeable
      * @param jsonObject       To send along with the result.
      * @throws IOException   If an IO error occurs.
      * @throws JSONException If something goes wrong when creating JSON object.
-     * @see #receiveResult(ActiveConnection, Device)
+     * @see #receiveResult(ActiveConnection, Client)
      */
     public static void sendSecure(ActiveConnection activeConnection, boolean result, JSONObject jsonObject)
             throws JSONException, IOException
@@ -667,7 +667,7 @@ public class CommunicationBridge implements Closeable
      * @param jsonObject To send along with the result.
      * @throws IOException   If an IO error occurs.
      * @throws JSONException If something goes wrong when creating JSON object.
-     * @see #receiveResult(ActiveConnection, Device)
+     * @see #receiveResult(ActiveConnection, Client)
      */
     public void sendSecure(boolean result, JSONObject jsonObject) throws JSONException, IOException
     {

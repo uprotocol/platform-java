@@ -1,6 +1,6 @@
 package org.monora.uprotocol.core.protocol.communication.peer;
 
-import org.monora.uprotocol.core.network.Device;
+import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 
 /**
@@ -10,8 +10,8 @@ import org.monora.uprotocol.core.protocol.communication.CommunicationException;
  */
 public class BlockedPeerException extends CommunicationException
 {
-    public BlockedPeerException(Device device)
+    public BlockedPeerException(Client client)
     {
-        super(device);
+        super(client);
     }
 }

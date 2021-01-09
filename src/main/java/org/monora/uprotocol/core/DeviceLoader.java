@@ -2,7 +2,7 @@ package org.monora.uprotocol.core;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.monora.uprotocol.core.network.Device;
+import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
@@ -26,14 +26,14 @@ public class DeviceLoader
      *
      * @param persistenceProvider That stores persistent data.
      * @param object              To load the details from.
-     * @param device              To load into.
+     * @param client              To load into.
      * @throws JSONException If something goes wrong when inflating the JSON data.
      */
-    public static void loadAsClient(PersistenceProvider persistenceProvider, JSONObject object, Device device)
+    public static void loadAsClient(PersistenceProvider persistenceProvider, JSONObject object, Client client)
             throws JSONException
     {
-        device.isBlocked = false;
-        loadFrom(persistenceProvider, object, device);
+        client.isBlocked = false;
+        loadFrom(persistenceProvider, object, client);
     }
 
     /**
@@ -41,53 +41,53 @@ public class DeviceLoader
      *
      * @param persistenceProvider That stores persistent data.
      * @param object              To load the details from.
-     * @param device              To load into.
+     * @param client              To load into.
      * @param hasPin              True will mean this device has a valid PIN and this will escalate the privileges it
      *                            will have. For instance, it will be unblocked if blocked and it will be flagged as
      *                            trusted.
      * @throws JSONException          If something goes wrong when inflating the JSON data.* @throws DeviceInsecureException
      * @throws BlockedPeerException If remote is blocked and has no valid PIN.
      */
-    public static void loadAsServer(PersistenceProvider persistenceProvider, JSONObject object, Device device,
+    public static void loadAsServer(PersistenceProvider persistenceProvider, JSONObject object, Client client,
                                     boolean hasPin) throws JSONException, BlockedPeerException
     {
-        device.uid = object.getString(Keyword.DEVICE_UID);
+        client.uid = object.getString(Keyword.DEVICE_UID);
         if (hasPin)
-            device.isTrusted = true;
+            client.isTrusted = true;
 
         try {
             try {
-                persistenceProvider.sync(device);
+                persistenceProvider.sync(client);
             } catch (PersistenceException ignored) {
             }
 
             if (hasPin) {
-                device.isBlocked = false;
-            } else if (device.isBlocked)
-                throw new BlockedPeerException(device);
+                client.isBlocked = false;
+            } else if (client.isBlocked)
+                throw new BlockedPeerException(client);
         } finally {
-            loadFrom(persistenceProvider, object, device);
+            loadFrom(persistenceProvider, object, client);
         }
     }
 
-    private static void loadFrom(PersistenceProvider persistenceProvider, JSONObject object, Device device)
+    private static void loadFrom(PersistenceProvider persistenceProvider, JSONObject object, Client client)
             throws JSONException
     {
-        device.isLocal = persistenceProvider.getDeviceUid().equals(device.uid);
-        device.brand = object.getString(Keyword.DEVICE_BRAND);
-        device.model = object.getString(Keyword.DEVICE_MODEL);
-        device.username = object.getString(Keyword.DEVICE_USERNAME);
-        device.clientType = object.getEnum(ClientType.class, Keyword.DEVICE_CLIENT_TYPE);
-        device.lastUsageTime = System.currentTimeMillis();
-        device.versionCode = object.getInt(Keyword.DEVICE_VERSION_CODE);
-        device.versionName = object.getString(Keyword.DEVICE_VERSION_NAME);
-        device.protocolVersion = object.getInt(Keyword.DEVICE_PROTOCOL_VERSION);
-        device.protocolVersionMin = object.getInt(Keyword.DEVICE_PROTOCOL_VERSION_MIN);
+        client.isLocal = persistenceProvider.getDeviceUid().equals(client.uid);
+        client.brand = object.getString(Keyword.DEVICE_BRAND);
+        client.model = object.getString(Keyword.DEVICE_MODEL);
+        client.username = object.getString(Keyword.DEVICE_USERNAME);
+        client.clientType = object.getEnum(ClientType.class, Keyword.DEVICE_CLIENT_TYPE);
+        client.lastUsageTime = System.currentTimeMillis();
+        client.versionCode = object.getInt(Keyword.DEVICE_VERSION_CODE);
+        client.versionName = object.getString(Keyword.DEVICE_VERSION_NAME);
+        client.protocolVersion = object.getInt(Keyword.DEVICE_PROTOCOL_VERSION);
+        client.protocolVersionMin = object.getInt(Keyword.DEVICE_PROTOCOL_VERSION_MIN);
 
-        if (device.username.length() > LENGTH_DEVICE_USERNAME)
-            device.username = device.username.substring(0, LENGTH_DEVICE_USERNAME);
+        if (client.username.length() > LENGTH_DEVICE_USERNAME)
+            client.username = client.username.substring(0, LENGTH_DEVICE_USERNAME);
 
-        persistenceProvider.save(device);
+        persistenceProvider.save(client);
 
         byte[] deviceAvatar;
         try {
@@ -96,7 +96,7 @@ public class DeviceLoader
             deviceAvatar = new byte[0];
         }
 
-        persistenceProvider.saveAvatar(device.uid, deviceAvatar);
+        persistenceProvider.saveAvatar(client.uid, deviceAvatar);
     }
 
     /**
@@ -129,9 +129,9 @@ public class DeviceLoader
         /**
          * Called after the connection is successful.
          *
-         * @param device  The devices that has been reached.
+         * @param client  The devices that has been reached.
          * @param address The address that device was found at.
          */
-        void onDeviceResolved(Device device, DeviceAddress address);
+        void onDeviceResolved(Client client, DeviceAddress address);
     }
 }

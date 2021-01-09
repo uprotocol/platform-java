@@ -6,7 +6,7 @@ import java.net.InetAddress;
  * This class ties an internet address with a device.
  *
  * @see InetAddress
- * @see Device
+ * @see Client
  */
 public abstract class DeviceAddress
 {
@@ -16,7 +16,7 @@ public abstract class DeviceAddress
     public InetAddress inetAddress;
 
     /**
-     * The {@link Device#uid} that specifies who owns this address.
+     * The {@link Client#uid} that specifies who owns this address.
      */
     public String deviceUid;
 

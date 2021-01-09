@@ -1,8 +1,7 @@
 package org.monora.uprotocol.variant.persistence;
 
-import org.monora.uprotocol.core.network.Device;
-import org.monora.uprotocol.core.protocol.ClientType;
-import org.monora.uprotocol.variant.DefaultDevice;
+import org.monora.uprotocol.core.network.Client;
+import org.monora.uprotocol.variant.DefaultClient;
 
 public class PrimaryPersistenceProvider extends BasePersistenceProvider
 {
@@ -13,8 +12,8 @@ public class PrimaryPersistenceProvider extends BasePersistenceProvider
     }
 
     @Override
-    public Device getDevice()
+    public Client getDevice()
     {
-        return new DefaultDevice(getDeviceUid(), "Primo", "Abc", "Def", getCertificate());
+        return new DefaultClient(getDeviceUid(), "Primo", "Abc", "Def", getCertificate());
     }
 }

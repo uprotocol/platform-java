@@ -2,7 +2,7 @@ package org.monora.uprotocol.variant;
 
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSeat;
-import org.monora.uprotocol.core.network.Device;
+import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
@@ -23,7 +23,7 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public void beginFileTransfer(CommunicationBridge bridge, Device device, long transferId, TransferItem.Type type)
+    public void beginFileTransfer(CommunicationBridge bridge, Client client, long transferId, TransferItem.Type type)
             throws PersistenceException, ProtocolException
     {
         if (type.equals(TransferItem.Type.INCOMING))
@@ -33,27 +33,27 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public boolean handleAcquaintanceRequest(Device device, DeviceAddress deviceAddress)
+    public boolean handleAcquaintanceRequest(Client client, DeviceAddress deviceAddress)
     {
         return true;
     }
 
     @Override
-    public void handleFileTransferRequest(Device device, boolean hasPin, long transferId, String jsonArray)
+    public void handleFileTransferRequest(Client client, boolean hasPin, long transferId, String jsonArray)
             throws PersistenceException, ProtocolException
     {
         List<TransferItem> itemList = persistenceProvider.toTransferItemList(transferId, jsonArray);
-        persistenceProvider.save(device.uid, itemList);
+        persistenceProvider.save(client.uid, itemList);
     }
 
     @Override
-    public void handleFileTransferState(Device device, long transferId, boolean isAccepted)
+    public void handleFileTransferState(Client client, long transferId, boolean isAccepted)
     {
 
     }
 
     @Override
-    public void handleTextTransfer(Device device, String text)
+    public void handleTextTransfer(Client client, String text)
     {
         System.out.println("Text received: " + text);
     }
@@ -71,10 +71,10 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public void notifyDeviceCredentialsChanged(Device device)
+    public void notifyDeviceCredentialsChanged(Client client)
     {
         if (autoAcceptNewKeys) {
-            persistenceProvider.approveInvalidationOfCredentials(device);
+            persistenceProvider.approveInvalidationOfCredentials(client);
         }
     }
 

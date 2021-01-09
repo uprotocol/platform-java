@@ -19,18 +19,18 @@
 package org.monora.uprotocol.core.protocol.communication.peer;
 
 import org.monora.uprotocol.core.CommunicationBridge;
-import org.monora.uprotocol.core.network.Device;
+import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 
 /**
  * This error concerns peers and is thrown when {@link CommunicationBridge} communicates with a peer that has a
- * different {@link Device#uid} mismatching with the one that it intends to connect to.
+ * different {@link Client#uid} mismatching with the one that it intends to connect to.
  */
 public class DifferentPeerException extends CommunicationException
 {
     public final String gotUid;
 
-    public DifferentPeerException(Device expected, String gotUid)
+    public DifferentPeerException(Client expected, String gotUid)
     {
         super(expected);
         this.gotUid = gotUid;

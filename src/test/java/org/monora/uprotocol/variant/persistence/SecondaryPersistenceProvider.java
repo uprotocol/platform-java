@@ -1,7 +1,7 @@
 package org.monora.uprotocol.variant.persistence;
 
-import org.monora.uprotocol.core.network.Device;
-import org.monora.uprotocol.variant.DefaultDevice;
+import org.monora.uprotocol.core.network.Client;
+import org.monora.uprotocol.variant.DefaultClient;
 
 public class SecondaryPersistenceProvider extends BasePersistenceProvider
 {
@@ -12,8 +12,8 @@ public class SecondaryPersistenceProvider extends BasePersistenceProvider
     }
 
     @Override
-    public Device getDevice()
+    public Client getDevice()
     {
-        return new DefaultDevice(getDeviceUid(), "Sec", "Xyz", "Tuv", getCertificate());
+        return new DefaultClient(getDeviceUid(), "Sec", "Xyz", "Tuv", getCertificate());
     }
 }

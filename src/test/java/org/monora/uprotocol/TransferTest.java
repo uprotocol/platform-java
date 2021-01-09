@@ -4,7 +4,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.monora.uprotocol.core.CommunicationBridge;
-import org.monora.uprotocol.core.network.Device;
+import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
@@ -146,7 +146,7 @@ public class TransferTest extends DefaultTestBase
     public void senderStartsTransferIfTrusted() throws IOException, InterruptedException, ProtocolException,
             PersistenceException
     {
-        Device secondaryOnPrimary = primaryPersistence.createDeviceFor(secondaryPersistence.getDeviceUid());
+        Client secondaryOnPrimary = primaryPersistence.createDeviceFor(secondaryPersistence.getDeviceUid());
         primaryPersistence.sync(secondaryOnPrimary);
         secondaryOnPrimary.isTrusted = true;
         primaryPersistence.save(secondaryOnPrimary);

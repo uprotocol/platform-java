@@ -4,7 +4,7 @@ import org.json.JSONObject;
 import org.monora.coolsocket.core.response.SizeOverflowException;
 import org.monora.coolsocket.core.session.ActiveConnection;
 import org.monora.coolsocket.core.session.CancelledException;
-import org.monora.uprotocol.core.network.Device;
+import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
@@ -38,14 +38,14 @@ public interface TransportSeat
      * The file transfer should be made on the same thread since the bridge belongs to {@link TransportSession}.
      *
      * @param bridge     The bridge that speaks on behalf of you when making requests. A connection wrapper.
-     * @param device     That is making the request.
+     * @param client     That is making the request.
      * @param transferId {@link TransferItem#transferId}
      * @param type       Of the transfer.
      * @throws PersistenceException   If some of the data is missing for this transfer (i.e., the remote doesn't have
      *                                some permissions enabled in the database).
      * @throws ProtocolException If the remote doesn't have satisfactory permissions or sent invalid values.
      */
-    void beginFileTransfer(CommunicationBridge bridge, Device device, long transferId, TransferItem.Type type)
+    void beginFileTransfer(CommunicationBridge bridge, Client client, long transferId, TransferItem.Type type)
             throws PersistenceException, ProtocolException;
 
     /**
@@ -53,11 +53,11 @@ public interface TransportSeat
      * <p>
      * If the user is about to pick a device, this should be the one that is picked.
      *
-     * @param device        That wants to be noticed.
+     * @param client        That wants to be noticed.
      * @param deviceAddress Where that device is located.
      * @return True if the request will be fulfilled.
      */
-    boolean handleAcquaintanceRequest(Device device, DeviceAddress deviceAddress);
+    boolean handleAcquaintanceRequest(Client client, DeviceAddress deviceAddress);
 
     /**
      * Handle the file transfer request.
@@ -68,14 +68,14 @@ public interface TransportSeat
      * <p>
      * Anything after the checks should be done on a separate thread.
      *
-     * @param device     That is making the file transfer request.
+     * @param client     That is making the file transfer request.
      * @param hasPin     Whether this device had a valid PIN when it made this request.
      * @param transferId The unique transfer id to mention a group of items.
      * @param jsonArray  The transfer item data.
      * @throws PersistenceException   If anything related to handling of the persistent data goes wrong.
      * @throws ProtocolException If something related to permissions or similar goes wrong.
      */
-    void handleFileTransferRequest(Device device, boolean hasPin, long transferId, String jsonArray)
+    void handleFileTransferRequest(Client client, boolean hasPin, long transferId, String jsonArray)
             throws PersistenceException, ProtocolException;
 
     /**
@@ -84,25 +84,25 @@ public interface TransportSeat
      * <p>
      * This may or not be called depending on the uprotocol client. You should not wait for this.
      *
-     * @param device     That is informing us. You may need to check if it owns the transfer request.
+     * @param client     That is informing us. You may need to check if it owns the transfer request.
      * @param transferId That points to the transfer request.
      * @param isAccepted True if the remote has accepted the request.
      */
-    void handleFileTransferState(Device device, long transferId, boolean isAccepted);
+    void handleFileTransferState(Client client, long transferId, boolean isAccepted);
 
     /**
      * Handle the text transfer request.
      *
-     * @param device That sent the request.
+     * @param client That sent the request.
      * @param text   That has been received.
      */
-    void handleTextTransfer(Device device, String text);
+    void handleTextTransfer(Client client, String text);
 
     /**
      * Check whether there is an ongoing transfer for the given parameters.
      *
      * @param transferId The transfer id as in {@link TransferItem#transferId}
-     * @param deviceUid  The {@link Device#uid} if this needs to concern only the given device, or null
+     * @param deviceUid  The {@link Client#uid} if this needs to concern only the given device, or null
      *                   you need check any transfer process for any device.
      * @param type       To limit the type of the transfer as in {@link TransferItem#type}.
      * @return True if there is an ongoing transfer for the given parameters.
@@ -128,10 +128,10 @@ public interface TransportSeat
      * doesn't save the request and {@link PersistenceProvider#hasRequestForInvalidationOfCredentials(String)} returns
      * {@code true}.
      *
-     * @param device That has accessed the server.
+     * @param client That has accessed the server.
      * @see PersistenceProvider#saveRequestForInvalidationOfCredentials(String)
      */
-    void notifyDeviceCredentialsChanged(Device device);
+    void notifyDeviceCredentialsChanged(Client client);
 
     /**
      * Handle the receive process. You can invoke this method in the {@link #beginFileTransfer} method when the type is
@@ -146,7 +146,7 @@ public interface TransportSeat
     {
         PersistenceProvider persistenceProvider = bridge.getPersistenceProvider();
         ActiveConnection activeConnection = bridge.getActiveConnection();
-        Device device = bridge.getDevice();
+        Client client = bridge.getDevice();
         TransferItem item;
 
         // TODO: 11/6/20 This should belong to the task manager making the ETA calculation.
@@ -181,7 +181,7 @@ public interface TransportSeat
                         }
 
                         outputStream.flush();
-                        persistenceProvider.setState(device.uid, item, PersistenceProvider.STATE_DONE, null);
+                        persistenceProvider.setState(client.uid, item, PersistenceProvider.STATE_DONE, null);
                         completedBytes += currentBytes;
                         completedCount++;
                         lastItem = item;
@@ -190,27 +190,27 @@ public interface TransportSeat
                     }
                 } catch (CancelledException e) {
                     // The task is cancelled. We reset the state of this item to 'pending'.
-                    persistenceProvider.setState(device.uid, item, PersistenceProvider.STATE_PENDING, e);
+                    persistenceProvider.setState(client.uid, item, PersistenceProvider.STATE_PENDING, e);
                     throw e;
                 } catch (FileNotFoundException e) {
                     throw e;
                 } catch (ContentException e) {
                     switch (e.error) {
                         case NotFound:
-                            persistenceProvider.setState(device.uid, item,
+                            persistenceProvider.setState(client.uid, item,
                                     PersistenceProvider.STATE_INVALIDATED_STICKY, e);
                             break;
                         case AlreadyExists:
                         case NotAccessible:
                         default:
-                            persistenceProvider.setState(device.uid, item,
+                            persistenceProvider.setState(client.uid, item,
                                     PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
                     }
                 } catch (Exception e) {
-                    persistenceProvider.setState(device.uid, item, PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
+                    persistenceProvider.setState(client.uid, item, PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
                     throw e;
                 } finally {
-                    persistenceProvider.save(device.uid, item);
+                    persistenceProvider.save(client.uid, item);
                     item = null;
                 }
             }
@@ -244,7 +244,7 @@ public interface TransportSeat
     {
         PersistenceProvider persistenceProvider = bridge.getPersistenceProvider();
         ActiveConnection activeConnection = bridge.getActiveConnection();
-        Device device = bridge.getDevice();
+        Client client = bridge.getDevice();
         TransferItem item;
 
         // TODO: 11/6/20 These variables belong to the ETA calculator.
@@ -262,7 +262,7 @@ public interface TransportSeat
 
                 try {
                     final ItemPointer itemPointer = Transfers.getItemRequest(request);
-                    item = persistenceProvider.loadTransferItem(device.uid, transferId, itemPointer.itemId,
+                    item = persistenceProvider.loadTransferItem(client.uid, transferId, itemPointer.itemId,
                             TransferItem.Type.OUTGOING);
                     currentBytes = itemPointer.position;
 
@@ -281,8 +281,8 @@ public interface TransportSeat
 
                             bridge.sendResult(true);
 
-                            persistenceProvider.setState(device.uid, item, PersistenceProvider.STATE_IN_PROGRESS, null);
-                            persistenceProvider.save(device.uid, item);
+                            persistenceProvider.setState(client.uid, item, PersistenceProvider.STATE_IN_PROGRESS, null);
+                            persistenceProvider.save(client.uid, item);
 
                             ActiveConnection.Description description = activeConnection.writeBegin(0,
                                     item.size - currentBytes);
@@ -305,20 +305,20 @@ public interface TransportSeat
 
                             completedBytes += currentBytes;
                             completedCount++;
-                            persistenceProvider.setState(device.uid, item, PersistenceProvider.STATE_DONE, null);
+                            persistenceProvider.setState(client.uid, item, PersistenceProvider.STATE_DONE, null);
                         }
                     } catch (CancelledException e) {
-                        persistenceProvider.setState(device.uid, item, PersistenceProvider.STATE_PENDING, e);
+                        persistenceProvider.setState(client.uid, item, PersistenceProvider.STATE_PENDING, e);
                         throw e;
                     } catch (FileNotFoundException e) {
-                        persistenceProvider.setState(device.uid, item, PersistenceProvider.STATE_INVALIDATED_STICKY, e);
+                        persistenceProvider.setState(client.uid, item, PersistenceProvider.STATE_INVALIDATED_STICKY, e);
                         throw e;
                     } catch (Exception e) {
-                        persistenceProvider.setState(device.uid, item,
+                        persistenceProvider.setState(client.uid, item,
                                 PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
                         throw e;
                     } finally {
-                        persistenceProvider.save(device.uid, item);
+                        persistenceProvider.save(client.uid, item);
                         item = null;
                     }
                 } catch (CancelledException e) {

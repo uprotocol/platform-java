@@ -3,7 +3,7 @@ package org.monora.uprotocol;
 import org.junit.Assert;
 import org.junit.Test;
 import org.monora.uprotocol.core.CommunicationBridge;
-import org.monora.uprotocol.core.network.Device;
+import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
@@ -27,12 +27,12 @@ public class RequestTest extends DefaultTestBase
                 deviceAddress, null, 0)) {
             Assert.assertTrue("Remote should send a positive message.", bridge.requestAcquaintance());
 
-            Device persistentDevice = secondaryPersistence.createDeviceFor(bridge.getDevice().uid);
-            secondaryPersistence.sync(persistentDevice);
+            Client persistentClient = secondaryPersistence.createDeviceFor(bridge.getDevice().uid);
+            secondaryPersistence.sync(persistentClient);
 
-            Assert.assertEquals("Devices should be same.", bridge.getDevice(), persistentDevice);
+            Assert.assertEquals("Devices should be same.", bridge.getDevice(), persistentClient);
             Assert.assertEquals("Devices should have the same username.", bridge.getDevice().username,
-                    persistentDevice.username);
+                    persistentClient.username);
         } finally {
             primarySession.stop();
         }
@@ -120,8 +120,8 @@ public class RequestTest extends DefaultTestBase
             bridge.requestAcquaintance();
         } catch (SecurityException e) {
             if (e.getCause() instanceof SSLHandshakeException) {
-                e.device.certificate = null;
-                secondaryPersistence.save(e.device);
+                e.client.certificate = null;
+                secondaryPersistence.save(e.client);
             } else
                 throw e;
         }

@@ -7,7 +7,7 @@ import java.security.cert.X509Certificate;
 /**
  * A device is a representation of a client using the latest information it has provided in a previous communication.
  */
-public abstract class Device
+public abstract class Client
 {
     /**
      * Represents the unique identifier for the device.
@@ -85,8 +85,8 @@ public abstract class Device
     @Override
     public boolean equals(Object obj)
     {
-        if (obj instanceof Device) {
-            return uid != null && uid.equals(((Device) obj).uid);
+        if (obj instanceof Client) {
+            return uid != null && uid.equals(((Client) obj).uid);
         }
         return super.equals(obj);
     }
@@ -94,12 +94,12 @@ public abstract class Device
     /**
      * Load the details for this instance from another instance.
      *
-     * @param device To load from.
+     * @param client To load from.
      */
-    public void from(Device device)
+    public void from(Client client)
     {
-        from(device.username, device.brand, device.model, device.clientType, device.versionName, device.versionCode,
-                device.protocolVersion, device.protocolVersionMin, device.isTrusted, device.isBlocked, device.certificate);
+        from(client.username, client.brand, client.model, client.clientType, client.versionName, client.versionCode,
+                client.protocolVersion, client.protocolVersionMin, client.isTrusted, client.isBlocked, client.certificate);
     }
 
     protected void from(String username, String brand, String model, ClientType clientType, String versionName,

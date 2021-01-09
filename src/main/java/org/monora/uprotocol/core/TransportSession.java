@@ -4,7 +4,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.CoolSocket;
 import org.monora.coolsocket.core.session.ActiveConnection;
-import org.monora.uprotocol.core.network.Device;
+import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.network.DeviceAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
@@ -65,7 +65,7 @@ public class TransportSession extends CoolSocket
             JSONObject response = activeConnection.receive().getAsJson();
             final int activePin = persistenceProvider.getNetworkPin();
             final boolean hasPin = activePin != 0 && activePin == response.getInt(Keyword.DEVICE_PIN);
-            final Device device = persistenceProvider.createDevice();
+            final Client client = persistenceProvider.createDevice();
             final DeviceAddress deviceAddress = persistenceProvider.createDeviceAddressFor(
                     activeConnection.getAddress());
 
@@ -73,14 +73,14 @@ public class TransportSession extends CoolSocket
                 persistenceProvider.revokeNetworkPin();
 
             try {
-                DeviceLoader.loadAsServer(persistenceProvider, response, device, hasPin);
+                DeviceLoader.loadAsServer(persistenceProvider, response, client, hasPin);
                 CommunicationBridge.sendSecure(activeConnection, true, persistenceProvider.deviceAsJson(0));
             } finally {
                 persistenceProvider.broadcast();
             }
 
             CommunicationBridge.sendResult(activeConnection, true);
-            CommunicationBridge.convertToSSL(connectionFactory, persistenceProvider, activeConnection, device,
+            CommunicationBridge.convertToSSL(connectionFactory, persistenceProvider, activeConnection, client,
                     false);
 
             activeConnection.setInternalCacheLimit(1073741824); // 1MB
@@ -89,12 +89,12 @@ public class TransportSession extends CoolSocket
             if (!CommunicationBridge.resultOf(request))
                 return;
 
-            handleRequest(new CommunicationBridge(persistenceProvider, activeConnection, device, deviceAddress),
-                    device, deviceAddress, hasPin, request);
+            handleRequest(new CommunicationBridge(persistenceProvider, activeConnection, client, deviceAddress),
+                    client, deviceAddress, hasPin, request);
         } catch (SecurityException e) {
-            if (!persistenceProvider.hasRequestForInvalidationOfCredentials(e.device.uid)) {
-                persistenceProvider.saveRequestForInvalidationOfCredentials(e.device.uid);
-                transportSeat.notifyDeviceCredentialsChanged(e.device);
+            if (!persistenceProvider.hasRequestForInvalidationOfCredentials(e.client.uid)) {
+                persistenceProvider.saveRequestForInvalidationOfCredentials(e.client.uid);
+                transportSeat.notifyDeviceCredentialsChanged(e.client);
             }
         } catch (Exception e) {
             try {
@@ -104,7 +104,7 @@ public class TransportSession extends CoolSocket
         }
     }
 
-    private void handleRequest(CommunicationBridge bridge, Device device, DeviceAddress deviceAddress,
+    private void handleRequest(CommunicationBridge bridge, Client client, DeviceAddress deviceAddress,
                                boolean hasPin, JSONObject response) throws JSONException, IOException,
             PersistenceException, ProtocolException
     {
@@ -116,7 +116,7 @@ public class TransportSession extends CoolSocket
                 if (transportSeat.hasOngoingIndexingFor(transferId) || persistenceProvider.containsTransfer(transferId))
                     throw new ContentException(ContentException.Error.AlreadyExists);
                 else {
-                    transportSeat.handleFileTransferRequest(device, hasPin, transferId, jsonIndex);
+                    transportSeat.handleFileTransferRequest(client, hasPin, transferId, jsonIndex);
                     bridge.sendResult(true);
                 }
                 return;
@@ -125,16 +125,16 @@ public class TransportSession extends CoolSocket
                 int transferId = response.getInt(Keyword.TRANSFER_ID);
                 boolean isAccepted = response.getBoolean(Keyword.TRANSFER_IS_ACCEPTED);
 
-                transportSeat.handleFileTransferState(device, transferId, isAccepted);
+                transportSeat.handleFileTransferState(client, transferId, isAccepted);
                 bridge.sendResult(true);
                 return;
             }
             case (Keyword.REQUEST_TRANSFER_TEXT):
-                transportSeat.handleTextTransfer(device, response.getString(Keyword.TRANSFER_TEXT));
+                transportSeat.handleTextTransfer(client, response.getString(Keyword.TRANSFER_TEXT));
                 bridge.sendResult(true);
                 return;
             case (Keyword.REQUEST_ACQUAINTANCE):
-                transportSeat.handleAcquaintanceRequest(device, deviceAddress);
+                transportSeat.handleAcquaintanceRequest(client, deviceAddress);
                 bridge.sendResult(true);
                 return;
             case (Keyword.REQUEST_TRANSFER_JOB):
@@ -147,13 +147,13 @@ public class TransportSession extends CoolSocket
                 else if (TransferItem.Type.OUTGOING.equals(type))
                     type = TransferItem.Type.INCOMING;
 
-                if (TransferItem.Type.INCOMING.equals(type) && !device.isTrusted)
+                if (TransferItem.Type.INCOMING.equals(type) && !client.isTrusted)
                     bridge.sendError(Keyword.ERROR_NOT_TRUSTED);
-                else if (transportSeat.hasOngoingTransferFor(transferId, device.uid, type))
+                else if (transportSeat.hasOngoingTransferFor(transferId, client.uid, type))
                     throw new ContentException(ContentException.Error.NotAccessible);
                 else {
                     bridge.sendResult(true);
-                    transportSeat.beginFileTransfer(bridge, device, transferId, type);
+                    transportSeat.beginFileTransfer(bridge, client, transferId, type);
                 }
                 return;
             default:
