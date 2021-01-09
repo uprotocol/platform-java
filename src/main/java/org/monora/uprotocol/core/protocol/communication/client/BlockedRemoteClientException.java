@@ -1,4 +1,4 @@
-package org.monora.uprotocol.core.protocol.communication.peer;
+package org.monora.uprotocol.core.protocol.communication.client;
 
 import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
@@ -8,9 +8,9 @@ import org.monora.uprotocol.core.protocol.communication.CommunicationException;
  * <p>
  * If this clients connects to a blocked peer, the blocked status will be removed.
  */
-public class BlockedPeerException extends CommunicationException
+public class BlockedRemoteClientException extends CommunicationException
 {
-    public BlockedPeerException(Client client)
+    public BlockedRemoteClientException(Client client)
     {
         super(client);
     }

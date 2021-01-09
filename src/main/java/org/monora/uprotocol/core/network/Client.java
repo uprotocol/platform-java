@@ -5,7 +5,8 @@ import org.monora.uprotocol.core.protocol.ClientType;
 import java.security.cert.X509Certificate;
 
 /**
- * A device is a representation of a client using the latest information it has provided in a previous communication.
+ * A client is a representation of a uprotocol client using the latest information it has provided in a previous
+ * communication.
  */
 public abstract class Client
 {

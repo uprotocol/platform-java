@@ -11,10 +11,10 @@ public class DefaultClientAddress extends ClientAddress
         this.inetAddress = inetAddress;
     }
 
-    public DefaultClientAddress(InetAddress inetAddress, String deviceUid, long lastUsageTime)
+    public DefaultClientAddress(InetAddress inetAddress, String clientUid, long lastUsageTime)
     {
         this(inetAddress);
-        this.deviceUid = deviceUid;
+        this.clientUid = clientUid;
         this.lastUsageTime = lastUsageTime;
     }
 }

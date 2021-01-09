@@ -10,9 +10,9 @@ import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.persistence.StreamDescriptor;
-import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
-import org.monora.uprotocol.core.spec.alpha.Keyword;
+import org.monora.uprotocol.core.protocol.communication.ProtocolException;
+import org.monora.uprotocol.core.spec.v1.Keyword;
 import org.monora.uprotocol.core.transfer.ItemPointer;
 import org.monora.uprotocol.core.transfer.Transfers;
 
@@ -41,9 +41,9 @@ public interface TransportSeat
      * @param client     That is making the request.
      * @param transferId {@link TransferItem#transferId}
      * @param type       Of the transfer.
-     * @throws PersistenceException   If some of the data is missing for this transfer (i.e., the remote doesn't have
-     *                                some permissions enabled in the database).
-     * @throws ProtocolException If the remote doesn't have satisfactory permissions or sent invalid values.
+     * @throws PersistenceException If some of the data is missing for this transfer (i.e., the remote doesn't have
+     *                              some permissions enabled in the database).
+     * @throws ProtocolException    If the remote doesn't have satisfactory permissions or sent invalid values.
      */
     void beginFileTransfer(CommunicationBridge bridge, Client client, long transferId, TransferItem.Type type)
             throws PersistenceException, ProtocolException;
@@ -51,11 +51,12 @@ public interface TransportSeat
     /**
      * The remote wants us to notice it.
      * <p>
-     * If the user is about to pick a device, this should be the one that is picked.
+     * If the user is about to pick a client, this should be the one that is picked.
      *
      * @param client        That wants to be noticed.
-     * @param clientAddress Where that device is located.
+     * @param clientAddress Where that client resides.
      * @return True if the request will be fulfilled.
+     * @see CommunicationBridge#requestAcquaintance()
      */
     boolean handleAcquaintanceRequest(Client client, ClientAddress clientAddress);
 
@@ -69,11 +70,11 @@ public interface TransportSeat
      * Anything after the checks should be done on a separate thread.
      *
      * @param client     That is making the file transfer request.
-     * @param hasPin     Whether this device had a valid PIN when it made this request.
+     * @param hasPin     Whether the remote client had a valid PIN when it made this request.
      * @param transferId The unique transfer id to mention a group of items.
      * @param jsonArray  The transfer item data.
-     * @throws PersistenceException   If anything related to handling of the persistent data goes wrong.
-     * @throws ProtocolException If something related to permissions or similar goes wrong.
+     * @throws PersistenceException If anything related to handling of the persistent data goes wrong.
+     * @throws ProtocolException    If something related to permissions or similar goes wrong.
      */
     void handleFileTransferRequest(Client client, boolean hasPin, long transferId, String jsonArray)
             throws PersistenceException, ProtocolException;
@@ -102,12 +103,12 @@ public interface TransportSeat
      * Check whether there is an ongoing transfer for the given parameters.
      *
      * @param transferId The transfer id as in {@link TransferItem#transferId}
-     * @param deviceUid  The {@link Client#uid} if this needs to concern only the given device, or null
+     * @param clientUid  The {@link Client#uid} if this needs to concern only the given client, or null
      *                   you need check any transfer process for any device.
      * @param type       To limit the type of the transfer as in {@link TransferItem#type}.
      * @return True if there is an ongoing transfer for the given parameters.
      */
-    boolean hasOngoingTransferFor(long transferId, String deviceUid, TransferItem.Type type);
+    boolean hasOngoingTransferFor(long transferId, String clientUid, TransferItem.Type type);
 
     /**
      * Check whether there is an indexing process for the given transfer id.
@@ -120,10 +121,10 @@ public interface TransportSeat
     boolean hasOngoingIndexingFor(long transferId);
 
     /**
-     * A known device could not connect due to sending different credentials.
+     * A known client could not connect due to a mismatch in credentials.
      * <p>
      * This is a suspicious event that should be handled in cooperation with user.
-     *
+     * <p>
      * This request will occur only once unless {@link PersistenceProvider#saveRequestForInvalidationOfCredentials(String)}
      * doesn't save the request and {@link PersistenceProvider#hasRequestForInvalidationOfCredentials(String)} returns
      * {@code true}.
@@ -131,7 +132,7 @@ public interface TransportSeat
      * @param client That has accessed the server.
      * @see PersistenceProvider#saveRequestForInvalidationOfCredentials(String)
      */
-    void notifyDeviceCredentialsChanged(Client client);
+    void notifyClientCredentialsChanged(Client client);
 
     /**
      * Handle the receive process. You can invoke this method in the {@link #beginFileTransfer} method when the type is
@@ -146,7 +147,7 @@ public interface TransportSeat
     {
         PersistenceProvider persistenceProvider = bridge.getPersistenceProvider();
         ActiveConnection activeConnection = bridge.getActiveConnection();
-        Client client = bridge.getDevice();
+        Client client = bridge.getRemoteClient();
         TransferItem item;
 
         // TODO: 11/6/20 This should belong to the task manager making the ETA calculation.
@@ -244,7 +245,7 @@ public interface TransportSeat
     {
         PersistenceProvider persistenceProvider = bridge.getPersistenceProvider();
         ActiveConnection activeConnection = bridge.getActiveConnection();
-        Client client = bridge.getDevice();
+        Client client = bridge.getRemoteClient();
         TransferItem item;
 
         // TODO: 11/6/20 These variables belong to the ETA calculator.

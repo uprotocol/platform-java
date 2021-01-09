@@ -8,7 +8,7 @@ import org.monora.uprotocol.core.TransportSession;
 import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.network.ClientAddress;
 import org.monora.uprotocol.core.network.TransferItem;
-import org.monora.uprotocol.core.spec.alpha.Keyword;
+import org.monora.uprotocol.core.spec.v1.Keyword;
 
 import javax.activation.MimetypesFileTypeMap;
 import javax.net.ssl.SSLContext;
@@ -62,7 +62,7 @@ public interface PersistenceProvider
     int STATE_IN_PROGRESS = 3;
 
     /**
-     * The item is done, that is, it has been received or sent for a given device.
+     * The item is done.
      */
     int STATE_DONE = 4;
 
@@ -72,9 +72,9 @@ public interface PersistenceProvider
     MimetypesFileTypeMap typeMap = new MimetypesFileTypeMap();
 
     /**
-     * Accept the request for invalidation of credentials of a device.
+     * Accept the request for invalidation of a client's credentials.
      * <p>
-     * Removing the certificate for the given device should be enough.
+     * When implementing, removal of the given client's certificate should be enough.
      *
      * @param client Of whose keys will be approved.
      * @return True if there were a request and now approved, or false there were no request.
@@ -98,55 +98,7 @@ public interface PersistenceProvider
     void broadcast();
 
     /**
-     * Check whether the transfer is known to us.
-     *
-     * @param transferId To check.
-     * @return True there is matching data for the given transfer id.
-     */
-    boolean containsTransfer(long transferId);
-
-    /**
-     * Create device address instance.
-     *
-     * @param address At which the device address will be pointing.
-     * @return The device address instance.
-     */
-    ClientAddress createDeviceAddressFor(InetAddress address);
-
-    /**
-     * Request from the factory to create an empty {@link Client} instance.
-     *
-     * @return The device instance.
-     */
-    Client createDevice();
-
-    /**
-     * Create a device instance using the given unique identifier.
-     * <p>
-     * The resulting {@link Client} instance is not ready for use. To make it so, call {@link #sync(Client)}.
-     *
-     * @param uid The unique identifier for the device.
-     * @return The device instance.
-     */
-    Client createDeviceFor(String uid);
-
-    /**
-     * Create a transfer item instance for the given parameters.
-     *
-     * @param transferId Points to {@link TransferItem#transferId}.
-     * @param id         Points to {@link TransferItem#id}.
-     * @param name       Points to {@link TransferItem#name}.
-     * @param mimeType   Points to {@link TransferItem#mimeType}.
-     * @param size       Points to {@link TransferItem#size}..
-     * @param directory  Points to {@link TransferItem#directory}.
-     * @param type       Points to {@link TransferItem#type}
-     * @return The transfer item instance.
-     */
-    TransferItem createTransferItemFor(long transferId, long id, String name, String mimeType, long size,
-                                       String directory, TransferItem.Type type);
-
-    /**
-     * Convert this device into {@link JSONObject}.
+     * Convert this client into {@link JSONObject}.
      * <p>
      * This should only be invoked when communicating with remote.
      * <p>
@@ -165,45 +117,75 @@ public interface PersistenceProvider
      * @return The JSON object
      * @throws JSONException If the creation of the JSON object fails for some reason.
      */
-    default JSONObject deviceAsJson(int pin) throws JSONException
+    default JSONObject clientAsJson(int pin) throws JSONException
     {
-        Client client = getDevice();
+        Client client = getClient();
         JSONObject object = new JSONObject()
-                .put(Keyword.DEVICE_UID, client.uid)
-                .put(Keyword.DEVICE_BRAND, client.brand)
-                .put(Keyword.DEVICE_MODEL, client.model)
-                .put(Keyword.DEVICE_USERNAME, client.username)
-                .put(Keyword.DEVICE_CLIENT_TYPE, client.clientType)
-                .put(Keyword.DEVICE_VERSION_CODE, client.versionCode)
-                .put(Keyword.DEVICE_VERSION_NAME, client.versionName)
-                .put(Keyword.DEVICE_PROTOCOL_VERSION, client.protocolVersion)
-                .put(Keyword.DEVICE_PROTOCOL_VERSION_MIN, client.protocolVersionMin)
-                .put(Keyword.DEVICE_PIN, pin);
+                .put(Keyword.CLIENT_UID, client.uid)
+                .put(Keyword.CLIENT_MANUFACTURER, client.brand)
+                .put(Keyword.CLIENT_PRODUCT, client.model)
+                .put(Keyword.CLIENT_USERNAME, client.username)
+                .put(Keyword.CLIENT_TYPE, client.clientType)
+                .put(Keyword.CLIENT_VERSION_CODE, client.versionCode)
+                .put(Keyword.CLIENT_VERSION_NAME, client.versionName)
+                .put(Keyword.CLIENT_PROTOCOL_VERSION, client.protocolVersion)
+                .put(Keyword.CLIENT_PROTOCOL_VERSION_MIN, client.protocolVersionMin)
+                .put(Keyword.CLIENT_PIN, pin);
 
-        byte[] deviceAvatar = getAvatar();
-        if (deviceAvatar.length > 0)
-            object.put(Keyword.DEVICE_AVATAR, Base64.getEncoder().encodeToString(deviceAvatar));
+        byte[] clientAvatar = getClientPicture();
+        if (clientAvatar.length > 0)
+            object.put(Keyword.CLIENT_PICTURE, Base64.getEncoder().encodeToString(clientAvatar));
 
         return object;
     }
 
     /**
-     * Returns the avatar for this client.
+     * Check whether the transfer is known to us.
      *
-     * @return The bitmap data for the avatar if exists, or zero-length byte array if it doesn't.
+     * @param transferId To check.
+     * @return True there is matching data for the given transfer id.
      */
-    byte[] getAvatar();
+    boolean containsTransfer(long transferId);
 
     /**
-     * Returns the avatar for the given device.
-     * <p>
-     * If the given device's {@link Client#uid} is equal to {@link #getDeviceUid()}, this should return the avatar
-     * for this client.
+     * Create client address instance.
      *
-     * @param client For which the avatar will be provided.
-     * @return The bitmap data for the avatar if exists, or zero-length byte array if it doesn't.
+     * @param address To which this will be pointing.
+     * @return The client address instance.
      */
-    byte[] getAvatarFor(Client client);
+    ClientAddress createClientAddressFor(InetAddress address);
+
+    /**
+     * Request from the factory to create an empty {@link Client} instance.
+     *
+     * @return The client instance.
+     */
+    Client createClient();
+
+    /**
+     * Create a client instance using the given unique identifier.
+     * <p>
+     * The resulting {@link Client} instance is not ready for use. To make it so, call {@link #sync(Client)}.
+     *
+     * @param uid The client's unique identifier.
+     * @return The client instance.
+     */
+    Client createClientFor(String uid);
+
+    /**
+     * Create a transfer item instance for the given parameters.
+     *
+     * @param transferId Points to {@link TransferItem#transferId}.
+     * @param id         Points to {@link TransferItem#id}.
+     * @param name       Points to {@link TransferItem#name}.
+     * @param mimeType   Points to {@link TransferItem#mimeType}.
+     * @param size       Points to {@link TransferItem#size}..
+     * @param directory  Points to {@link TransferItem#directory}.
+     * @param type       Points to {@link TransferItem#type}
+     * @return The transfer item instance.
+     */
+    TransferItem createTransferItemFor(long transferId, long id, String name, String mimeType, long size,
+                                       String directory, TransferItem.Type type);
 
     /**
      * Returns this client's certificate.
@@ -213,6 +195,40 @@ public interface PersistenceProvider
      * @return This client's certificate.
      */
     X509Certificate getCertificate();
+
+    /**
+     * Returns the avatar for this client.
+     *
+     * @return The bitmap data for the avatar if exists, or zero-length byte array if it doesn't.
+     */
+    byte[] getClientPicture();
+
+    /**
+     * Returns the avatar for the given device.
+     * <p>
+     * If the given device's {@link Client#uid} is equal to {@link #getClientUid()}, this should return the avatar
+     * for this client.
+     *
+     * @param client For which the avatar will be provided.
+     * @return The bitmap data for the avatar if exists, or zero-length byte array if it doesn't.
+     */
+    byte[] getClientPictureFor(Client client);
+
+    /**
+     * This should return the unique identifier for this client. It should be both unique and persistent.
+     * <p>
+     * It is not meant to change.
+     *
+     * @return The unique identifier for this client.
+     */
+    String getClientUid();
+
+    /**
+     * This will return the {@link Client} instance representing this client.
+     *
+     * @return The client instance.
+     */
+    Client getClient();
 
     /**
      * This will return the descriptor that points to the file that is received or sent.
@@ -228,22 +244,6 @@ public interface PersistenceProvider
     StreamDescriptor getDescriptorFor(TransferItem transferItem);
 
     /**
-     * This should return the unique identifier for this client. It should be both unique and persistent.
-     * <p>
-     * It is not meant to change.
-     *
-     * @return The unique identifier for this client.
-     */
-    String getDeviceUid();
-
-    /**
-     * This will return the {@link Client} instance representing this client.
-     *
-     * @return The device instance.
-     */
-    Client getDevice();
-
-    /**
      * This will return the first valid item that that this side can receive.
      *
      * @param transferId Points to {@link TransferItem#transferId}.
@@ -254,12 +254,12 @@ public interface PersistenceProvider
     /**
      * This method is invoked when there is a new connection to the server.
      * <p>
-     * This is used to provide the access PIN which may be delivered to the remote device via a QR code, or by other
+     * This provides the PIN which may be delivered to the remote client via a QR code, or by other
      * means to allow it to have instant access to this client.
      * <p>
      * The code should persist until {@link #revokeNetworkPin()} is invoked.
      *
-     * @return the PIN that will change after revoked.
+     * @return the PIN that will change after being revoked.
      * @see #revokeNetworkPin()
      */
     int getNetworkPin();
@@ -271,26 +271,26 @@ public interface PersistenceProvider
     SSLContext getSSLContextFor(Client client);
 
     /**
-     * Check whether the given device had already sent a wrong key and has a pending key request to be approved.
+     * Check whether the given client already has a request for invalidation.
      *
-     * @param deviceUid That sent the request.
+     * @param clientUid That sent the request.
      * @return True if there is a pending request.
      * @see #saveRequestForInvalidationOfCredentials(String)
      * @see #approveInvalidationOfCredentials(Client)
      */
-    boolean hasRequestForInvalidationOfCredentials(String deviceUid);
+    boolean hasRequestForInvalidationOfCredentials(String clientUid);
 
     /**
      * Load transfer item for the given parameters.
      *
-     * @param deviceUid   Owning the item.
+     * @param clientUid  Owning the item.
      * @param transferId Points to {@link TransferItem#transferId}
      * @param id         Points to {@link TransferItem#id}.
      * @param type       Specifying whether this is an incoming or outgoing operation.
      * @return The transfer item that points to the given parameters or null if there is no match.
      * @throws PersistenceException When the given parameters don't point to a valid item.
      */
-    TransferItem loadTransferItem(String deviceUid, long transferId, long id, TransferItem.Type type)
+    TransferItem loadTransferItem(String clientUid, long transferId, long id, TransferItem.Type type)
             throws PersistenceException;
 
     /**
@@ -312,14 +312,14 @@ public interface PersistenceProvider
     OutputStream openOutputStream(StreamDescriptor descriptor) throws IOException;
 
     /**
-     * This method is invoked after the PIN is used by a device.
+     * Revoke the current valid network PIN.
      *
      * @see #getNetworkPin()
      */
     void revokeNetworkPin();
 
     /**
-     * Save this device in the persistence database.
+     * Save this client in the persistence database.
      * <p>
      * Do not hold any duplicates, and verify it using the {@link Client#uid} field.
      *
@@ -328,9 +328,7 @@ public interface PersistenceProvider
     void save(Client client);
 
     /**
-     * Save this device address in the persistence database.
-     * <p>
-     * Doing so will allow you to connect to a device later.
+     * Save this client address in the persistence database.
      *
      * @param clientAddress To save.
      */
@@ -341,41 +339,41 @@ public interface PersistenceProvider
      * <p>
      * Note: ensure there are no duplicates.
      *
-     * @param deviceUid That owns the item.
-     * @param item     To save.
+     * @param clientUid That owns the item.
+     * @param item      To save.
      */
-    void save(String deviceUid, TransferItem item);
+    void save(String clientUid, TransferItem item);
 
     /**
      * Save all the items in the given list.
      *
-     * @param deviceUid That owns the items.
-     * @param itemList To save.
+     * @param clientUid That owns the items.
+     * @param itemList  To save.
      */
-    void save(String deviceUid, List<? extends TransferItem> itemList);
+    void save(String clientUid, List<? extends TransferItem> itemList);
 
     /**
-     * Save the avatar for the given device.
+     * Save the client's picture.
      * <p>
-     * This will be invoked both when the device has an avatar and when it doesn't.
+     * This will always be invoked whether or not the bitmap is empty.
      *
-     * @param deviceUid The device that the avatar belongs to.
-     * @param bitmap   The bitmap data for the avatar.
+     * @param clientUid The device that the avatar belongs to.
+     * @param bitmap    The bitmap data for the avatar.
      */
-    void saveAvatar(String deviceUid, byte[] bitmap);
+    void saveClientPicture(String clientUid, byte[] bitmap);
 
     /**
-     * This method call happens when a known device sends different credentials and now cannot connect.
+     * Invoken when a known clients sends invalid credentials and now cannot connect.
      * <p>
      * You can show the error to the user so that they can decide for themselves.
      * <p>
      * At the end, you should remove the existing certificate for the given device id.
      *
-     * @param deviceUid That wants key invalidation.
+     * @param clientUid That wants key invalidation.
      * @see #hasRequestForInvalidationOfCredentials(String)
      * @see #approveInvalidationOfCredentials(Client)
      */
-    void saveRequestForInvalidationOfCredentials(String deviceUid);
+    void saveRequestForInvalidationOfCredentials(String clientUid);
 
     /**
      * Change the state of the given item.
@@ -383,23 +381,23 @@ public interface PersistenceProvider
      * Note: this should set the state but should not save it since saving it is spared for
      * {@link #save(String, TransferItem)}.
      *
-     * @param deviceUid That owns the copy of the 'item'.
-     * @param item     Of which the given state will be applied.
-     * @param state    The level of invalidation.
-     * @param e        The nullable additional exception cause this state.
+     * @param clientUid That owns the copy of the 'item'.
+     * @param item      Of which the given state will be applied.
+     * @param state     The level of invalidation.
+     * @param e         The nullable additional exception cause this state.
      * @see #STATE_PENDING
      * @see #STATE_INVALIDATED_TEMPORARILY
      * @see #STATE_INVALIDATED_STICKY
      * @see #STATE_IN_PROGRESS
      * @see #STATE_DONE
      */
-    void setState(String deviceUid, TransferItem item, int state, Exception e);
+    void setState(String clientUid, TransferItem item, int state, Exception e);
 
     /**
-     * Sync the device with the persistence database.
+     * Sync the client with the persistence database.
      *
      * @param client To sync.
-     * @throws PersistenceException When there is no device associated with the unique identifier {@link Client#uid}.
+     * @throws PersistenceException When there is no client associated with the unique identifier {@link Client#uid}.
      */
     void sync(Client client) throws PersistenceException;
 

@@ -59,7 +59,7 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public boolean hasOngoingTransferFor(long transferId, String deviceUid, TransferItem.Type type)
+    public boolean hasOngoingTransferFor(long transferId, String clientUid, TransferItem.Type type)
     {
         return false;
     }
@@ -71,7 +71,7 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public void notifyDeviceCredentialsChanged(Client client)
+    public void notifyClientCredentialsChanged(Client client)
     {
         if (autoAcceptNewKeys) {
             persistenceProvider.approveInvalidationOfCredentials(client);

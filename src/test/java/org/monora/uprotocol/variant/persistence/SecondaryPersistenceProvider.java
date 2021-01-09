@@ -6,14 +6,14 @@ import org.monora.uprotocol.variant.DefaultClient;
 public class SecondaryPersistenceProvider extends BasePersistenceProvider
 {
     @Override
-    public String getDeviceUid()
+    public String getClientUid()
     {
-        return "secondary-device";
+        return "secondary-client";
     }
 
     @Override
-    public Client getDevice()
+    public Client getClient()
     {
-        return new DefaultClient(getDeviceUid(), "Sec", "Xyz", "Tuv", getCertificate());
+        return new DefaultClient(getClientUid(), "Sec", "Xyz", "Tuv", getCertificate());
     }
 }

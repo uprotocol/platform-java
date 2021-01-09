@@ -1,4 +1,4 @@
-package org.monora.uprotocol.core.spec.alpha;
+package org.monora.uprotocol.core.spec.v1;
 
 /**
  * The default values for uprotocol.

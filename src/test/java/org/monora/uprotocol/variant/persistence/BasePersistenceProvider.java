@@ -9,7 +9,7 @@ import org.monora.uprotocol.core.persistence.StreamDescriptor;
 import org.monora.uprotocol.variant.DefaultClient;
 import org.monora.uprotocol.variant.DefaultClientAddress;
 import org.monora.uprotocol.variant.DefaultTransferItem;
-import org.monora.uprotocol.variant.holder.Avatar;
+import org.monora.uprotocol.variant.holder.ClientPicture;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
 import org.monora.uprotocol.variant.holder.OwnedTransferHolder;
 import org.spongycastle.asn1.x500.X500NameBuilder;
@@ -52,7 +52,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     private final List<Client> clientList = new ArrayList<>();
     private final List<ClientAddress> clientAddressList = new ArrayList<>();
     private final List<OwnedTransferHolder> transferHolderList = new ArrayList<>();
-    private final List<Avatar> avatarList = new ArrayList<>();
+    private final List<ClientPicture> clientPictureList = new ArrayList<>();
     private final List<MemoryStreamDescriptor> streamDescriptorList = new ArrayList<>();
     private final List<String> invalidationRequestList = new ArrayList<>();
     private final BouncyCastleProvider bouncyCastleProvider = new BouncyCastleProvider();
@@ -98,7 +98,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
             // the issue: https://issuetracker.google.com/issues/37095309
             X500NameBuilder nameBuilder = new X500NameBuilder(BCStyle.INSTANCE);
 
-            nameBuilder.addRDN(BCStyle.CN, getDeviceUid());
+            nameBuilder.addRDN(BCStyle.CN, getClientUid());
             nameBuilder.addRDN(BCStyle.OU, "uprotocol");
             nameBuilder.addRDN(BCStyle.O, "monora");
             final LocalDate localDate = LocalDate.now().minusYears(1);
@@ -161,19 +161,19 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public ClientAddress createDeviceAddressFor(InetAddress address)
+    public ClientAddress createClientAddressFor(InetAddress address)
     {
         return new DefaultClientAddress(address);
     }
 
     @Override
-    public DefaultClient createDevice()
+    public DefaultClient createClient()
     {
         return new DefaultClient();
     }
 
     @Override
-    public DefaultClient createDeviceFor(String uid)
+    public DefaultClient createClientFor(String uid)
     {
         return new DefaultClient(uid);
     }
@@ -186,18 +186,18 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public byte[] getAvatar()
+    public byte[] getClientPicture()
     {
         return new byte[0];
     }
 
     @Override
-    public byte[] getAvatarFor(Client client)
+    public byte[] getClientPictureFor(Client client)
     {
-        synchronized (avatarList) {
-            for (Avatar avatar : avatarList) {
-                if (avatar.deviceUid.equals(client.uid))
-                    return avatar.data;
+        synchronized (clientPictureList) {
+            for (ClientPicture clientPicture : clientPictureList) {
+                if (clientPicture.clientUid.equals(client.uid))
+                    return clientPicture.data;
             }
         }
         return new byte[0];
@@ -270,7 +270,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     public SSLContext getSSLContextFor(Client client)
     {
         try {
-            // Get device private key
+            // Get this client's private key
             PrivateKey privateKey = getPrivateKey();
             char[] password = new char[0];
 
@@ -340,21 +340,21 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public boolean hasRequestForInvalidationOfCredentials(String deviceUid)
+    public boolean hasRequestForInvalidationOfCredentials(String clientUid)
     {
         synchronized (invalidationRequestList) {
-            return invalidationRequestList.contains(deviceUid);
+            return invalidationRequestList.contains(clientUid);
         }
     }
 
     @Override
-    public TransferItem loadTransferItem(String deviceUid, long transferId, long id, TransferItem.Type type)
+    public TransferItem loadTransferItem(String clientUid, long transferId, long id, TransferItem.Type type)
             throws PersistenceException
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {
                 if (holder.item.transferId == transferId && holder.item.id == id && holder.item.type.equals(type)
-                        && holder.deviceUid.equals(deviceUid))
+                        && holder.clientUid.equals(clientUid))
                     return holder.item;
             }
         }
@@ -412,54 +412,54 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void save(String deviceUid, TransferItem item)
+    public void save(String clientUid, TransferItem item)
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {
                 if (holder.item.equals(item)) {
                     holder.item = item;
-                    holder.deviceUid = deviceUid;
+                    holder.clientUid = clientUid;
                     return;
                 }
             }
 
-            transferHolderList.add(new OwnedTransferHolder(item, deviceUid));
+            transferHolderList.add(new OwnedTransferHolder(item, clientUid));
         }
     }
 
     @Override
-    public void save(String deviceUid, List<? extends TransferItem> itemList)
+    public void save(String clientUid, List<? extends TransferItem> itemList)
     {
         for (TransferItem item : itemList) {
-            save(deviceUid, item);
+            save(clientUid, item);
         }
     }
 
     @Override
-    public void saveAvatar(String deviceUid, byte[] bitmap)
+    public void saveClientPicture(String clientUid, byte[] bitmap)
     {
-        synchronized (avatarList) {
-            avatarList.add(new Avatar(deviceUid, bitmap));
+        synchronized (clientPictureList) {
+            clientPictureList.add(new ClientPicture(clientUid, bitmap));
         }
     }
 
     @Override
-    public void saveRequestForInvalidationOfCredentials(String deviceUid)
+    public void saveRequestForInvalidationOfCredentials(String clientUid)
     {
-        if (hasRequestForInvalidationOfCredentials(deviceUid))
+        if (hasRequestForInvalidationOfCredentials(clientUid))
             return;
 
         synchronized (invalidationRequestList) {
-            invalidationRequestList.add(deviceUid);
+            invalidationRequestList.add(clientUid);
         }
     }
 
     @Override
-    public void setState(String deviceUid, TransferItem item, int state, Exception e)
+    public void setState(String clientUid, TransferItem item, int state, Exception e)
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {
-                if (deviceUid.equals(holder.deviceUid) && item.equals(holder.item))
+                if (clientUid.equals(holder.clientUid) && item.equals(holder.item))
                     holder.state = state;
             }
         }
@@ -477,6 +477,6 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
             }
         }
 
-        throw new PersistenceException("The requested device did not exist and failed to sync.");
+        throw new PersistenceException("The requested client does not exist and failed to sync.");
     }
 }

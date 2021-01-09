@@ -20,14 +20,13 @@ package org.monora.uprotocol.core.protocol.communication.client;
 
 import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
-import org.monora.uprotocol.core.protocol.communication.peer.BlockedPeerException;
 
 /**
  * Concerning this client, this error is thrown when it requests operation it is not allowed to perform.
  *
- * If this device is blocked on the peer side, still this error will be thrown.
+ * If this client is blocked on the remote client side, still this error will be thrown.
  *
- * @see BlockedPeerException
+ * @see BlockedRemoteClientException
  */
 public class UnauthorizedClientException extends CommunicationException
 {

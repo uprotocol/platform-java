@@ -3,7 +3,7 @@ package org.monora.uprotocol.core.network;
 import java.net.InetAddress;
 
 /**
- * This class ties an internet address with a device.
+ * This class ties an internet address with a client.
  *
  * @see InetAddress
  * @see Client
@@ -18,7 +18,7 @@ public abstract class ClientAddress
     /**
      * The {@link Client#uid} that specifies who owns this address.
      */
-    public String deviceUid;
+    public String clientUid;
 
     /**
      * The last time that a communication was started with this address.

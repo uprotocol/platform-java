@@ -32,7 +32,7 @@ public class DefaultTestBase
     public DefaultTestBase()
     {
         try {
-            clientAddress = primaryPersistence.createDeviceAddressFor(InetAddress.getLocalHost());
+            clientAddress = primaryPersistence.createClientAddressFor(InetAddress.getLocalHost());
         } catch (UnknownHostException e) {
             throw new RuntimeException("Could not gather the loopback address");
         }

@@ -5,7 +5,7 @@ import org.json.JSONObject;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
-import org.monora.uprotocol.core.spec.alpha.Keyword;
+import org.monora.uprotocol.core.spec.v1.Keyword;
 
 import java.io.IOException;
 

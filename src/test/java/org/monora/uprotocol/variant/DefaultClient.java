@@ -5,8 +5,8 @@ import org.monora.uprotocol.core.protocol.ClientType;
 
 import java.security.cert.X509Certificate;
 
-import static org.monora.uprotocol.core.spec.alpha.Config.VERSION_UPROTOCOL;
-import static org.monora.uprotocol.core.spec.alpha.Config.VERSION_UPROTOCOL_MIN;
+import static org.monora.uprotocol.core.spec.v1.Config.VERSION_UPROTOCOL;
+import static org.monora.uprotocol.core.spec.v1.Config.VERSION_UPROTOCOL_MIN;
 
 public class DefaultClient extends Client
 {

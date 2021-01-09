@@ -27,11 +27,11 @@ public class RequestTest extends DefaultTestBase
                 clientAddress, null, 0)) {
             Assert.assertTrue("Remote should send a positive message.", bridge.requestAcquaintance());
 
-            Client persistentClient = secondaryPersistence.createDeviceFor(bridge.getDevice().uid);
+            Client persistentClient = secondaryPersistence.createClientFor(bridge.getRemoteClient().uid);
             secondaryPersistence.sync(persistentClient);
 
-            Assert.assertEquals("Devices should be same.", bridge.getDevice(), persistentClient);
-            Assert.assertEquals("Devices should have the same username.", bridge.getDevice().username,
+            Assert.assertEquals("Clients should be same.", bridge.getRemoteClient(), persistentClient);
+            Assert.assertEquals("Clients should have the same username.", bridge.getRemoteClient().username,
                     persistentClient.username);
         } finally {
             primarySession.stop();

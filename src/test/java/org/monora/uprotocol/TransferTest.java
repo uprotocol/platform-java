@@ -51,7 +51,7 @@ public class TransferTest extends DefaultTestBase
         secondaryPersistence.openOutputStream(descriptor1).write(data1);
         secondaryPersistence.openOutputStream(descriptor2).write(data2);
 
-        clientAddress = primaryPersistence.createDeviceAddressFor(InetAddress.getLocalHost());
+        clientAddress = primaryPersistence.createClientAddressFor(InetAddress.getLocalHost());
     }
 
     @Before
@@ -146,7 +146,7 @@ public class TransferTest extends DefaultTestBase
     public void senderStartsTransferIfTrusted() throws IOException, InterruptedException, ProtocolException,
             PersistenceException
     {
-        Client secondaryOnPrimary = primaryPersistence.createDeviceFor(secondaryPersistence.getDeviceUid());
+        Client secondaryOnPrimary = primaryPersistence.createClientFor(secondaryPersistence.getClientUid());
         primaryPersistence.sync(secondaryOnPrimary);
         secondaryOnPrimary.isTrusted = true;
         primaryPersistence.save(secondaryOnPrimary);

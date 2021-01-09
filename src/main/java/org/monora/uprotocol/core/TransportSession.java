@@ -13,8 +13,8 @@ import org.monora.uprotocol.core.protocol.ConnectionFactory;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
-import org.monora.uprotocol.core.spec.alpha.Config;
-import org.monora.uprotocol.core.spec.alpha.Keyword;
+import org.monora.uprotocol.core.spec.v1.Config;
+import org.monora.uprotocol.core.spec.v1.Keyword;
 
 import java.io.IOException;
 
@@ -60,21 +60,21 @@ public class TransportSession extends CoolSocket
     public void onConnected(ActiveConnection activeConnection)
     {
         try {
-            activeConnection.reply(persistenceProvider.getDeviceUid());
+            activeConnection.reply(persistenceProvider.getClientUid());
 
             JSONObject response = activeConnection.receive().getAsJson();
             final int activePin = persistenceProvider.getNetworkPin();
-            final boolean hasPin = activePin != 0 && activePin == response.getInt(Keyword.DEVICE_PIN);
-            final Client client = persistenceProvider.createDevice();
-            final ClientAddress clientAddress = persistenceProvider.createDeviceAddressFor(
+            final boolean hasPin = activePin != 0 && activePin == response.getInt(Keyword.CLIENT_PIN);
+            final Client client = persistenceProvider.createClient();
+            final ClientAddress clientAddress = persistenceProvider.createClientAddressFor(
                     activeConnection.getAddress());
 
             if (hasPin)
                 persistenceProvider.revokeNetworkPin();
 
             try {
-                DeviceLoader.loadAsServer(persistenceProvider, response, client, hasPin);
-                CommunicationBridge.sendSecure(activeConnection, true, persistenceProvider.deviceAsJson(0));
+                ClientLoader.loadAsServer(persistenceProvider, response, client, hasPin);
+                CommunicationBridge.sendSecure(activeConnection, true, persistenceProvider.clientAsJson(0));
             } finally {
                 persistenceProvider.broadcast();
             }
@@ -94,7 +94,7 @@ public class TransportSession extends CoolSocket
         } catch (SecurityException e) {
             if (!persistenceProvider.hasRequestForInvalidationOfCredentials(e.client.uid)) {
                 persistenceProvider.saveRequestForInvalidationOfCredentials(e.client.uid);
-                transportSeat.notifyDeviceCredentialsChanged(e.client);
+                transportSeat.notifyClientCredentialsChanged(e.client);
             }
         } catch (Exception e) {
             try {
