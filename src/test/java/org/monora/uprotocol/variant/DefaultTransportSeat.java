@@ -3,7 +3,7 @@ package org.monora.uprotocol.variant;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSeat;
 import org.monora.uprotocol.core.network.Client;
-import org.monora.uprotocol.core.network.DeviceAddress;
+import org.monora.uprotocol.core.network.ClientAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
@@ -33,7 +33,7 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public boolean handleAcquaintanceRequest(Client client, DeviceAddress deviceAddress)
+    public boolean handleAcquaintanceRequest(Client client, ClientAddress clientAddress)
     {
         return true;
     }

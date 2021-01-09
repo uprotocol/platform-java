@@ -5,7 +5,7 @@ import org.json.JSONObject;
 import org.monora.coolsocket.core.CoolSocket;
 import org.monora.coolsocket.core.session.ActiveConnection;
 import org.monora.uprotocol.core.network.Client;
-import org.monora.uprotocol.core.network.DeviceAddress;
+import org.monora.uprotocol.core.network.ClientAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
@@ -66,7 +66,7 @@ public class TransportSession extends CoolSocket
             final int activePin = persistenceProvider.getNetworkPin();
             final boolean hasPin = activePin != 0 && activePin == response.getInt(Keyword.DEVICE_PIN);
             final Client client = persistenceProvider.createDevice();
-            final DeviceAddress deviceAddress = persistenceProvider.createDeviceAddressFor(
+            final ClientAddress clientAddress = persistenceProvider.createDeviceAddressFor(
                     activeConnection.getAddress());
 
             if (hasPin)
@@ -89,8 +89,8 @@ public class TransportSession extends CoolSocket
             if (!CommunicationBridge.resultOf(request))
                 return;
 
-            handleRequest(new CommunicationBridge(persistenceProvider, activeConnection, client, deviceAddress),
-                    client, deviceAddress, hasPin, request);
+            handleRequest(new CommunicationBridge(persistenceProvider, activeConnection, client, clientAddress),
+                    client, clientAddress, hasPin, request);
         } catch (SecurityException e) {
             if (!persistenceProvider.hasRequestForInvalidationOfCredentials(e.client.uid)) {
                 persistenceProvider.saveRequestForInvalidationOfCredentials(e.client.uid);
@@ -104,7 +104,7 @@ public class TransportSession extends CoolSocket
         }
     }
 
-    private void handleRequest(CommunicationBridge bridge, Client client, DeviceAddress deviceAddress,
+    private void handleRequest(CommunicationBridge bridge, Client client, ClientAddress clientAddress,
                                boolean hasPin, JSONObject response) throws JSONException, IOException,
             PersistenceException, ProtocolException
     {
@@ -134,7 +134,7 @@ public class TransportSession extends CoolSocket
                 bridge.sendResult(true);
                 return;
             case (Keyword.REQUEST_ACQUAINTANCE):
-                transportSeat.handleAcquaintanceRequest(client, deviceAddress);
+                transportSeat.handleAcquaintanceRequest(client, clientAddress);
                 bridge.sendResult(true);
                 return;
             case (Keyword.REQUEST_TRANSFER_JOB):

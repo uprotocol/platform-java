@@ -8,7 +8,7 @@ import java.net.InetAddress;
  * @see InetAddress
  * @see Client
  */
-public abstract class DeviceAddress
+public abstract class ClientAddress
 {
     /**
      * The internet address that this instance is targeting.
@@ -30,8 +30,8 @@ public abstract class DeviceAddress
     @Override
     public boolean equals(Object obj)
     {
-        if (obj instanceof DeviceAddress) {
-            return inetAddress != null && inetAddress.equals(((DeviceAddress) obj).inetAddress);
+        if (obj instanceof ClientAddress) {
+            return inetAddress != null && inetAddress.equals(((ClientAddress) obj).inetAddress);
         }
         return super.equals(obj);
     }

@@ -5,7 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.network.Client;
-import org.monora.uprotocol.core.network.DeviceAddress;
+import org.monora.uprotocol.core.network.ClientAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
@@ -29,7 +29,7 @@ import java.util.List;
  */
 public class TransferTest extends DefaultTestBase
 {
-    private DeviceAddress deviceAddress;
+    private ClientAddress clientAddress;
     private TransferItem demoTransfer1;
     private TransferItem demoTransfer2;
 
@@ -51,7 +51,7 @@ public class TransferTest extends DefaultTestBase
         secondaryPersistence.openOutputStream(descriptor1).write(data1);
         secondaryPersistence.openOutputStream(descriptor2).write(data2);
 
-        deviceAddress = primaryPersistence.createDeviceAddressFor(InetAddress.getLocalHost());
+        clientAddress = primaryPersistence.createDeviceAddressFor(InetAddress.getLocalHost());
     }
 
     @Before
@@ -63,7 +63,7 @@ public class TransferTest extends DefaultTestBase
         itemList.add(demoTransfer1);
         itemList.add(demoTransfer2);
 
-        try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestFileTransfer(transferId, itemList);
         }
 
@@ -75,7 +75,7 @@ public class TransferTest extends DefaultTestBase
     {
         secondarySession.start();
 
-        try (CommunicationBridge bridge = openConnection(primaryPersistence, deviceAddress)) {
+        try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
             Assert.assertTrue("The result should be positive", bridge.requestFileTransferStart(transferId,
                     TransferItem.Type.INCOMING));
 
@@ -108,7 +108,7 @@ public class TransferTest extends DefaultTestBase
     {
         secondarySession.start();
 
-        try (CommunicationBridge bridge = openConnection(primaryPersistence, deviceAddress)) {
+        try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
             bridge.requestFileTransferStart(transferId, TransferItem.Type.INCOMING);
             primarySeat.receiveFiles(bridge, transferId);
         }
@@ -134,7 +134,7 @@ public class TransferTest extends DefaultTestBase
     {
         primarySession.start();
 
-        try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestFileTransferStart(transferId, TransferItem.Type.OUTGOING);
             secondarySeat.receiveFiles(bridge, transferId);
         } finally {
@@ -153,7 +153,7 @@ public class TransferTest extends DefaultTestBase
 
         primarySession.start();
 
-        try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestFileTransferStart(transferId, TransferItem.Type.OUTGOING);
             secondarySeat.receiveFiles(bridge, transferId);
         }

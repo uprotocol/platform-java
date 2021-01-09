@@ -3,7 +3,7 @@ package org.monora.uprotocol.core;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.uprotocol.core.network.Client;
-import org.monora.uprotocol.core.network.DeviceAddress;
+import org.monora.uprotocol.core.network.ClientAddress;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.ClientType;
@@ -132,6 +132,6 @@ public class DeviceLoader
          * @param client  The devices that has been reached.
          * @param address The address that device was found at.
          */
-        void onDeviceResolved(Client client, DeviceAddress address);
+        void onDeviceResolved(Client client, ClientAddress address);
     }
 }

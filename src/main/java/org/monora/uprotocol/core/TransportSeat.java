@@ -5,7 +5,7 @@ import org.monora.coolsocket.core.response.SizeOverflowException;
 import org.monora.coolsocket.core.session.ActiveConnection;
 import org.monora.coolsocket.core.session.CancelledException;
 import org.monora.uprotocol.core.network.Client;
-import org.monora.uprotocol.core.network.DeviceAddress;
+import org.monora.uprotocol.core.network.ClientAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
@@ -54,10 +54,10 @@ public interface TransportSeat
      * If the user is about to pick a device, this should be the one that is picked.
      *
      * @param client        That wants to be noticed.
-     * @param deviceAddress Where that device is located.
+     * @param clientAddress Where that device is located.
      * @return True if the request will be fulfilled.
      */
-    boolean handleAcquaintanceRequest(Client client, DeviceAddress deviceAddress);
+    boolean handleAcquaintanceRequest(Client client, ClientAddress clientAddress);
 
     /**
      * Handle the file transfer request.

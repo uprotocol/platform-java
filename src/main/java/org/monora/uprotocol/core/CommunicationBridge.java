@@ -22,7 +22,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.session.ActiveConnection;
 import org.monora.uprotocol.core.network.Client;
-import org.monora.uprotocol.core.network.DeviceAddress;
+import org.monora.uprotocol.core.network.ClientAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
@@ -65,7 +65,7 @@ public class CommunicationBridge implements Closeable
 
     private final Client client;
 
-    private final DeviceAddress deviceAddress;
+    private final ClientAddress clientAddress;
 
     /**
      * Create a new instance.
@@ -75,15 +75,15 @@ public class CommunicationBridge implements Closeable
      * @param persistenceProvider Where the persistent data is stored and queried.
      * @param activeConnection    Represents a valid connection with the said device.
      * @param client              We are connected to.
-     * @param deviceAddress       Where the device is located at.
+     * @param clientAddress       Where the device is located at.
      */
     public CommunicationBridge(PersistenceProvider persistenceProvider, ActiveConnection activeConnection,
-                               Client client, DeviceAddress deviceAddress)
+                               Client client, ClientAddress clientAddress)
     {
         this.persistenceProvider = persistenceProvider;
         this.activeConnection = activeConnection;
         this.client = client;
-        this.deviceAddress = deviceAddress;
+        this.clientAddress = clientAddress;
     }
 
     /**
@@ -101,7 +101,7 @@ public class CommunicationBridge implements Closeable
     }
 
     /**
-     * Open a connection using the given {@link DeviceAddress} list.
+     * Open a connection using the given {@link ClientAddress} list.
      * <p>
      * This will try each address one by one until one of them works.
      * <p>
@@ -109,10 +109,10 @@ public class CommunicationBridge implements Closeable
      * try rest of the addresses.
      * <p>
      * If all addresses fail, this will still throw an error to simulate what
-     * {@link #connect(ConnectionFactory, PersistenceProvider, DeviceAddress, Client, int)} does.
+     * {@link #connect(ConnectionFactory, PersistenceProvider, ClientAddress, Client, int)} does.
      * <p>
      * The rest of the behavior is the same with
-     * {@link #connect(ConnectionFactory, PersistenceProvider, DeviceAddress, Client, int)}.
+     * {@link #connect(ConnectionFactory, PersistenceProvider, ClientAddress, Client, int)}.
      *
      * @param connectionFactory   To start and set up connections with.
      * @param persistenceProvider To store and query objects.
@@ -128,14 +128,14 @@ public class CommunicationBridge implements Closeable
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
     public static CommunicationBridge connect(ConnectionFactory connectionFactory,
-                                              PersistenceProvider persistenceProvider, List<DeviceAddress> addressList,
+                                              PersistenceProvider persistenceProvider, List<ClientAddress> addressList,
                                               Client client, int pin) throws JSONException, IOException,
             ProtocolException
     {
         if (addressList.size() < 1)
             throw new IllegalArgumentException("The address list should contain at least one item.");
 
-        for (DeviceAddress address : addressList) {
+        for (ClientAddress address : addressList) {
             try {
                 return connect(connectionFactory, persistenceProvider, address, client, pin);
             } catch (IOException | DifferentPeerException ignored) {
@@ -146,13 +146,13 @@ public class CommunicationBridge implements Closeable
     }
 
     /**
-     * Open a connection using the given {@link DeviceAddress}.
+     * Open a connection using the given {@link ClientAddress}.
      * <p>
      * If connection opens but the remote rejects the communication request, this will throw that error.
      *
      * @param connectionFactory   To start and set up connections with.
      * @param persistenceProvider To store and query objects.
-     * @param deviceAddress       To try.
+     * @param clientAddress       To try.
      * @param client              That we are going to open a connection with. If the connected device is different,
      *                            this will throw error. If you don't know who you are connecting to, just leave
      *                            this field as 'null'.
@@ -165,15 +165,15 @@ public class CommunicationBridge implements Closeable
      * @throws SecurityException If something goes wrong while establishing a secure connection.
      */
     public static CommunicationBridge connect(ConnectionFactory connectionFactory,
-                                              PersistenceProvider persistenceProvider, DeviceAddress deviceAddress,
+                                              PersistenceProvider persistenceProvider, ClientAddress clientAddress,
                                               Client client, int pin)
             throws IOException, JSONException, ProtocolException
     {
-        ActiveConnection activeConnection = connectionFactory.openConnection(deviceAddress.inetAddress);
+        ActiveConnection activeConnection = connectionFactory.openConnection(clientAddress.inetAddress);
         String remoteDeviceUid = activeConnection.receive().getAsString();
 
-        deviceAddress.deviceUid = remoteDeviceUid;
-        persistenceProvider.save(deviceAddress);
+        clientAddress.deviceUid = remoteDeviceUid;
+        persistenceProvider.save(clientAddress);
 
         if (client != null && client.uid != null && !client.uid.equals(remoteDeviceUid)) {
             activeConnection.closeSafely();
@@ -195,7 +195,7 @@ public class CommunicationBridge implements Closeable
         receiveResult(activeConnection, client);
         convertToSSL(connectionFactory, persistenceProvider, activeConnection, client, true);
 
-        return new CommunicationBridge(persistenceProvider, activeConnection, client, deviceAddress);
+        return new CommunicationBridge(persistenceProvider, activeConnection, client, clientAddress);
     }
 
     protected static void convertToSSL(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
@@ -277,9 +277,9 @@ public class CommunicationBridge implements Closeable
      *
      * @return The device address.
      */
-    public DeviceAddress getDeviceAddress()
+    public ClientAddress getDeviceAddress()
     {
-        return deviceAddress;
+        return clientAddress;
     }
 
     /**
@@ -308,7 +308,7 @@ public class CommunicationBridge implements Closeable
      * Inform the remote that it should choose you (this client) if it's about to choose a device.
      * <p>
      * For instance, the remote is setting up a file transfer request and is about to pick a device. If you make this
-     * request in that timespan, this will invoke {@link TransportSeat#handleAcquaintanceRequest(Client, DeviceAddress)}
+     * request in that timespan, this will invoke {@link TransportSeat#handleAcquaintanceRequest(Client, ClientAddress)}
      * method on the remote and it will choose you.
      *
      * @return True if successful.

@@ -6,7 +6,7 @@ import org.json.JSONObject;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSession;
 import org.monora.uprotocol.core.network.Client;
-import org.monora.uprotocol.core.network.DeviceAddress;
+import org.monora.uprotocol.core.network.ClientAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.spec.alpha.Keyword;
 
@@ -111,7 +111,7 @@ public interface PersistenceProvider
      * @param address At which the device address will be pointing.
      * @return The device address instance.
      */
-    DeviceAddress createDeviceAddressFor(InetAddress address);
+    ClientAddress createDeviceAddressFor(InetAddress address);
 
     /**
      * Request from the factory to create an empty {@link Client} instance.
@@ -332,9 +332,9 @@ public interface PersistenceProvider
      * <p>
      * Doing so will allow you to connect to a device later.
      *
-     * @param deviceAddress To save.
+     * @param clientAddress To save.
      */
-    void save(DeviceAddress deviceAddress);
+    void save(ClientAddress clientAddress);
 
     /**
      * Save this transfer item in the persistence database.

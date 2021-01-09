@@ -24,7 +24,7 @@ public class RequestTest extends DefaultTestBase
         primarySession.start();
 
         try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
-                deviceAddress, null, 0)) {
+                clientAddress, null, 0)) {
             Assert.assertTrue("Remote should send a positive message.", bridge.requestAcquaintance());
 
             Client persistentClient = secondaryPersistence.createDeviceFor(bridge.getDevice().uid);
@@ -53,7 +53,7 @@ public class RequestTest extends DefaultTestBase
         transferItemList.add(secondaryPersistence.createTransferItemFor(transferId, 3, "3.jpg",
                 "image/jpeg", 0, null, TransferItem.Type.OUTGOING));
 
-        try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             Assert.assertTrue("The request should be successful", bridge.requestFileTransfer(transferId,
                     transferItemList));
         } finally {
@@ -66,13 +66,13 @@ public class RequestTest extends DefaultTestBase
     {
         primarySession.start();
 
-        try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestAcquaintance();
         }
 
         primaryPersistence.regenerateSecrets();
 
-        try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestAcquaintance();
         } finally {
             primarySession.stop();
@@ -84,20 +84,20 @@ public class RequestTest extends DefaultTestBase
     {
         primarySession.start();
 
-        try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestAcquaintance();
         }
 
         primaryPersistence.regenerateSecrets();
 
-        try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestAcquaintance();
         } catch (SecurityException ignored) {
         }
 
         primaryPersistence.restoreSecrets();
 
-        try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestAcquaintance();
         } finally {
             primarySession.stop();
@@ -109,14 +109,14 @@ public class RequestTest extends DefaultTestBase
     {
         primarySession.start();
 
-        try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestAcquaintance();
         }
 
         primarySeat.setAutoInvalidationOfCredentials(true);
         primaryPersistence.regenerateSecrets();
 
-        try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestAcquaintance();
         } catch (SecurityException e) {
             if (e.getCause() instanceof SSLHandshakeException) {
@@ -126,7 +126,7 @@ public class RequestTest extends DefaultTestBase
                 throw e;
         }
 
-        try (CommunicationBridge bridge = openConnection(secondaryPersistence, deviceAddress)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestAcquaintance();
         } finally {
             primarySession.stop();

@@ -1,13 +1,13 @@
 package org.monora.uprotocol.variant.persistence;
 
 import org.monora.uprotocol.core.network.Client;
-import org.monora.uprotocol.core.network.DeviceAddress;
+import org.monora.uprotocol.core.network.ClientAddress;
 import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.persistence.StreamDescriptor;
 import org.monora.uprotocol.variant.DefaultClient;
-import org.monora.uprotocol.variant.DefaultDeviceAddress;
+import org.monora.uprotocol.variant.DefaultClientAddress;
 import org.monora.uprotocol.variant.DefaultTransferItem;
 import org.monora.uprotocol.variant.holder.Avatar;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
@@ -50,7 +50,7 @@ import java.util.List;
 public abstract class BasePersistenceProvider implements PersistenceProvider
 {
     private final List<Client> clientList = new ArrayList<>();
-    private final List<DeviceAddress> deviceAddressList = new ArrayList<>();
+    private final List<ClientAddress> clientAddressList = new ArrayList<>();
     private final List<OwnedTransferHolder> transferHolderList = new ArrayList<>();
     private final List<Avatar> avatarList = new ArrayList<>();
     private final List<MemoryStreamDescriptor> streamDescriptorList = new ArrayList<>();
@@ -161,9 +161,9 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public DeviceAddress createDeviceAddressFor(InetAddress address)
+    public ClientAddress createDeviceAddressFor(InetAddress address)
     {
-        return new DefaultDeviceAddress(address);
+        return new DefaultClientAddress(address);
     }
 
     @Override
@@ -403,11 +403,11 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void save(DeviceAddress deviceAddress)
+    public void save(ClientAddress clientAddress)
     {
-        synchronized (deviceAddressList) {
-            deviceAddressList.remove(deviceAddress);
-            deviceAddressList.add(deviceAddress);
+        synchronized (clientAddressList) {
+            clientAddressList.remove(clientAddress);
+            clientAddressList.add(clientAddress);
         }
     }
 
