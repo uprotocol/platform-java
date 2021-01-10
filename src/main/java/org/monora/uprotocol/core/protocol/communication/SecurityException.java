@@ -1,6 +1,6 @@
 package org.monora.uprotocol.core.protocol.communication;
 
-import org.monora.uprotocol.core.network.Client;
+import org.monora.uprotocol.core.protocol.Client;
 
 /**
  * Thrown when an SSL-related error occurs.

@@ -5,8 +5,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSession;
-import org.monora.uprotocol.core.network.Client;
-import org.monora.uprotocol.core.network.ClientAddress;
+import org.monora.uprotocol.core.protocol.Client;
+import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.spec.v1.Keyword;
 import org.monora.uprotocol.core.transfer.Transfer;
 

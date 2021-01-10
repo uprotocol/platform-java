@@ -1,6 +1,6 @@
 package org.monora.uprotocol.variant.persistence;
 
-import org.monora.uprotocol.core.network.Client;
+import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.variant.DefaultClient;
 
 public class PrimaryPersistenceProvider extends BasePersistenceProvider

@@ -1,6 +1,6 @@
 package org.monora.uprotocol.variant;
 
-import org.monora.uprotocol.core.network.ClientAddress;
+import org.monora.uprotocol.core.protocol.ClientAddress;
 
 import java.net.InetAddress;
 

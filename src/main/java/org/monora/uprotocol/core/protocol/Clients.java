@@ -1,6 +1,4 @@
-package org.monora.uprotocol.core.network;
-
-import org.monora.uprotocol.core.protocol.ClientType;
+package org.monora.uprotocol.core.protocol;
 
 import java.security.cert.X509Certificate;
 

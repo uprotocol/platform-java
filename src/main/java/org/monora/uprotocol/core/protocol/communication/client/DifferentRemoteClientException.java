@@ -19,7 +19,7 @@
 package org.monora.uprotocol.core.protocol.communication.client;
 
 import org.monora.uprotocol.core.CommunicationBridge;
-import org.monora.uprotocol.core.network.Client;
+import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 
 /**

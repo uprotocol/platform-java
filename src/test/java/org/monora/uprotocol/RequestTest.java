@@ -3,7 +3,7 @@ package org.monora.uprotocol;
 import org.junit.Assert;
 import org.junit.Test;
 import org.monora.uprotocol.core.CommunicationBridge;
-import org.monora.uprotocol.core.network.Client;
+import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.transfer.Transfer;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;

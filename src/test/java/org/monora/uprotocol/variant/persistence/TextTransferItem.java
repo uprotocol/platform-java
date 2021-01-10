@@ -1,6 +1,6 @@
 package org.monora.uprotocol.variant.persistence;
 
-import org.monora.uprotocol.core.network.Client;
+import org.monora.uprotocol.core.protocol.Client;
 
 public class TextTransferItem
 {

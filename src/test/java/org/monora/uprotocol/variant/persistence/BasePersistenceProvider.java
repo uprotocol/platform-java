@@ -1,8 +1,8 @@
 package org.monora.uprotocol.variant.persistence;
 
-import org.monora.uprotocol.core.network.Client;
-import org.monora.uprotocol.core.network.ClientAddress;
-import org.monora.uprotocol.core.network.Clients;
+import org.monora.uprotocol.core.protocol.Client;
+import org.monora.uprotocol.core.protocol.ClientAddress;
+import org.monora.uprotocol.core.protocol.Clients;
 import org.monora.uprotocol.core.transfer.Transfer;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;

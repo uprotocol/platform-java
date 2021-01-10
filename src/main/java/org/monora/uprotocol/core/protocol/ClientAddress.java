@@ -1,4 +1,4 @@
-package org.monora.uprotocol.core.network;
+package org.monora.uprotocol.core.protocol;
 
 import java.net.InetAddress;
 

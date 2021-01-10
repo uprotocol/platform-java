@@ -1,6 +1,6 @@
 package org.monora.uprotocol.core.protocol.communication;
 
-import org.monora.uprotocol.core.network.Client;
+import org.monora.uprotocol.core.protocol.Client;
 
 /**
  * This is a high-level error that is thrown when communication with a remote client fails in some way.
