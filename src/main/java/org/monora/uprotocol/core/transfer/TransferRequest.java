@@ -3,12 +3,12 @@ package org.monora.uprotocol.core.transfer;
 /**
  * Holds the details for a requested {@link Transfer}.
  */
-public class ItemPointer
+public class TransferRequest
 {
     /**
      * Corresponds to {@link Transfer#getTransferId()}.
      */
-    public final long itemId;
+    public final long id;
 
     /**
      * The position of bytes to start from when sending the data.
@@ -17,9 +17,9 @@ public class ItemPointer
      */
     public final long position;
 
-    ItemPointer(long itemId, long position)
+    TransferRequest(long id, long position)
     {
-        this.itemId = itemId;
+        this.id = id;
         this.position = position;
     }
 }

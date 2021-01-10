@@ -21,9 +21,9 @@ public class Transfers
      * @return The requested item holder.
      * @throws JSONException If something goes wrong when inflating the JSON data.
      */
-    public static ItemPointer getItemRequest(JSONObject jsonObject) throws JSONException
+    public static TransferRequest getTransferRequest(JSONObject jsonObject) throws JSONException
     {
-        return new ItemPointer(jsonObject.getLong(Keyword.TRANSFER_ID),
+        return new TransferRequest(jsonObject.getLong(Keyword.TRANSFER_ID),
                 jsonObject.getLong(Keyword.TRANSFER_CURRENT_POSITION));
     }
 

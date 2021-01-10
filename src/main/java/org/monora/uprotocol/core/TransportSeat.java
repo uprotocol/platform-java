@@ -12,7 +12,7 @@ import org.monora.uprotocol.core.persistence.StreamDescriptor;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.spec.v1.Keyword;
-import org.monora.uprotocol.core.transfer.ItemPointer;
+import org.monora.uprotocol.core.transfer.TransferRequest;
 import org.monora.uprotocol.core.transfer.Transfer;
 import org.monora.uprotocol.core.transfer.Transfers;
 
@@ -264,10 +264,10 @@ public interface TransportSeat
                     break;
 
                 try {
-                    final ItemPointer itemPointer = Transfers.getItemRequest(request);
-                    item = persistenceProvider.loadTransferItem(client.getClientUid(), groupId, itemPointer.itemId,
+                    final TransferRequest transferRequest = Transfers.getTransferRequest(request);
+                    item = persistenceProvider.loadTransferItem(client.getClientUid(), groupId, transferRequest.id,
                             Transfer.Type.OUTGOING);
-                    currentBytes = itemPointer.position;
+                    currentBytes = transferRequest.position;
 
                     try {
                         StreamDescriptor descriptor = persistenceProvider.getDescriptorFor(item);
