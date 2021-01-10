@@ -4,7 +4,7 @@ import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSeat;
 import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.network.ClientAddress;
-import org.monora.uprotocol.core.network.TransferItem;
+import org.monora.uprotocol.core.transfer.Transfer;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
@@ -23,13 +23,13 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public void beginFileTransfer(CommunicationBridge bridge, Client client, long transferId, TransferItem.Type type)
+    public void beginFileTransfer(CommunicationBridge bridge, Client client, long groupId, Transfer.Type type)
             throws PersistenceException, ProtocolException
     {
-        if (type.equals(TransferItem.Type.INCOMING))
-            receiveFiles(bridge, transferId);
-        else if (type.equals(TransferItem.Type.OUTGOING))
-            sendFiles(bridge, transferId);
+        if (type.equals(Transfer.Type.INCOMING))
+            receiveFiles(bridge, groupId);
+        else if (type.equals(Transfer.Type.OUTGOING))
+            sendFiles(bridge, groupId);
     }
 
     @Override
@@ -39,15 +39,15 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public void handleFileTransferRequest(Client client, boolean hasPin, long transferId, String jsonArray)
+    public void handleFileTransferRequest(Client client, boolean hasPin, long groupId, String jsonArray)
             throws PersistenceException, ProtocolException
     {
-        List<TransferItem> itemList = persistenceProvider.toTransferItemList(transferId, jsonArray);
-        persistenceProvider.save(client.getClientUid(), itemList);
+        List<Transfer> transferList = persistenceProvider.toTransferList(groupId, jsonArray);
+        persistenceProvider.save(client.getClientUid(), transferList);
     }
 
     @Override
-    public void handleFileTransferState(Client client, long transferId, boolean isAccepted)
+    public void handleFileTransferState(Client client, long groupId, boolean isAccepted)
     {
 
     }
@@ -59,13 +59,13 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public boolean hasOngoingTransferFor(long transferId, String clientUid, TransferItem.Type type)
+    public boolean hasOngoingTransferFor(long groupId, String clientUid, Transfer.Type type)
     {
         return false;
     }
 
     @Override
-    public boolean hasOngoingIndexingFor(long transferId)
+    public boolean hasOngoingIndexingFor(long groupId)
     {
         return false;
     }

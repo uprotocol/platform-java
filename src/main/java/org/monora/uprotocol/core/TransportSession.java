@@ -6,7 +6,6 @@ import org.monora.coolsocket.core.CoolSocket;
 import org.monora.coolsocket.core.session.ActiveConnection;
 import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.network.ClientAddress;
-import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
@@ -15,6 +14,7 @@ import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
 import org.monora.uprotocol.core.spec.v1.Config;
 import org.monora.uprotocol.core.spec.v1.Keyword;
+import org.monora.uprotocol.core.transfer.Transfer;
 
 import java.io.IOException;
 
@@ -105,28 +105,28 @@ public class TransportSession extends CoolSocket
         }
     }
 
-    private void handleRequest(CommunicationBridge bridge, Client client, ClientAddress clientAddress,
-                               boolean hasPin, JSONObject response) throws JSONException, IOException,
+    private void handleRequest(CommunicationBridge bridge, Client client, ClientAddress clientAddress, boolean hasPin,
+                               JSONObject response) throws JSONException, IOException,
             PersistenceException, ProtocolException
     {
         switch (response.getString(Keyword.REQUEST)) {
             case (Keyword.REQUEST_TRANSFER): {
-                long transferId = response.getLong(Keyword.TRANSFER_ID);
+                long groupId = response.getLong(Keyword.TRANSFER_GROUP_ID);
                 String jsonIndex = response.getString(Keyword.INDEX);
 
-                if (transportSeat.hasOngoingIndexingFor(transferId) || persistenceProvider.containsTransfer(transferId))
+                if (transportSeat.hasOngoingIndexingFor(groupId) || persistenceProvider.containsTransfer(groupId))
                     throw new ContentException(ContentException.Error.AlreadyExists);
                 else {
-                    transportSeat.handleFileTransferRequest(client, hasPin, transferId, jsonIndex);
+                    transportSeat.handleFileTransferRequest(client, hasPin, groupId, jsonIndex);
                     bridge.sendResult(true);
                 }
                 return;
             }
             case (Keyword.REQUEST_NOTIFY_TRANSFER_STATE): {
-                int transferId = response.getInt(Keyword.TRANSFER_ID);
+                int groupId = response.getInt(Keyword.TRANSFER_GROUP_ID);
                 boolean isAccepted = response.getBoolean(Keyword.TRANSFER_IS_ACCEPTED);
 
-                transportSeat.handleFileTransferState(client, transferId, isAccepted);
+                transportSeat.handleFileTransferState(client, groupId, isAccepted);
                 bridge.sendResult(true);
                 return;
             }
@@ -139,22 +139,22 @@ public class TransportSession extends CoolSocket
                 bridge.sendResult(true);
                 return;
             case (Keyword.REQUEST_TRANSFER_JOB):
-                int transferId = response.getInt(Keyword.TRANSFER_ID);
-                TransferItem.Type type = response.getEnum(TransferItem.Type.class, Keyword.TRANSFER_TYPE);
+                int groupId = response.getInt(Keyword.TRANSFER_GROUP_ID);
+                Transfer.Type type = response.getEnum(Transfer.Type.class, Keyword.TRANSFER_TYPE);
 
                 // The type is reversed to match our side
-                if (TransferItem.Type.INCOMING.equals(type))
-                    type = TransferItem.Type.OUTGOING;
-                else if (TransferItem.Type.OUTGOING.equals(type))
-                    type = TransferItem.Type.INCOMING;
+                if (Transfer.Type.INCOMING.equals(type))
+                    type = Transfer.Type.OUTGOING;
+                else if (Transfer.Type.OUTGOING.equals(type))
+                    type = Transfer.Type.INCOMING;
 
-                if (TransferItem.Type.INCOMING.equals(type) && !client.isClientTrusted())
+                if (Transfer.Type.INCOMING.equals(type) && !client.isClientTrusted())
                     bridge.sendError(Keyword.ERROR_NOT_TRUSTED);
-                else if (transportSeat.hasOngoingTransferFor(transferId, client.getClientUid(), type))
+                else if (transportSeat.hasOngoingTransferFor(groupId, client.getClientUid(), type))
                     throw new ContentException(ContentException.Error.NotAccessible);
                 else {
                     bridge.sendResult(true);
-                    transportSeat.beginFileTransfer(bridge, client, transferId, type);
+                    transportSeat.beginFileTransfer(bridge, client, groupId, type);
                 }
                 return;
             default:

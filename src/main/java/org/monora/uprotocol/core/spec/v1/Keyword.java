@@ -55,8 +55,8 @@ public class Keyword
             REQUEST_TRANSFER_TEXT = "transferText",
             RESULT = "result",
             TRANSFER_CURRENT_POSITION = "currentPosition",
+            TRANSFER_GROUP_ID = "groupId",
             TRANSFER_ID = "id",
-            TRANSFER_ITEM_ID = "itemId",
             TRANSFER_IS_ACCEPTED = "isAccepted",
             TRANSFER_TEXT = "text",
             TRANSFER_TYPE = "type";

@@ -23,7 +23,6 @@ import org.json.JSONObject;
 import org.monora.coolsocket.core.session.ActiveConnection;
 import org.monora.uprotocol.core.network.Client;
 import org.monora.uprotocol.core.network.ClientAddress;
-import org.monora.uprotocol.core.network.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
@@ -33,6 +32,7 @@ import org.monora.uprotocol.core.protocol.communication.client.DifferentRemoteCl
 import org.monora.uprotocol.core.protocol.communication.client.UnauthorizedClientException;
 import org.monora.uprotocol.core.protocol.communication.client.UntrustedClientException;
 import org.monora.uprotocol.core.spec.v1.Keyword;
+import org.monora.uprotocol.core.transfer.Transfer;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -328,31 +328,31 @@ public class CommunicationBridge implements Closeable
      * <p>
      * This request doesn't guarantee that the request will be processed immediately. You should close the connection
      * after making this request. If everything goes right, the remote will reach you using
-     * {@link #requestFileTransferStart(long, TransferItem.Type)}, which will end up in your
-     * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Client, long, TransferItem.Type)} method.
+     * {@link #requestFileTransferStart(long, Transfer.Type)}, which will end up in your
+     * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Client, long, Transfer.Type)} method.
      * <p>
      * If the initial response is positive, the items will be saved to the persistence provider using
      * {@link PersistenceProvider#save(String, List)}.
      *
-     * @param transferId That ties a group of {@link TransferItem} as in {@link TransferItem#transferId}.
-     * @param itemList   Items that you will send.
+     * @param groupId      That ties a group of {@link Transfer} as in {@link Transfer#getTransferGroupId()}.
+     * @param transferList That you will send.
      * @return True if successful.
      * @throws IOException       If an IO error occurs.
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public boolean requestFileTransfer(long transferId, List<TransferItem> itemList) throws JSONException, IOException,
+    public boolean requestFileTransfer(long groupId, List<Transfer> transferList) throws JSONException, IOException,
             ProtocolException
     {
         sendSecure(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER)
-                .put(Keyword.TRANSFER_ID, transferId)
-                .put(Keyword.INDEX, getPersistenceProvider().toJson(itemList).toString()));
+                .put(Keyword.TRANSFER_GROUP_ID, groupId)
+                .put(Keyword.INDEX, getPersistenceProvider().toJson(transferList).toString()));
 
         boolean result = receiveResult();
 
         if (result)
-            getPersistenceProvider().save(getRemoteClient().getClientUid(), itemList);
+            getPersistenceProvider().save(getRemoteClient().getClientUid(), transferList);
 
         return result;
     }
@@ -362,19 +362,19 @@ public class CommunicationBridge implements Closeable
      * <p>
      * The transfer request, in this case, has already been sent with {@link #requestFileTransfer(long, List)}.
      *
-     * @param transferId That ties a group of {@link TransferItem} as in {@link TransferItem#transferId}.
-     * @param type       Of the transfer as in {@link TransferItem#type}.
+     * @param groupId That ties a group of {@link Transfer} as in {@link Transfer#getTransferGroupId()}.
+     * @param type    Of the transfer as in {@link Transfer#getTransferType()}.
      * @return True if successful.
      * @throws IOException       If an IO error occurs.
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public boolean requestFileTransferStart(long transferId, TransferItem.Type type) throws JSONException, IOException,
+    public boolean requestFileTransferStart(long groupId, Transfer.Type type) throws JSONException, IOException,
             ProtocolException
     {
         sendSecure(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER_JOB)
-                .put(Keyword.TRANSFER_ID, transferId)
+                .put(Keyword.TRANSFER_GROUP_ID, groupId)
                 .put(Keyword.TRANSFER_TYPE, type));
         return receiveResult();
     }
@@ -382,19 +382,19 @@ public class CommunicationBridge implements Closeable
     /**
      * Inform remote about the state of a transfer request it sent previously.
      *
-     * @param transferId The transfer id that you are informing about.
-     * @param accepted   True if the transfer request was accepted.
+     * @param groupId  The transfer id that you are informing about.
+     * @param accepted True if the transfer request was accepted.
      * @return True if the request was processed successfully.
      * @throws IOException       If an IO error occurs.
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public boolean requestNotifyTransferState(long transferId, boolean accepted) throws JSONException, IOException,
+    public boolean requestNotifyTransferState(long groupId, boolean accepted) throws JSONException, IOException,
             ProtocolException
     {
         sendSecure(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_NOTIFY_TRANSFER_STATE)
-                .put(Keyword.TRANSFER_ID, transferId)
+                .put(Keyword.TRANSFER_GROUP_ID, groupId)
                 .put(Keyword.TRANSFER_IS_ACCEPTED, accepted));
         return receiveResult();
     }

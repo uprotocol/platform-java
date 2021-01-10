@@ -23,7 +23,7 @@ import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 
 /**
  * Concerning this client, this error is thrown when it requests operation it is not allowed to perform.
- *
+ * <p>
  * If this client is blocked on the remote client side, still this error will be thrown.
  *
  * @see BlockedRemoteClientException

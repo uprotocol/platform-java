@@ -1,32 +1,32 @@
 package org.monora.uprotocol.variant.holder;
 
-import org.monora.uprotocol.core.network.TransferItem;
+import org.monora.uprotocol.core.transfer.Transfer;
 import org.monora.uprotocol.core.persistence.StreamDescriptor;
 
 import java.io.ByteArrayOutputStream;
 
 /**
- * This class will match with its other instances regardless of the direction of the{@link TransferItem} it holds, that
- * is, {@link org.monora.uprotocol.core.network.TransferItem.Type#INCOMING} will <b>NOT</b> a difference.
+ * This class will match with its other instances regardless of the direction of the{@link Transfer} it holds, that
+ * is, {@link Transfer.Type#INCOMING} will <b>NOT</b> a difference.
  */
 public class MemoryStreamDescriptor implements StreamDescriptor
 {
     public final ByteArrayOutputStream data;
 
-    public final TransferItem transferItem;
+    public final Transfer transfer;
 
-    MemoryStreamDescriptor(TransferItem transferItem)
+    MemoryStreamDescriptor(Transfer transfer)
     {
-        this.transferItem = transferItem;
-        this.data = new ByteArrayOutputStream((int) transferItem.size);
+        this.transfer = transfer;
+        this.data = new ByteArrayOutputStream((int) transfer.getTransferSize());
     }
 
-    public static MemoryStreamDescriptor newInstance(TransferItem transferItem)
+    public static MemoryStreamDescriptor newInstance(Transfer transfer)
     {
-        if (transferItem.size < 0 || transferItem.size >= Short.MAX_VALUE)
+        if (transfer.getTransferSize() < 0 || transfer.getTransferSize() >= Short.MAX_VALUE)
             throw new ArrayIndexOutOfBoundsException("Transfer item size cannot be larger than " + Short.MAX_VALUE
                     + " or smaller than 0");
-        return new MemoryStreamDescriptor(transferItem);
+        return new MemoryStreamDescriptor(transfer);
     }
 
     @Override
