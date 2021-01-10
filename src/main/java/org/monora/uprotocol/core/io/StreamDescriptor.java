@@ -1,4 +1,4 @@
-package org.monora.uprotocol.core.persistence;
+package org.monora.uprotocol.core.io;
 
 import org.monora.uprotocol.core.transfer.Transfer;
 

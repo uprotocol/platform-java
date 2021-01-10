@@ -6,7 +6,7 @@ import org.monora.uprotocol.core.protocol.Clients;
 import org.monora.uprotocol.core.transfer.Transfer;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
-import org.monora.uprotocol.core.persistence.StreamDescriptor;
+import org.monora.uprotocol.core.io.StreamDescriptor;
 import org.monora.uprotocol.variant.DefaultClient;
 import org.monora.uprotocol.variant.DefaultClientAddress;
 import org.monora.uprotocol.variant.DefaultTransferItem;

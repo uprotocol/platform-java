@@ -1,7 +1,7 @@
 package org.monora.uprotocol.variant.holder;
 
 import org.monora.uprotocol.core.transfer.Transfer;
-import org.monora.uprotocol.core.persistence.StreamDescriptor;
+import org.monora.uprotocol.core.io.StreamDescriptor;
 
 import java.io.ByteArrayOutputStream;
 

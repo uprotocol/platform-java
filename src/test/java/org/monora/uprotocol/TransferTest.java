@@ -9,7 +9,7 @@ import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.transfer.Transfer;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
-import org.monora.uprotocol.core.persistence.StreamDescriptor;
+import org.monora.uprotocol.core.io.StreamDescriptor;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.client.UntrustedClientException;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
