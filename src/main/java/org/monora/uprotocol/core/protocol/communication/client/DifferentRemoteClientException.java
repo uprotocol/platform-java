@@ -24,7 +24,7 @@ import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 
 /**
  * This error concerns a remote client and is thrown when {@link CommunicationBridge} communicates with a peer that has
- * a different {@link Client#uid} mismatching with the one that it intends to connect to.
+ * a different {@link Client#getClientUid()} mismatching with the one that it intends to connect to.
  */
 public class DifferentRemoteClientException extends CommunicationException
 {
