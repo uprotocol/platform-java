@@ -3,13 +3,13 @@ package org.monora.uprotocol.variant.persistence;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.Clients;
-import org.monora.uprotocol.core.transfer.Transfer;
+import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.io.StreamDescriptor;
 import org.monora.uprotocol.variant.DefaultClient;
 import org.monora.uprotocol.variant.DefaultClientAddress;
-import org.monora.uprotocol.variant.DefaultTransferItem;
+import org.monora.uprotocol.variant.DefaultTransferItemItem;
 import org.monora.uprotocol.variant.holder.ClientPicture;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
 import org.monora.uprotocol.variant.holder.OwnedTransferHolder;
@@ -65,7 +65,6 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
 
     private KeyPair keyPairBackup;
     private X509Certificate certificateBackup;
-
 
     private int networkPin;
 
@@ -153,7 +152,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {
-                if (holder.item.getTransferGroupId() == groupId)
+                if (holder.item.getItemGroupId() == groupId)
                     return true;
             }
         }
@@ -180,10 +179,10 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public Transfer createTransferFor(long groupId, long id, String name, String mimeType, long size,
-                                      String directory, Transfer.Type type)
+    public TransferItem createTransferFor(long groupId, long id, String name, String mimeType, long size,
+                                          String directory, TransferItem.Type type)
     {
-        return new DefaultTransferItem(groupId, id, name, mimeType, size, directory, type);
+        return new DefaultTransferItemItem(groupId, id, name, mimeType, size, directory, type);
     }
 
     @Override
@@ -211,27 +210,27 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public StreamDescriptor getDescriptorFor(Transfer transfer)
+    public StreamDescriptor getDescriptorFor(TransferItem transferItem)
     {
         synchronized (streamDescriptorList) {
             for (MemoryStreamDescriptor streamDescriptor : streamDescriptorList) {
-                if (streamDescriptor.transfer.equals(transfer))
+                if (streamDescriptor.transferItem.equals(transferItem))
                     return streamDescriptor;
             }
 
-            MemoryStreamDescriptor descriptor = MemoryStreamDescriptor.newInstance(transfer);
+            MemoryStreamDescriptor descriptor = MemoryStreamDescriptor.newInstance(transferItem);
             streamDescriptorList.add(descriptor);
             return descriptor;
         }
     }
 
     @Override
-    public Transfer getFirstReceivableItem(long groupId)
+    public TransferItem getFirstReceivableItem(long groupId)
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {
-                if (Transfer.Type.INCOMING.equals(holder.item.getTransferType())
-                        && holder.item.getTransferGroupId() == groupId && holder.state == STATE_PENDING)
+                if (TransferItem.Type.INCOMING.equals(holder.item.getItemType())
+                        && holder.item.getItemGroupId() == groupId && holder.state == STATE_PENDING)
                     return holder.item;
             }
         }
@@ -349,13 +348,13 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public Transfer loadTransferItem(String clientUid, long groupId, long id, Transfer.Type type)
+    public TransferItem loadTransferItem(String clientUid, long groupId, long id, TransferItem.Type type)
             throws PersistenceException
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {
-                if (holder.item.getTransferGroupId() == groupId && holder.item.getTransferId() == id
-                        && holder.item.getTransferType().equals(type) && holder.clientUid.equals(clientUid))
+                if (holder.item.getItemGroupId() == groupId && holder.item.getItemId() == id
+                        && holder.item.getItemType().equals(type) && holder.clientUid.equals(clientUid))
                     return holder.item;
             }
         }
@@ -413,7 +412,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void save(String clientUid, Transfer item)
+    public void save(String clientUid, TransferItem item)
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {
@@ -429,9 +428,9 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void save(String clientUid, List<? extends Transfer> itemList)
+    public void save(String clientUid, List<? extends TransferItem> itemList)
     {
-        for (Transfer item : itemList) {
+        for (TransferItem item : itemList) {
             save(clientUid, item);
         }
     }
@@ -456,7 +455,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void setState(String clientUid, Transfer item, int state, Exception e)
+    public void setState(String clientUid, TransferItem item, int state, Exception e)
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {

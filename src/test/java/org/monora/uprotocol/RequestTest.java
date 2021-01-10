@@ -4,7 +4,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.protocol.Client;
-import org.monora.uprotocol.core.transfer.Transfer;
+import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
@@ -43,19 +43,19 @@ public class RequestTest extends DefaultTestBase
     {
         primarySession.start();
 
-        final List<Transfer> transferList = new ArrayList<>();
+        final List<TransferItem> transferItemList = new ArrayList<>();
         final long groupId = 1;
 
-        transferList.add(secondaryPersistence.createTransferFor(groupId, 1, "1.jpg",
-                "image/jpeg", 0, null, Transfer.Type.OUTGOING));
-        transferList.add(secondaryPersistence.createTransferFor(groupId, 2, "2.jpg",
-                "image/jpeg", 0, null, Transfer.Type.OUTGOING));
-        transferList.add(secondaryPersistence.createTransferFor(groupId, 3, "3.jpg",
-                "image/jpeg", 0, null, Transfer.Type.OUTGOING));
+        transferItemList.add(secondaryPersistence.createTransferFor(groupId, 1, "1.jpg",
+                "image/jpeg", 0, null, TransferItem.Type.OUTGOING));
+        transferItemList.add(secondaryPersistence.createTransferFor(groupId, 2, "2.jpg",
+                "image/jpeg", 0, null, TransferItem.Type.OUTGOING));
+        transferItemList.add(secondaryPersistence.createTransferFor(groupId, 3, "3.jpg",
+                "image/jpeg", 0, null, TransferItem.Type.OUTGOING));
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             Assert.assertTrue("The request should be successful", bridge.requestFileTransfer(groupId,
-                    transferList));
+                    transferItemList));
         } finally {
             primarySession.stop();
         }

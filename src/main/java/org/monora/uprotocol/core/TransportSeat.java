@@ -13,7 +13,7 @@ import org.monora.uprotocol.core.protocol.communication.ContentException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.spec.v1.Keyword;
 import org.monora.uprotocol.core.transfer.TransferRequest;
-import org.monora.uprotocol.core.transfer.Transfer;
+import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.transfer.Transfers;
 
 import java.io.FileNotFoundException;
@@ -39,13 +39,13 @@ public interface TransportSeat
      *
      * @param bridge  The bridge that speaks on behalf of you when making requests. A connection wrapper.
      * @param client  That is making the request.
-     * @param groupId {@link Transfer#getTransferGroupId()}.
+     * @param groupId {@link TransferItem#getItemGroupId()}.
      * @param type    Of the transfer.
      * @throws PersistenceException If some of the data is missing for this transfer (i.e., the remote doesn't have
      *                              some permissions enabled in the database).
      * @throws ProtocolException    If the remote doesn't have satisfactory permissions or sent invalid values.
      */
-    void beginFileTransfer(CommunicationBridge bridge, Client client, long groupId, Transfer.Type type)
+    void beginFileTransfer(CommunicationBridge bridge, Client client, long groupId, TransferItem.Type type)
             throws PersistenceException, ProtocolException;
 
     /**
@@ -102,20 +102,20 @@ public interface TransportSeat
     /**
      * Check whether there is an ongoing transfer for the given parameters.
      *
-     * @param groupId   The transfer id as in {@link Transfer#getTransferGroupId()}
+     * @param groupId   The transfer id as in {@link TransferItem#getItemGroupId()}
      * @param clientUid The {@link Client#getClientUid()} if this needs to concern only the given client, or null you
      *                  need check all transfer processes.
-     * @param type      To limit the type of the transfer as in {@link Transfer#getTransferType()}.
+     * @param type      To limit the type of the transfer as in {@link TransferItem#getItemType()}.
      * @return True if there is an ongoing transfer for the given parameters.
      */
-    boolean hasOngoingTransferFor(long groupId, String clientUid, Transfer.Type type);
+    boolean hasOngoingTransferFor(long groupId, String clientUid, TransferItem.Type type);
 
     /**
      * Check whether there is an indexing process for the given transfer id.
      * <p>
-     * The 'id' is the {@link Transfer#getTransferGroupId()} field.
+     * The 'id' is the {@link TransferItem#getItemGroupId()} field.
      *
-     * @param groupId The transfer id as in {@link Transfer#getTransferGroupId()}
+     * @param groupId The transfer id as in {@link TransferItem#getItemGroupId()}
      * @return True if there is an ongoing transfer indexing for the given id.
      */
     boolean hasOngoingIndexingFor(long groupId);
@@ -136,22 +136,22 @@ public interface TransportSeat
 
     /**
      * Handle the receive process. You can invoke this method in the {@link #beginFileTransfer} method when the type is
-     * {@link Transfer.Type#INCOMING}.
+     * {@link TransferItem.Type#INCOMING}.
      * <p>
      * You should not override this default method unless that is really what you need.
      *
      * @param bridge  The bridge that speaks on behalf of you when making requests. A connection wrapper.
-     * @param groupId As in {@link Transfer#getTransferGroupId()}.
+     * @param groupId As in {@link TransferItem#getItemGroupId()}.
      */
     default void receiveFiles(CommunicationBridge bridge, long groupId)
     {
         PersistenceProvider persistenceProvider = bridge.getPersistenceProvider();
         ActiveConnection activeConnection = bridge.getActiveConnection();
         Client client = bridge.getRemoteClient();
-        Transfer item;
+        TransferItem item;
 
         // TODO: 11/6/20 This should belong to the task manager making the ETA calculation.
-        Transfer lastItem;
+        TransferItem lastItem;
         long currentBytes = 0;
         long completedBytes = 0;
         long completedCount = 0;
@@ -169,7 +169,7 @@ public interface TransportSeat
 
                 try (OutputStream outputStream = persistenceProvider.openOutputStream(descriptor)) {
                     // This if-block will throw an error if the result is false.
-                    if (Transfers.requestItem(bridge, item.getTransferId(), currentBytes)) {
+                    if (Transfers.requestItem(bridge, item.getItemId(), currentBytes)) {
                         int len;
                         ActiveConnection.Description description = bridge.getActiveConnection().readBegin();
                         WritableByteChannel writableByteChannel = Channels.newChannel(outputStream);
@@ -236,19 +236,19 @@ public interface TransportSeat
 
     /**
      * Handle the sending process. You can invoke this method in the {@link #beginFileTransfer} method when the type is
-     * {@link Transfer.Type#OUTGOING}.
+     * {@link TransferItem.Type#OUTGOING}.
      * <p>
      * You should not override this default method unless that is what you need.
      *
      * @param bridge  The bridge that speaks on behalf of you when making requests. A connection wrapper.
-     * @param groupId As in {@link Transfer#getTransferId()}.
+     * @param groupId As in {@link TransferItem#getItemId()}.
      */
     default void sendFiles(CommunicationBridge bridge, long groupId)
     {
         PersistenceProvider persistenceProvider = bridge.getPersistenceProvider();
         ActiveConnection activeConnection = bridge.getActiveConnection();
         Client client = bridge.getRemoteClient();
-        Transfer item;
+        TransferItem item;
 
         // TODO: 11/6/20 These variables belong to the ETA calculator.
         long currentBytes = 0;
@@ -266,12 +266,12 @@ public interface TransportSeat
                 try {
                     final TransferRequest transferRequest = Transfers.getTransferRequest(request);
                     item = persistenceProvider.loadTransferItem(client.getClientUid(), groupId, transferRequest.id,
-                            Transfer.Type.OUTGOING);
+                            TransferItem.Type.OUTGOING);
                     currentBytes = transferRequest.position;
 
                     try {
                         StreamDescriptor descriptor = persistenceProvider.getDescriptorFor(item);
-                        if (descriptor.length() != item.getTransferSize())
+                        if (descriptor.length() != item.getItemSize())
                             // FIXME: 11/6/20 Is it a good idea to throw an unrelated error? Probably not.
                             throw new FileNotFoundException("File size has changed. It is probably a different file.");
 
@@ -289,7 +289,7 @@ public interface TransportSeat
                             persistenceProvider.save(client.getClientUid(), item);
 
                             ActiveConnection.Description description = activeConnection.writeBegin(0,
-                                    item.getTransferSize() - currentBytes);
+                                    item.getItemSize() - currentBytes);
                             byte[] bytes = new byte[8096];
                             int readLength;
 

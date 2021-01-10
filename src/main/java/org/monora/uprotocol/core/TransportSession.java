@@ -14,7 +14,7 @@ import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
 import org.monora.uprotocol.core.spec.v1.Config;
 import org.monora.uprotocol.core.spec.v1.Keyword;
-import org.monora.uprotocol.core.transfer.Transfer;
+import org.monora.uprotocol.core.transfer.TransferItem;
 
 import java.io.IOException;
 
@@ -140,15 +140,15 @@ public class TransportSession extends CoolSocket
                 return;
             case (Keyword.REQUEST_TRANSFER_JOB):
                 int groupId = response.getInt(Keyword.TRANSFER_GROUP_ID);
-                Transfer.Type type = response.getEnum(Transfer.Type.class, Keyword.TRANSFER_TYPE);
+                TransferItem.Type type = response.getEnum(TransferItem.Type.class, Keyword.TRANSFER_TYPE);
 
                 // The type is reversed to match our side
-                if (Transfer.Type.INCOMING.equals(type))
-                    type = Transfer.Type.OUTGOING;
-                else if (Transfer.Type.OUTGOING.equals(type))
-                    type = Transfer.Type.INCOMING;
+                if (TransferItem.Type.INCOMING.equals(type))
+                    type = TransferItem.Type.OUTGOING;
+                else if (TransferItem.Type.OUTGOING.equals(type))
+                    type = TransferItem.Type.INCOMING;
 
-                if (Transfer.Type.INCOMING.equals(type) && !client.isClientTrusted())
+                if (TransferItem.Type.INCOMING.equals(type) && !client.isClientTrusted())
                     bridge.sendError(Keyword.ERROR_NOT_TRUSTED);
                 else if (transportSeat.hasOngoingTransferFor(groupId, client.getClientUid(), type))
                     throw new ContentException(ContentException.Error.NotAccessible);

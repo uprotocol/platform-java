@@ -1,12 +1,12 @@
 package org.monora.uprotocol.core.io;
 
-import org.monora.uprotocol.core.transfer.Transfer;
+import org.monora.uprotocol.core.transfer.TransferItem;
 
 /**
  * This represents an input or output stream depending on the use case.
  * <p>
- * The difference from {@link Transfer} is that this keeps what the file is
- * whereas {@link Transfer} keeps what the file was before it was exchanged
+ * The difference from {@link TransferItem} is that this keeps what the file is
+ * whereas {@link TransferItem} keeps what the file was before it was exchanged
  * between networked clients.
  */
 public interface StreamDescriptor

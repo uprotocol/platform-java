@@ -3,7 +3,7 @@ package org.monora.uprotocol.core.transfer;
 /**
  * Holds the details for a transfer item.
  */
-public interface Transfer
+public interface TransferItem
 {
     /**
      * The path in which this item should be stored.
@@ -11,80 +11,80 @@ public interface Transfer
      * @return The relative path.
      * @see #setTransferDirectory(String)
      */
-    String getTransferDirectory();
+    String getItemDirectory();
 
     /**
      * The unique of the item.
      *
      * @return The unique id.
-     * @see #setTransferId(long)
-     * @see #getTransferGroupId()
+     * @see #setItemId(long)
+     * @see #getItemGroupId()
      */
-    long getTransferId();
+    long getItemId();
 
     /**
      * The last time this item was interacted with.
      *
      * @return The time in UNIX epoch format.
-     * @see #setTransferItemLastChangeTime(long)
+     * @see #setItemLastChangeTime(long)
      */
-    long getTransferLastChangeTime();
+    long getItemLastChangeTime();
 
     /**
      * The MIME-type of the item.
      *
      * @return The MIME-type.
-     * @see #setTransferMimeType(String)
+     * @see #setItemMimeType(String)
      */
-    String getTransferMimeType();
+    String getItemMimeType();
 
     /**
      * The name of this item.
      *
      * @return The item name.
-     * @see #setTransferItemName(String)
+     * @see #setItemName(String)
      */
-    String getTransferName();
+    String getItemName();
 
     /**
      * The length (size) of the item in bytes.
      *
      * @return The size in bytes.
      */
-    long getTransferSize();
+    long getItemSize();
 
     /**
      * The type of this item showing whether it is an incoming or outgoing transfer.
      *
      * @return The item type.
-     * @see #setTransferType(Transfer.Type)
+     * @see #setItemType(TransferItem.Type)
      */
-    Transfer.Type getTransferType();
+    TransferItem.Type getItemType();
 
     /**
      * The group id of the item that specifies the group it belongs to.
      *
      * @return The group id.
      * @see #setTransferGroupId(long)
-     * @see #getTransferId()
+     * @see #getItemId()
      */
-    long getTransferGroupId();
+    long getItemGroupId();
 
     /**
      * Sets the item id that refers to the item individually.
      *
      * @param id Of the item.
-     * @see #getTransferId()
+     * @see #getItemId()
      * @see #setTransferGroupId(long)
      */
-    void setTransferId(long id);
+    void setItemId(long id);
 
     /**
      * Sets the group id that this item belongs to.
      *
      * @param groupId Of the group that the item belongs to.
-     * @see #getTransferGroupId()
-     * @see #setTransferId(long)
+     * @see #getItemGroupId()
+     * @see #setItemId(long)
      */
     void setTransferGroupId(long groupId);
 
@@ -92,9 +92,9 @@ public interface Transfer
      * Sets the name of the item.
      *
      * @param name Of the item.
-     * @see #getTransferName()
+     * @see #getItemName()
      */
-    void setTransferItemName(String name);
+    void setItemName(String name);
 
     /**
      * Sets the relative path that this item should be in.
@@ -107,35 +107,38 @@ public interface Transfer
      * Sets the MIME-type of the item.
      *
      * @param mimeType Of the item.
-     * @see #getTransferMimeType()
+     * @see #getItemMimeType()
      */
-    void setTransferMimeType(String mimeType);
+    void setItemMimeType(String mimeType);
 
     /**
      * The total length (size) of the item.
      *
      * @param size Of the item in bytes.
-     * @see #getTransferSize()
+     * @see #getItemSize()
      */
-    void setTransferItemSize(long size);
+    void setItemSize(long size);
 
     /**
      * Sets the last time this item was interacted with
      *
      * @param lastChangeTime In UNIX epoch format.
-     * @see #getTransferLastChangeTime()
+     * @see #getItemLastChangeTime()
      */
-    void setTransferItemLastChangeTime(long lastChangeTime);
+    void setItemLastChangeTime(long lastChangeTime);
 
     /**
      * Sets the type of the item specifying whether it is an incoming or outgoing item.
      *
      * @param type Of the item.
-     * @see #getTransferType()
+     * @see #getItemType()
      */
-    void setTransferType(Transfer.Type type);
+    void setItemType(TransferItem.Type type);
 
-    public enum Type
+    /**
+     * The enum for the type of the transfer item.
+     */
+    enum Type
     {
         /**
          * The item is incoming

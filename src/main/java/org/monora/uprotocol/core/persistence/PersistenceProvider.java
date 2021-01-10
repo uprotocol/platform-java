@@ -9,7 +9,7 @@ import org.monora.uprotocol.core.io.StreamDescriptor;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.spec.v1.Keyword;
-import org.monora.uprotocol.core.transfer.Transfer;
+import org.monora.uprotocol.core.transfer.TransferItem;
 
 import javax.activation.MimetypesFileTypeMap;
 import javax.net.ssl.SSLContext;
@@ -176,17 +176,17 @@ public interface PersistenceProvider
     /**
      * Create a transfer item instance for the given parameters.
      *
-     * @param groupId   Points to {@link Transfer#getTransferGroupId()}.
-     * @param id        Points to {@link Transfer#getTransferId()}.
-     * @param name      Points to {@link Transfer#getTransferName()}.
-     * @param mimeType  Points to {@link Transfer#getTransferMimeType()}.
-     * @param size      Points to {@link Transfer#getTransferSize()}.
-     * @param directory Points to {@link Transfer#getTransferDirectory()}.
-     * @param type      Points to {@link Transfer#getTransferType()}
+     * @param groupId   Points to {@link TransferItem#getItemGroupId()}.
+     * @param id        Points to {@link TransferItem#getItemId()}.
+     * @param name      Points to {@link TransferItem#getItemName()}.
+     * @param mimeType  Points to {@link TransferItem#getItemMimeType()}.
+     * @param size      Points to {@link TransferItem#getItemSize()}.
+     * @param directory Points to {@link TransferItem#getItemDirectory()}.
+     * @param type      Points to {@link TransferItem#getItemType()}
      * @return The transfer item instance.
      */
-    Transfer createTransferFor(long groupId, long id, String name, String mimeType, long size, String directory,
-                               Transfer.Type type);
+    TransferItem createTransferFor(long groupId, long id, String name, String mimeType, long size, String directory,
+                                   TransferItem.Type type);
 
     /**
      * Returns this client's certificate.
@@ -237,20 +237,20 @@ public interface PersistenceProvider
      * For instance, this can be a file descriptor or a network stream of which only the name, size and location are
      * known.
      *
-     * @param transfer For which the descriptor will be generated.
+     * @param transferItem For which the descriptor will be generated.
      * @return The generated descriptor.
      * @see #openInputStream(StreamDescriptor)
      * @see #openOutputStream(StreamDescriptor)
      */
-    StreamDescriptor getDescriptorFor(Transfer transfer);
+    StreamDescriptor getDescriptorFor(TransferItem transferItem);
 
     /**
      * This will return the first valid item that that this side can receive.
      *
-     * @param groupId Points to {@link Transfer#getTransferGroupId()}.
+     * @param groupId Points to {@link TransferItem#getItemGroupId()}.
      * @return The transfer receivable item or null if there are none.
      */
-    Transfer getFirstReceivableItem(long groupId);
+    TransferItem getFirstReceivableItem(long groupId);
 
     /**
      * This method is invoked when there is a new connection to the server.
@@ -285,13 +285,13 @@ public interface PersistenceProvider
      * Load transfer item for the given parameters.
      *
      * @param clientUid Owning the item.
-     * @param groupId   Points to {@link Transfer#getTransferGroupId()}
-     * @param id        Points to {@link Transfer#getTransferId()}.
+     * @param groupId   Points to {@link TransferItem#getItemGroupId()}
+     * @param id        Points to {@link TransferItem#getItemId()}.
      * @param type      Specifying whether this is an incoming or outgoing operation.
      * @return The transfer item that points to the given parameters or null if there is no match.
      * @throws PersistenceException When the given parameters don't point to a valid item.
      */
-    Transfer loadTransferItem(String clientUid, long groupId, long id, Transfer.Type type)
+    TransferItem loadTransferItem(String clientUid, long groupId, long id, TransferItem.Type type)
             throws PersistenceException;
 
     /**
@@ -343,7 +343,7 @@ public interface PersistenceProvider
      * @param clientUid That owns the item.
      * @param item      To save.
      */
-    void save(String clientUid, Transfer item);
+    void save(String clientUid, TransferItem item);
 
     /**
      * Save all the items in the given list.
@@ -351,7 +351,7 @@ public interface PersistenceProvider
      * @param clientUid That owns the items.
      * @param itemList  To save.
      */
-    void save(String clientUid, List<? extends Transfer> itemList);
+    void save(String clientUid, List<? extends TransferItem> itemList);
 
     /**
      * Save the client's picture.
@@ -380,7 +380,7 @@ public interface PersistenceProvider
      * Change the state of the given item.
      * <p>
      * Note: this should set the state but should not save it since saving it is spared for
-     * {@link #save(String, Transfer)}.
+     * {@link #save(String, TransferItem)}.
      *
      * @param clientUid That owns the copy of the 'item'.
      * @param item      Of which the given state will be applied.
@@ -392,7 +392,7 @@ public interface PersistenceProvider
      * @see #STATE_IN_PROGRESS
      * @see #STATE_DONE
      */
-    void setState(String clientUid, Transfer item, int state, Exception e);
+    void setState(String clientUid, TransferItem item, int state, Exception e);
 
     /**
      * Sync the client with the persistence database.
@@ -404,29 +404,29 @@ public interface PersistenceProvider
     void sync(Client client) throws PersistenceException;
 
     /**
-     * Transform a given {@link Transfer} list into its {@link JSONArray} equivalent.
+     * Transform a given {@link TransferItem} list into its {@link JSONArray} equivalent.
      * <p>
      * The resulting {@link JSONArray} can be fed to {@link CommunicationBridge#requestFileTransfer(long, List)},
      * to start a file transfer operation.
      * <p>
      * You can have the same JSON data back using {@link #toTransferList(long, String)}.
      *
-     * @param transferList To convert.
+     * @param transferItemList To convert.
      * @return The JSON equivalent of the same list.
      */
-    default JSONArray toJson(List<Transfer> transferList)
+    default JSONArray toJson(List<TransferItem> transferItemList)
     {
         JSONArray jsonArray = new JSONArray();
 
-        for (Transfer transfer : transferList) {
+        for (TransferItem transferItem : transferItemList) {
             JSONObject json = new JSONObject()
-                    .put(Keyword.TRANSFER_ID, transfer.getTransferId())
-                    .put(Keyword.INDEX_FILE_NAME, transfer.getTransferName())
-                    .put(Keyword.INDEX_FILE_SIZE, transfer.getTransferSize())
-                    .put(Keyword.INDEX_FILE_MIME, transfer.getTransferMimeType());
+                    .put(Keyword.TRANSFER_ID, transferItem.getItemId())
+                    .put(Keyword.INDEX_FILE_NAME, transferItem.getItemName())
+                    .put(Keyword.INDEX_FILE_SIZE, transferItem.getItemSize())
+                    .put(Keyword.INDEX_FILE_MIME, transferItem.getItemMimeType());
 
-            if (transfer.getTransferDirectory() != null)
-                json.put(Keyword.INDEX_DIRECTORY, transfer.getTransferDirectory());
+            if (transferItem.getItemDirectory() != null)
+                json.put(Keyword.INDEX_DIRECTORY, transferItem.getItemDirectory());
 
             jsonArray.put(json);
         }
@@ -442,22 +442,22 @@ public interface PersistenceProvider
      * @return The list of items inflated from the JSON data.
      * @throws JSONException If the JSON data is corrupted or has missing/mismatch values.
      */
-    default List<Transfer> toTransferList(long groupId, String jsonArray) throws JSONException
+    default List<TransferItem> toTransferList(long groupId, String jsonArray) throws JSONException
     {
         JSONArray json = new JSONArray(jsonArray);
-        List<Transfer> transferList = new ArrayList<>();
+        List<TransferItem> transferItemList = new ArrayList<>();
 
         if (json.length() > 0) {
             for (int i = 0; i < json.length(); i++) {
                 JSONObject jsonObject = json.getJSONObject(i);
                 String directory = jsonObject.has(Keyword.INDEX_DIRECTORY)
                         ? jsonObject.getString(Keyword.INDEX_DIRECTORY) : null;
-                transferList.add(createTransferFor(groupId, jsonObject.getLong(Keyword.TRANSFER_ID),
+                transferItemList.add(createTransferFor(groupId, jsonObject.getLong(Keyword.TRANSFER_ID),
                         jsonObject.getString(Keyword.INDEX_FILE_NAME), jsonObject.getString(Keyword.INDEX_FILE_MIME),
-                        jsonObject.getLong(Keyword.INDEX_FILE_SIZE), directory, Transfer.Type.INCOMING));
+                        jsonObject.getLong(Keyword.INDEX_FILE_SIZE), directory, TransferItem.Type.INCOMING));
             }
         }
 
-        return transferList;
+        return transferItemList;
     }
 }

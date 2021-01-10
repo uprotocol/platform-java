@@ -4,7 +4,7 @@ import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSeat;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
-import org.monora.uprotocol.core.transfer.Transfer;
+import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
@@ -23,12 +23,12 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public void beginFileTransfer(CommunicationBridge bridge, Client client, long groupId, Transfer.Type type)
+    public void beginFileTransfer(CommunicationBridge bridge, Client client, long groupId, TransferItem.Type type)
             throws PersistenceException, ProtocolException
     {
-        if (type.equals(Transfer.Type.INCOMING))
+        if (type.equals(TransferItem.Type.INCOMING))
             receiveFiles(bridge, groupId);
-        else if (type.equals(Transfer.Type.OUTGOING))
+        else if (type.equals(TransferItem.Type.OUTGOING))
             sendFiles(bridge, groupId);
     }
 
@@ -42,8 +42,8 @@ public class DefaultTransportSeat implements TransportSeat
     public void handleFileTransferRequest(Client client, boolean hasPin, long groupId, String jsonArray)
             throws PersistenceException, ProtocolException
     {
-        List<Transfer> transferList = persistenceProvider.toTransferList(groupId, jsonArray);
-        persistenceProvider.save(client.getClientUid(), transferList);
+        List<TransferItem> transferItemList = persistenceProvider.toTransferList(groupId, jsonArray);
+        persistenceProvider.save(client.getClientUid(), transferItemList);
     }
 
     @Override
@@ -59,7 +59,7 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public boolean hasOngoingTransferFor(long groupId, String clientUid, Transfer.Type type)
+    public boolean hasOngoingTransferFor(long groupId, String clientUid, TransferItem.Type type)
     {
         return false;
     }

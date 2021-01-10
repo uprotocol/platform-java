@@ -6,7 +6,7 @@ import org.junit.Test;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
-import org.monora.uprotocol.core.transfer.Transfer;
+import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.io.StreamDescriptor;
@@ -30,8 +30,8 @@ import java.util.List;
 public class TransferTest extends DefaultTestBase
 {
     private ClientAddress clientAddress;
-    private Transfer demoTransfer1;
-    private Transfer demoTransfer2;
+    private TransferItem demoTransferItem1;
+    private TransferItem demoTransferItem2;
 
     private final static byte[] data1 = "This is the first demo data".getBytes();
     private final static byte[] data2 = "This is the second demo data".getBytes();
@@ -40,13 +40,13 @@ public class TransferTest extends DefaultTestBase
     @Before
     public void setUp() throws IOException
     {
-        demoTransfer1 = secondaryPersistence.createTransferFor(groupId, 1, "File1",
-                "text/plain", data1.length, null, Transfer.Type.OUTGOING);
-        demoTransfer2 = secondaryPersistence.createTransferFor(groupId, 2, "File2",
-                "text/plain", data2.length, null, Transfer.Type.OUTGOING);
+        demoTransferItem1 = secondaryPersistence.createTransferFor(groupId, 1, "File1",
+                "text/plain", data1.length, null, TransferItem.Type.OUTGOING);
+        demoTransferItem2 = secondaryPersistence.createTransferFor(groupId, 2, "File2",
+                "text/plain", data2.length, null, TransferItem.Type.OUTGOING);
 
-        StreamDescriptor descriptor1 = secondaryPersistence.getDescriptorFor(demoTransfer1);
-        StreamDescriptor descriptor2 = secondaryPersistence.getDescriptorFor(demoTransfer2);
+        StreamDescriptor descriptor1 = secondaryPersistence.getDescriptorFor(demoTransferItem1);
+        StreamDescriptor descriptor2 = secondaryPersistence.getDescriptorFor(demoTransferItem2);
 
         secondaryPersistence.openOutputStream(descriptor1).write(data1);
         secondaryPersistence.openOutputStream(descriptor2).write(data2);
@@ -59,9 +59,9 @@ public class TransferTest extends DefaultTestBase
     {
         primarySession.start();
 
-        final List<Transfer> itemList = new ArrayList<>();
-        itemList.add(demoTransfer1);
-        itemList.add(demoTransfer2);
+        final List<TransferItem> itemList = new ArrayList<>();
+        itemList.add(demoTransferItem1);
+        itemList.add(demoTransferItem2);
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestFileTransfer(groupId, itemList);
@@ -77,7 +77,7 @@ public class TransferTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
             Assert.assertTrue("The result should be positive", bridge.requestFileTransferStart(groupId,
-                    Transfer.Type.INCOMING));
+                    TransferItem.Type.INCOMING));
 
             primarySeat.receiveFiles(bridge, groupId);
         }
@@ -91,8 +91,8 @@ public class TransferTest extends DefaultTestBase
         for (MemoryStreamDescriptor descriptor : primaryList) {
             boolean dataMatched = false;
             for (MemoryStreamDescriptor secondaryDescriptor : secondaryList) {
-                if (descriptor.transfer.getTransferGroupId() == secondaryDescriptor.transfer.getTransferGroupId()
-                        && descriptor.transfer.getTransferId() == secondaryDescriptor.transfer.getTransferId()) {
+                if (descriptor.transferItem.getItemGroupId() == secondaryDescriptor.transferItem.getItemGroupId()
+                        && descriptor.transferItem.getItemId() == secondaryDescriptor.transferItem.getItemId()) {
                     Assert.assertEquals("The data should match", descriptor.data.toString(),
                             secondaryDescriptor.data.toString());
                     dataMatched = true;
@@ -109,7 +109,7 @@ public class TransferTest extends DefaultTestBase
         secondarySession.start();
 
         try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
-            bridge.requestFileTransferStart(groupId, Transfer.Type.INCOMING);
+            bridge.requestFileTransferStart(groupId, TransferItem.Type.INCOMING);
             primarySeat.receiveFiles(bridge, groupId);
         }
 
@@ -135,7 +135,7 @@ public class TransferTest extends DefaultTestBase
         primarySession.start();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestFileTransferStart(groupId, Transfer.Type.OUTGOING);
+            bridge.requestFileTransferStart(groupId, TransferItem.Type.OUTGOING);
             secondarySeat.receiveFiles(bridge, groupId);
         } finally {
             primarySession.stop();
@@ -154,7 +154,7 @@ public class TransferTest extends DefaultTestBase
         primarySession.start();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestFileTransferStart(groupId, Transfer.Type.OUTGOING);
+            bridge.requestFileTransferStart(groupId, TransferItem.Type.OUTGOING);
             secondarySeat.receiveFiles(bridge, groupId);
         }
 

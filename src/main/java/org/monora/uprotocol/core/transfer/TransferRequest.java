@@ -1,12 +1,12 @@
 package org.monora.uprotocol.core.transfer;
 
 /**
- * Holds the details for a requested {@link Transfer}.
+ * Holds the details for a requested {@link TransferItem}.
  */
 public class TransferRequest
 {
     /**
-     * Corresponds to {@link Transfer#getTransferId()}.
+     * Corresponds to {@link TransferItem#getItemId()}.
      */
     public final long id;
 

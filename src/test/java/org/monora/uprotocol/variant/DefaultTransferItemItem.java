@@ -1,8 +1,8 @@
 package org.monora.uprotocol.variant;
 
-import org.monora.uprotocol.core.transfer.Transfer;
+import org.monora.uprotocol.core.transfer.TransferItem;
 
-public class DefaultTransferItem implements Transfer
+public class DefaultTransferItemItem implements TransferItem
 {
     public long id;
 
@@ -20,81 +20,80 @@ public class DefaultTransferItem implements Transfer
 
     public Type type = Type.INCOMING;
 
-    public DefaultTransferItem(long groupId, long id, String name, String mimeType, long size, String directory,
-                               Transfer.Type type)
+    public DefaultTransferItemItem(long groupId, long id, String name, String mimeType, long size, String directory,
+                                   TransferItem.Type type)
     {
         setTransferGroupId(groupId);
-        setTransferId(id);
-        setTransferItemName(name);
-        setTransferMimeType(mimeType);
-        setTransferItemSize(size);
+        setItemId(id);
+        setItemName(name);
+        setItemMimeType(mimeType);
+        setItemSize(size);
         setTransferDirectory(directory);
-        setTransferType(type);
+        setItemType(type);
     }
 
     @Override
     public boolean equals(Object obj)
     {
-        if (obj instanceof Transfer) {
-            Transfer other = (Transfer) obj;
-            return getTransferType() != null && getTransferType().equals(other.getTransferType())
-                    && getTransferGroupId() == other.getTransferGroupId()
-                    && getTransferId() == other.getTransferId();
+        if (obj instanceof TransferItem) {
+            TransferItem other = (TransferItem) obj;
+            return getItemType() != null && getItemType().equals(other.getItemType())
+                    && getItemGroupId() == other.getItemGroupId() && getItemId() == other.getItemId();
         }
 
         return super.equals(obj);
     }
 
     @Override
-    public String getTransferDirectory()
+    public String getItemDirectory()
     {
         return directory;
     }
 
     @Override
-    public long getTransferId()
+    public long getItemId()
     {
         return id;
     }
 
     @Override
-    public long getTransferLastChangeTime()
+    public long getItemLastChangeTime()
     {
         return lastChangeTime;
     }
 
     @Override
-    public String getTransferMimeType()
+    public String getItemMimeType()
     {
         return mimeType;
     }
 
     @Override
-    public String getTransferName()
+    public String getItemName()
     {
         return name;
     }
 
     @Override
-    public long getTransferSize()
+    public long getItemSize()
     {
         return size;
     }
 
     @Override
-    public Type getTransferType()
+    public Type getItemType()
     {
         return type;
     }
 
     @Override
-    public long getTransferGroupId()
+    public long getItemGroupId()
     {
         return groupId;
     }
 
     @Override
-    public void setTransferId(long id)
+    public void setItemId(long id)
     {
         this.id = id;
     }
@@ -106,7 +105,7 @@ public class DefaultTransferItem implements Transfer
     }
 
     @Override
-    public void setTransferItemName(String name)
+    public void setItemName(String name)
     {
         this.name = name;
     }
@@ -118,25 +117,25 @@ public class DefaultTransferItem implements Transfer
     }
 
     @Override
-    public void setTransferMimeType(String mimeType)
+    public void setItemMimeType(String mimeType)
     {
         this.mimeType = mimeType;
     }
 
     @Override
-    public void setTransferItemSize(long size)
+    public void setItemSize(long size)
     {
         this.size = size;
     }
 
     @Override
-    public void setTransferItemLastChangeTime(long lastChangeTime)
+    public void setItemLastChangeTime(long lastChangeTime)
     {
         this.lastChangeTime = lastChangeTime;
     }
 
     @Override
-    public void setTransferType(Type type)
+    public void setItemType(Type type)
     {
         this.type = type;
     }

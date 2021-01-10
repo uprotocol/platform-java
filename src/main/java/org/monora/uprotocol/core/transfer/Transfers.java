@@ -31,7 +31,7 @@ public class Transfers
      * Request item from the remote.
      *
      * @param bridge          The bridge that speaks on behalf of you when making requests. A connection wrapper.
-     * @param itemId          Corresponds to {@link Transfer#getTransferId()}.
+     * @param itemId          Corresponds to {@link TransferItem#getItemId()}.
      * @param currentPosition To skip if this item has recovered from an error, meaning it already has some bytes transferred
      *                        on your side.
      * @return True if the remote approved of the request.
