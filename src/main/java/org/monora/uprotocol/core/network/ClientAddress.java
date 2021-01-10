@@ -8,31 +8,54 @@ import java.net.InetAddress;
  * @see InetAddress
  * @see Client
  */
-public abstract class ClientAddress
+public interface ClientAddress
 {
     /**
-     * The internet address that this instance is targeting.
-     */
-    public InetAddress inetAddress;
-
-    /**
-     * The {@link Client#uid} that specifies who owns this address.
-     */
-    public String clientUid;
-
-    /**
-     * The last time that a communication was started with this address.
+     * The internet address that points to the client.
      *
+     * @return The internet address.
+     * @see #setClientAddress(InetAddress)
+     */
+    InetAddress getClientAddress();
+
+    /**
+     * The last usage time of this address.
+     *
+     * @return The time in UNIX epoch format.
+     * @see #getClientAddressLastUsageTime()
+     */
+    long getClientAddressLastUsageTime();
+
+    /**
+     * The uid of the {@link Client} that owns this address.
+     *
+     * @return The client uid.
+     * @see #setClientAddressOwnerUid(String)
+     */
+    String getClientAddressOwnerUid();
+
+    /**
+     * Change the address of this instance.
+     *
+     * @param inetAddress The internet address.
+     * @see #getClientAddress()
+     */
+    void setClientAddress(InetAddress inetAddress);
+
+    /**
+     * Change the time that this address was used.
+     *
+     * @param lastUsageTime The time in UNIX epoch format.
+     * @see #getClientAddressLastUsageTime()
+     */
+    void setClientAddressLastUsageTime(long lastUsageTime);
+
+    /**
+     * Change the client uid owning this address.
+     *
+     * @param clientUid The uid of the client.
+     * @see #getClientAddressLastUsageTime()
      * @see System#currentTimeMillis()
      */
-    public long lastUsageTime;
-
-    @Override
-    public boolean equals(Object obj)
-    {
-        if (obj instanceof ClientAddress) {
-            return inetAddress != null && inetAddress.equals(((ClientAddress) obj).inetAddress);
-        }
-        return super.equals(obj);
-    }
+    void setClientAddressOwnerUid(String clientUid);
 }

@@ -171,10 +171,10 @@ public class CommunicationBridge implements Closeable
                                               Client client, int pin)
             throws IOException, JSONException, ProtocolException
     {
-        ActiveConnection activeConnection = connectionFactory.openConnection(clientAddress.inetAddress);
+        ActiveConnection activeConnection = connectionFactory.openConnection(clientAddress.getClientAddress());
         String remoteClientUid = activeConnection.receive().getAsString();
 
-        clientAddress.clientUid = remoteClientUid;
+        clientAddress.setClientAddressOwnerUid(remoteClientUid);
         persistenceProvider.save(clientAddress);
 
         if (client != null && client.getClientUid() != null && !client.getClientUid().equals(remoteClientUid)) {
