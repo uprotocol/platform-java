@@ -23,12 +23,12 @@ public class DefaultTransferItemItem implements TransferItem
     public DefaultTransferItemItem(long groupId, long id, String name, String mimeType, long size, String directory,
                                    TransferItem.Type type)
     {
-        setTransferGroupId(groupId);
+        setItemGroupId(groupId);
         setItemId(id);
         setItemName(name);
         setItemMimeType(mimeType);
         setItemSize(size);
-        setTransferDirectory(directory);
+        setItemDirectory(directory);
         setItemType(type);
     }
 
@@ -99,7 +99,7 @@ public class DefaultTransferItemItem implements TransferItem
     }
 
     @Override
-    public void setTransferGroupId(long groupId)
+    public void setItemGroupId(long groupId)
     {
         this.groupId = groupId;
     }
@@ -111,7 +111,7 @@ public class DefaultTransferItemItem implements TransferItem
     }
 
     @Override
-    public void setTransferDirectory(String directory)
+    public void setItemDirectory(String directory)
     {
         this.directory = directory;
     }

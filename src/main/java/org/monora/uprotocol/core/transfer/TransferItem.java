@@ -9,9 +9,18 @@ public interface TransferItem
      * The path in which this item should be stored.
      *
      * @return The relative path.
-     * @see #setTransferDirectory(String)
+     * @see #setItemDirectory(String)
      */
     String getItemDirectory();
+
+    /**
+     * The group id of the item that specifies the group it belongs to.
+     *
+     * @return The group id.
+     * @see #setItemGroupId(long)
+     * @see #getItemId()
+     */
+    long getItemGroupId();
 
     /**
      * The unique of the item.
@@ -62,22 +71,11 @@ public interface TransferItem
     TransferItem.Type getItemType();
 
     /**
-     * The group id of the item that specifies the group it belongs to.
+     * Sets the relative path that this item should be in.
      *
-     * @return The group id.
-     * @see #setTransferGroupId(long)
-     * @see #getItemId()
+     * @param directory Or the relative path that the item should be in.
      */
-    long getItemGroupId();
-
-    /**
-     * Sets the item id that refers to the item individually.
-     *
-     * @param id Of the item.
-     * @see #getItemId()
-     * @see #setTransferGroupId(long)
-     */
-    void setItemId(long id);
+    void setItemDirectory(String directory);
 
     /**
      * Sets the group id that this item belongs to.
@@ -86,7 +84,16 @@ public interface TransferItem
      * @see #getItemGroupId()
      * @see #setItemId(long)
      */
-    void setTransferGroupId(long groupId);
+    void setItemGroupId(long groupId);
+
+    /**
+     * Sets the item id that refers to the item individually.
+     *
+     * @param id Of the item.
+     * @see #getItemId()
+     * @see #setItemGroupId(long)
+     */
+    void setItemId(long id);
 
     /**
      * Sets the name of the item.
@@ -97,11 +104,13 @@ public interface TransferItem
     void setItemName(String name);
 
     /**
-     * Sets the relative path that this item should be in.
+     * Sets the last time this item was interacted with
      *
-     * @param directory Or the relative path that the item should be in.
+     * @param lastChangeTime In UNIX epoch format.
+     * @see #getItemLastChangeTime()
      */
-    void setTransferDirectory(String directory);
+    void setItemLastChangeTime(long lastChangeTime);
+
 
     /**
      * Sets the MIME-type of the item.
@@ -118,14 +127,6 @@ public interface TransferItem
      * @see #getItemSize()
      */
     void setItemSize(long size);
-
-    /**
-     * Sets the last time this item was interacted with
-     *
-     * @param lastChangeTime In UNIX epoch format.
-     * @see #getItemLastChangeTime()
-     */
-    void setItemLastChangeTime(long lastChangeTime);
 
     /**
      * Sets the type of the item specifying whether it is an incoming or outgoing item.

@@ -40,9 +40,9 @@ public class TransferTest extends DefaultTestBase
     @Before
     public void setUp() throws IOException
     {
-        demoTransferItem1 = secondaryPersistence.createTransferFor(groupId, 1, "File1",
+        demoTransferItem1 = secondaryPersistence.createTransferItemFor(groupId, 1, "File1",
                 "text/plain", data1.length, null, TransferItem.Type.OUTGOING);
-        demoTransferItem2 = secondaryPersistence.createTransferFor(groupId, 2, "File2",
+        demoTransferItem2 = secondaryPersistence.createTransferItemFor(groupId, 2, "File2",
                 "text/plain", data2.length, null, TransferItem.Type.OUTGOING);
 
         StreamDescriptor descriptor1 = secondaryPersistence.getDescriptorFor(demoTransferItem1);

@@ -57,7 +57,6 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     private final List<MemoryStreamDescriptor> streamDescriptorList = new ArrayList<>();
     private final List<String> invalidationRequestList = new ArrayList<>();
     private final BouncyCastleProvider bouncyCastleProvider = new BouncyCastleProvider();
-    private final SecureRandom secureRandom = new SecureRandom();
     private final KeyFactory keyFactory;
 
     private KeyPair keyPair;
@@ -179,8 +178,8 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public TransferItem createTransferFor(long groupId, long id, String name, String mimeType, long size,
-                                          String directory, TransferItem.Type type)
+    public TransferItem createTransferItemFor(long groupId, long id, String name, String mimeType, long size,
+                                              String directory, TransferItem.Type type)
     {
         return new DefaultTransferItemItem(groupId, id, name, mimeType, size, directory, type);
     }
@@ -263,69 +262,6 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
             return keyFactory.generatePublic(new X509EncodedKeySpec(keyPair.getPublic().getEncoded()));
         } catch (InvalidKeySpecException e) {
             throw new RuntimeException("Could not generate the encoded public key.", e);
-        }
-    }
-
-    @Override
-    public SSLContext getSSLContextFor(Client client)
-    {
-        try {
-            // Get this client's private key
-            PrivateKey privateKey = getPrivateKey();
-            char[] password = new char[0];
-
-            // Setup keystore
-            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            keyStore.load(null, null);
-            keyStore.setKeyEntry("key", privateKey, password, new Certificate[]{certificate});
-
-            if (client.getClientCertificate() != null)
-                keyStore.setCertificateEntry(client.getClientUid(), client.getClientCertificate());
-
-            // Setup key manager factory
-            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            keyManagerFactory.init(keyStore, password);
-
-            TrustManager[] trustManagers;
-
-            if (client.getClientCertificate() == null) {
-                // Set up custom trust manager if we don't have the certificate for the peer.
-                X509TrustManager trustManager = new X509TrustManager()
-                {
-                    public java.security.cert.X509Certificate[] getAcceptedIssuers()
-                    {
-                        return new X509Certificate[0];
-                    }
-
-                    @Override
-                    public void checkClientTrusted(X509Certificate[] certs, String authType)
-                    {
-                    }
-
-                    @Override
-                    public void checkServerTrusted(X509Certificate[] certs, String authType)
-                    {
-                    }
-                };
-
-                trustManagers = new TrustManager[]{trustManager};
-            } else {
-                // Set up the default trust manager if we already have the certificate for the peer.
-                TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
-                        TrustManagerFactory.getDefaultAlgorithm());
-                trustManagerFactory.init(keyStore);
-
-                trustManagers = trustManagerFactory.getTrustManagers();
-            }
-
-            // Newer TLS versions are only supported on API 16+
-            SSLContext tlsContext = SSLContext.getInstance("TLSv1");
-            tlsContext.init(keyManagerFactory.getKeyManagers(), trustManagers, secureRandom);
-
-            return tlsContext;
-        } catch (Exception e) {
-            // TODO: 1/7/21 Should this throw custom exceptions?
-            throw new RuntimeException("Could not create a secure socket context.");
         }
     }
 

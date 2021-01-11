@@ -12,13 +12,16 @@ import org.monora.uprotocol.core.spec.v1.Keyword;
 import org.monora.uprotocol.core.transfer.TransferItem;
 
 import javax.activation.MimetypesFileTypeMap;
-import javax.net.ssl.SSLContext;
+import javax.net.ssl.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -185,8 +188,8 @@ public interface PersistenceProvider
      * @param type      Points to {@link TransferItem#getItemType()}
      * @return The transfer item instance.
      */
-    TransferItem createTransferFor(long groupId, long id, String name, String mimeType, long size, String directory,
-                                   TransferItem.Type type);
+    TransferItem createTransferItemFor(long groupId, long id, String name, String mimeType, long size, String directory,
+                                       TransferItem.Type type);
 
     /**
      * Returns this client's certificate.
@@ -265,11 +268,102 @@ public interface PersistenceProvider
      */
     int getNetworkPin();
 
+    /**
+     * The private key that belongs to this client.
+     *
+     * @return The private key.
+     */
     PrivateKey getPrivateKey();
 
+    /**
+     * The public key that belongs to this client.
+     *
+     * @return The public key.
+     */
     PublicKey getPublicKey();
 
-    SSLContext getSSLContextFor(Client client);
+    /**
+     * Generates a cryptographically strong random number.
+     * <p>
+     * This method will be invoked by the default {@link #getSSLContextFor(Client)} method.
+     *
+     * @return The secure random number instance.
+     * @see #getSSLContextFor(Client)
+     */
+    default SecureRandom getSecureRandom()
+    {
+        return new SecureRandom();
+    }
+
+    /**
+     * Creates the SSL context for the given client.
+     * <p>
+     * If the certificate does not exist, a custom TrustStore will be generated.
+     *
+     * @param client For which the context will be generated.
+     * @return The SSL context.
+     */
+    default SSLContext getSSLContextFor(Client client)
+    {
+        try {
+            // Get this client's private key
+            PrivateKey privateKey = getPrivateKey();
+            char[] password = new char[0];
+
+            // Setup keystore
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(null, null);
+            keyStore.setKeyEntry("key", privateKey, password, new Certificate[]{getCertificate()});
+
+            if (client.getClientCertificate() != null)
+                keyStore.setCertificateEntry(client.getClientUid(), client.getClientCertificate());
+
+            // Setup key manager factory
+            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+            keyManagerFactory.init(keyStore, password);
+
+            TrustManager[] trustManagers;
+
+            if (client.getClientCertificate() == null) {
+                // Set up custom trust manager if we don't have the certificate for the peer.
+                X509TrustManager trustManager = new X509TrustManager()
+                {
+                    public java.security.cert.X509Certificate[] getAcceptedIssuers()
+                    {
+                        return new X509Certificate[0];
+                    }
+
+                    @Override
+                    public void checkClientTrusted(X509Certificate[] certs, String authType)
+                    {
+                    }
+
+                    @Override
+                    public void checkServerTrusted(X509Certificate[] certs, String authType)
+                    {
+                    }
+                };
+
+                trustManagers = new TrustManager[]{trustManager};
+            } else {
+                // Set up the default trust manager if we already have the certificate for the peer.
+                TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
+                        TrustManagerFactory.getDefaultAlgorithm());
+                trustManagerFactory.init(keyStore);
+
+                trustManagers = trustManagerFactory.getTrustManagers();
+            }
+
+            // Newer TLS versions are only supported on API 16+
+            SSLContext tlsContext = SSLContext.getInstance("TLSv1");
+            tlsContext.init(keyManagerFactory.getKeyManagers(), trustManagers, getSecureRandom());
+
+            return tlsContext;
+        } catch (Exception e) {
+            // TODO: 1/7/21 Should this throw custom exceptions?
+            throw new RuntimeException("Could not create a secure socket context.");
+        }
+    }
 
     /**
      * Check whether the given client already has a request for invalidation.
@@ -409,7 +503,7 @@ public interface PersistenceProvider
      * The resulting {@link JSONArray} can be fed to {@link CommunicationBridge#requestFileTransfer(long, List)},
      * to start a file transfer operation.
      * <p>
-     * You can have the same JSON data back using {@link #toTransferList(long, String)}.
+     * You can have the same JSON data back using {@link #toTransferItemList(long, String)}.
      *
      * @param transferItemList To convert.
      * @return The JSON equivalent of the same list.
@@ -442,7 +536,7 @@ public interface PersistenceProvider
      * @return The list of items inflated from the JSON data.
      * @throws JSONException If the JSON data is corrupted or has missing/mismatch values.
      */
-    default List<TransferItem> toTransferList(long groupId, String jsonArray) throws JSONException
+    default List<TransferItem> toTransferItemList(long groupId, String jsonArray) throws JSONException
     {
         JSONArray json = new JSONArray(jsonArray);
         List<TransferItem> transferItemList = new ArrayList<>();
@@ -452,7 +546,7 @@ public interface PersistenceProvider
                 JSONObject jsonObject = json.getJSONObject(i);
                 String directory = jsonObject.has(Keyword.INDEX_DIRECTORY)
                         ? jsonObject.getString(Keyword.INDEX_DIRECTORY) : null;
-                transferItemList.add(createTransferFor(groupId, jsonObject.getLong(Keyword.TRANSFER_ID),
+                transferItemList.add(createTransferItemFor(groupId, jsonObject.getLong(Keyword.TRANSFER_ID),
                         jsonObject.getString(Keyword.INDEX_FILE_NAME), jsonObject.getString(Keyword.INDEX_FILE_MIME),
                         jsonObject.getLong(Keyword.INDEX_FILE_SIZE), directory, TransferItem.Type.INCOMING));
             }

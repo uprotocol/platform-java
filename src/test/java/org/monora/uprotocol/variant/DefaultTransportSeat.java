@@ -42,7 +42,7 @@ public class DefaultTransportSeat implements TransportSeat
     public void handleFileTransferRequest(Client client, boolean hasPin, long groupId, String jsonArray)
             throws PersistenceException, ProtocolException
     {
-        List<TransferItem> transferItemList = persistenceProvider.toTransferList(groupId, jsonArray);
+        List<TransferItem> transferItemList = persistenceProvider.toTransferItemList(groupId, jsonArray);
         persistenceProvider.save(client.getClientUid(), transferItemList);
     }
 

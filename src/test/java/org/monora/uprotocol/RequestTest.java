@@ -46,11 +46,11 @@ public class RequestTest extends DefaultTestBase
         final List<TransferItem> transferItemList = new ArrayList<>();
         final long groupId = 1;
 
-        transferItemList.add(secondaryPersistence.createTransferFor(groupId, 1, "1.jpg",
+        transferItemList.add(secondaryPersistence.createTransferItemFor(groupId, 1, "1.jpg",
                 "image/jpeg", 0, null, TransferItem.Type.OUTGOING));
-        transferItemList.add(secondaryPersistence.createTransferFor(groupId, 2, "2.jpg",
+        transferItemList.add(secondaryPersistence.createTransferItemFor(groupId, 2, "2.jpg",
                 "image/jpeg", 0, null, TransferItem.Type.OUTGOING));
-        transferItemList.add(secondaryPersistence.createTransferFor(groupId, 3, "3.jpg",
+        transferItemList.add(secondaryPersistence.createTransferItemFor(groupId, 3, "3.jpg",
                 "image/jpeg", 0, null, TransferItem.Type.OUTGOING));
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
