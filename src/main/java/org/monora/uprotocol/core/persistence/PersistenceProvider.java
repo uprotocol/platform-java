@@ -201,6 +201,20 @@ public interface PersistenceProvider
     X509Certificate getCertificate();
 
     /**
+     * This will return the {@link Client} instance representing this client.
+     *
+     * @return The client instance.
+     */
+    Client getClient();
+
+    /**
+     * This client's user-friendly optional nickname.
+     *
+     * @return The nickname.
+     */
+    String getClientNickname();
+
+    /**
      * Returns the avatar for this client.
      *
      * @return The bitmap data for the avatar if exists, or zero-length byte array if it doesn't.
@@ -226,13 +240,6 @@ public interface PersistenceProvider
      * @return The unique identifier for this client.
      */
     String getClientUid();
-
-    /**
-     * This will return the {@link Client} instance representing this client.
-     *
-     * @return The client instance.
-     */
-    Client getClient();
 
     /**
      * This will return the descriptor that points to the file that is received or sent.
