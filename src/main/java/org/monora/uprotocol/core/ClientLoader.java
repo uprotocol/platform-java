@@ -2,16 +2,17 @@ package org.monora.uprotocol.core;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.monora.uprotocol.core.protocol.Client;
-import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
+import org.monora.uprotocol.core.protocol.Client;
+import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.ClientType;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
+import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.client.BlockedRemoteClientException;
 import org.monora.uprotocol.core.spec.v1.Keyword;
 
-import java.net.InetAddress;
+import java.io.IOException;
 import java.util.Base64;
 
 import static org.monora.uprotocol.core.spec.v1.Config.LENGTH_CLIENT_USERNAME;
@@ -103,34 +104,16 @@ public class ClientLoader
      *
      * @param connectionFactory   That will set up the connection.
      * @param persistenceProvider That stores the persistent data.
-     * @param address             To connect to.
-     * @param listener            That listens for successful attempts. Pass it as null if unneeded.
+     * @param clientAddress       Where the remote client reside on the network.
+     * @return The remote client.
      */
-    public static void load(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
-                            InetAddress address, OnClientResolvedListener listener)
+    public static Client load(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
+                              ClientAddress clientAddress) throws IOException, ProtocolException
     {
-        new Thread(() -> {
-            try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, persistenceProvider,
-                    persistenceProvider.createClientAddressFor(address), null, 0)) {
-                bridge.sendResult(false);
-                if (listener != null)
-                    listener.onClientResolved(bridge.getRemoteClient(), bridge.getRemoteClientAddress());
-            } catch (Exception ignored) {
-            }
-        }).start();
-    }
-
-    /**
-     * Callback for delivering the details for a client when successful.
-     */
-    public interface OnClientResolvedListener
-    {
-        /**
-         * Called after the connection is successful.
-         *
-         * @param client  The client that the loader found.
-         * @param address The address where the client resides.
-         */
-        void onClientResolved(Client client, ClientAddress address);
+        try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, persistenceProvider,
+                clientAddress, null, 0)) {
+            bridge.sendResult(false);
+            return bridge.getRemoteClient();
+        }
     }
 }

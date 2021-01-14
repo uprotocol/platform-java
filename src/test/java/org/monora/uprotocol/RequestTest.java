@@ -2,12 +2,13 @@ package org.monora.uprotocol;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.monora.uprotocol.core.ClientLoader;
 import org.monora.uprotocol.core.CommunicationBridge;
-import org.monora.uprotocol.core.protocol.Client;
-import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
+import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
+import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.variant.test.DefaultTestBase;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -128,6 +129,20 @@ public class RequestTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestAcquaintance();
+        } finally {
+            primarySession.stop();
+        }
+    }
+
+    @Test
+    public void loadDeviceTest() throws IOException, InterruptedException, ProtocolException
+    {
+        primarySession.start();
+
+        try {
+            Client primaryAsRemote = ClientLoader.load(connectionFactory, secondaryPersistence, clientAddress);
+            Assert.assertEquals("The UIDs should be the same.", primaryAsRemote.getClientUid(),
+                    primaryPersistence.getClientUid());
         } finally {
             primarySession.stop();
         }

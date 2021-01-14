@@ -14,4 +14,6 @@ public class Config
     public static final int VERSION_UPROTOCOL = 1;
 
     public static final int VERSION_UPROTOCOL_MIN = 1;
+
+    public static final String SERVICE_UPROTOCOL_DNS_SD = "_uproto._tcp.";
 }

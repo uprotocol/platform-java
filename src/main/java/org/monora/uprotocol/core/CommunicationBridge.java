@@ -47,6 +47,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import static org.monora.uprotocol.core.spec.v1.Config.PORT_UPROTOCOL;
 import static org.monora.uprotocol.core.spec.v1.Config.TIMEOUT_SOCKET_DEFAULT;
@@ -65,6 +66,8 @@ public class CommunicationBridge implements Closeable
     private final Client client;
 
     private final ClientAddress clientAddress;
+
+    private Logger logger;
 
     /**
      * Create a new instance.
