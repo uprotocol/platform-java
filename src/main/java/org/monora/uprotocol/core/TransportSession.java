@@ -97,10 +97,10 @@ public class TransportSession extends CoolSocket
                 transportSeat.notifyClientCredentialsChanged(e.client);
             }
         } catch (Exception e) {
-            // TODO: 1/10/21 Should it print errors?
             try {
                 CommunicationBridge.sendError(activeConnection, e);
-            } catch (Exception ignored) {
+            } catch (Exception e1) {
+                e1.printStackTrace();
             }
         }
     }

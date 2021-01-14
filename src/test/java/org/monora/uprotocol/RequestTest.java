@@ -13,6 +13,7 @@ import org.monora.uprotocol.variant.test.DefaultTestBase;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +21,7 @@ public class RequestTest extends DefaultTestBase
 {
     @Test
     public void requestAcquaintanceTest() throws IOException, InterruptedException, ProtocolException,
-            PersistenceException
+            PersistenceException, CertificateException
     {
         primarySession.start();
 
@@ -40,7 +41,8 @@ public class RequestTest extends DefaultTestBase
     }
 
     @Test
-    public void requestFileTransferTest() throws IOException, InterruptedException, ProtocolException
+    public void requestFileTransferTest() throws IOException, InterruptedException, ProtocolException,
+            CertificateException
     {
         primarySession.start();
 
@@ -63,7 +65,8 @@ public class RequestTest extends DefaultTestBase
     }
 
     @Test(expected = SecurityException.class)
-    public void failsWithKeyMismatchTest() throws IOException, InterruptedException, ProtocolException
+    public void failsWithKeyMismatchTest() throws IOException, InterruptedException, ProtocolException,
+            CertificateException
     {
         primarySession.start();
 
@@ -81,7 +84,8 @@ public class RequestTest extends DefaultTestBase
     }
 
     @Test
-    public void connectsAfterKeyMismatchWithRightKey() throws IOException, ProtocolException, InterruptedException
+    public void connectsAfterKeyMismatchWithRightKey() throws IOException, ProtocolException, InterruptedException,
+            CertificateException
     {
         primarySession.start();
 
@@ -106,7 +110,7 @@ public class RequestTest extends DefaultTestBase
     }
 
     @Test
-    public void acceptNewKeysTest() throws IOException, InterruptedException, ProtocolException
+    public void acceptNewKeysTest() throws IOException, InterruptedException, ProtocolException, CertificateException
     {
         primarySession.start();
 
@@ -135,7 +139,7 @@ public class RequestTest extends DefaultTestBase
     }
 
     @Test
-    public void loadDeviceTest() throws IOException, InterruptedException, ProtocolException
+    public void loadDeviceTest() throws IOException, InterruptedException, ProtocolException, CertificateException
     {
         primarySession.start();
 

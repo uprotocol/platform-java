@@ -22,6 +22,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -310,7 +311,7 @@ public interface PersistenceProvider
      * @param client For which the context will be generated.
      * @return The SSL context.
      */
-    default SSLContext getSSLContextFor(Client client)
+    default SSLContext getSSLContextFor(Client client) throws CertificateException
     {
         try {
             // Get this client's private key
@@ -366,9 +367,10 @@ public interface PersistenceProvider
             tlsContext.init(keyManagerFactory.getKeyManagers(), trustManagers, getSecureRandom());
 
             return tlsContext;
+        } catch (CertificateException e) {
+            throw e;
         } catch (Exception e) {
-            // TODO: 1/7/21 Should this throw custom exceptions?
-            throw new RuntimeException("Could not create a secure socket context.");
+            throw new CertificateException("Could not create a secure socket context.", e);
         }
     }
 

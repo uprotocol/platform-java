@@ -18,6 +18,7 @@ import org.monora.uprotocol.variant.test.DefaultTestBase;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,7 +56,8 @@ public class TransferTest extends DefaultTestBase
     }
 
     @Before
-    public void setUpInitialTransferItems() throws IOException, InterruptedException, ProtocolException
+    public void setUpInitialTransferItems() throws IOException, InterruptedException, ProtocolException,
+            CertificateException
     {
         primarySession.start();
 
@@ -71,7 +73,7 @@ public class TransferTest extends DefaultTestBase
     }
 
     @Test
-    public void sendFilesTest() throws IOException, InterruptedException, ProtocolException
+    public void sendFilesTest() throws IOException, InterruptedException, ProtocolException, CertificateException
     {
         secondarySession.start();
 
@@ -104,7 +106,7 @@ public class TransferTest extends DefaultTestBase
     }
 
     @Test
-    public void flagItemAsDoneTest() throws IOException, InterruptedException, ProtocolException
+    public void flagItemAsDoneTest() throws IOException, InterruptedException, ProtocolException, CertificateException
     {
         secondarySession.start();
 
@@ -130,7 +132,7 @@ public class TransferTest extends DefaultTestBase
 
     @Test(expected = UntrustedClientException.class)
     public void senderFailsToStartTransferIfNotTrusted() throws IOException, InterruptedException,
-            ProtocolException
+            ProtocolException, CertificateException
     {
         primarySession.start();
 
@@ -144,7 +146,7 @@ public class TransferTest extends DefaultTestBase
 
     @Test
     public void senderStartsTransferIfTrusted() throws IOException, InterruptedException, ProtocolException,
-            PersistenceException
+            PersistenceException, CertificateException
     {
         Client secondaryOnPrimary = primaryPersistence.createClientFor(secondaryPersistence.getClientUid());
         primaryPersistence.sync(secondaryOnPrimary);
@@ -156,8 +158,8 @@ public class TransferTest extends DefaultTestBase
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestFileTransferStart(groupId, TransferItem.Type.OUTGOING);
             secondarySeat.receiveFiles(bridge, groupId);
+        } finally {
+            primarySession.stop();
         }
-
-        primarySession.stop();
     }
 }

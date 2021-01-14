@@ -13,6 +13,7 @@ import org.monora.uprotocol.core.protocol.communication.client.BlockedRemoteClie
 import org.monora.uprotocol.core.spec.v1.Keyword;
 
 import java.io.IOException;
+import java.security.cert.CertificateException;
 import java.util.Base64;
 
 import static org.monora.uprotocol.core.spec.v1.Config.LENGTH_CLIENT_USERNAME;
@@ -108,7 +109,7 @@ public class ClientLoader
      * @return The remote client.
      */
     public static Client load(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
-                              ClientAddress clientAddress) throws IOException, ProtocolException
+                              ClientAddress clientAddress) throws IOException, ProtocolException, CertificateException
     {
         try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, persistenceProvider,
                 clientAddress, null, 0)) {

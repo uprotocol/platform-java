@@ -134,7 +134,7 @@ public class CommunicationBridge implements Closeable
     public static CommunicationBridge connect(ConnectionFactory connectionFactory,
                                               PersistenceProvider persistenceProvider, List<ClientAddress> addressList,
                                               Client client, int pin) throws JSONException, IOException,
-            ProtocolException
+            ProtocolException, CertificateException
     {
         if (addressList.size() < 1)
             throw new IllegalArgumentException("The address list should contain at least one item.");
@@ -172,7 +172,7 @@ public class CommunicationBridge implements Closeable
     public static CommunicationBridge connect(ConnectionFactory connectionFactory,
                                               PersistenceProvider persistenceProvider, ClientAddress clientAddress,
                                               Client client, int pin)
-            throws IOException, JSONException, ProtocolException
+            throws IOException, JSONException, ProtocolException, CertificateException
     {
         ActiveConnection activeConnection = connectionFactory.openConnection(clientAddress.getClientAddress());
         String remoteClientUid = activeConnection.receive().getAsString();
@@ -204,7 +204,7 @@ public class CommunicationBridge implements Closeable
 
     static void convertToSSL(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
                              ActiveConnection activeConnection, Client client, boolean isClient)
-            throws IOException, CommunicationException
+            throws IOException, CommunicationException, CertificateException
     {
         Socket socket = activeConnection.getSocket();
         SSLSocketFactory sslSocketFactory = persistenceProvider.getSSLContextFor(client).getSocketFactory();

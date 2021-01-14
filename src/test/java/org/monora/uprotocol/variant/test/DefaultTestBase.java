@@ -15,6 +15,7 @@ import org.monora.uprotocol.variant.persistence.SecondaryPersistenceProvider;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.cert.CertificateException;
 
 public class DefaultTestBase
 {
@@ -39,7 +40,7 @@ public class DefaultTestBase
     }
 
     protected CommunicationBridge openConnection(PersistenceProvider persistenceProvider, ClientAddress address)
-            throws IOException, ProtocolException
+            throws IOException, ProtocolException, CertificateException
     {
         return CommunicationBridge.connect(connectionFactory, persistenceProvider, address, null, 0);
     }
