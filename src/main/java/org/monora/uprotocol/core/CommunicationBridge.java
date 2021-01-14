@@ -77,7 +77,7 @@ public class CommunicationBridge implements Closeable
      * @param persistenceProvider Where the persistent data is stored and queried.
      * @param activeConnection    Represents a valid connection to the remote client.
      * @param client              The remote that this client has connected to.
-     * @param clientAddress       Where the remote client reside on the network.
+     * @param clientAddress       Where the remote client resides on the network.
      */
     public CommunicationBridge(PersistenceProvider persistenceProvider, ActiveConnection activeConnection,
                                Client client, ClientAddress clientAddress)

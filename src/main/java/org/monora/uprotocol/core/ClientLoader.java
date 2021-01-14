@@ -104,7 +104,7 @@ public class ClientLoader
      *
      * @param connectionFactory   That will set up the connection.
      * @param persistenceProvider That stores the persistent data.
-     * @param clientAddress       Where the remote client reside on the network.
+     * @param clientAddress       Where the remote client resides on the network.
      * @return The remote client.
      */
     public static Client load(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
