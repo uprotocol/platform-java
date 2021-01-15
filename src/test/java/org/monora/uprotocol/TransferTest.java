@@ -42,9 +42,9 @@ public class TransferTest extends DefaultTestBase
     public void setUp() throws IOException
     {
         demoTransferItem1 = secondaryPersistence.createTransferItemFor(groupId, 1, "File1",
-                "text/plain", data1.length, null, TransferItem.Type.OUTGOING);
+                "text/plain", data1.length, null, TransferItem.Type.Outgoing);
         demoTransferItem2 = secondaryPersistence.createTransferItemFor(groupId, 2, "File2",
-                "text/plain", data2.length, null, TransferItem.Type.OUTGOING);
+                "text/plain", data2.length, null, TransferItem.Type.Outgoing);
 
         StreamDescriptor descriptor1 = secondaryPersistence.getDescriptorFor(demoTransferItem1);
         StreamDescriptor descriptor2 = secondaryPersistence.getDescriptorFor(demoTransferItem2);
@@ -79,7 +79,7 @@ public class TransferTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
             Assert.assertTrue("The result should be positive", bridge.requestFileTransferStart(groupId,
-                    TransferItem.Type.INCOMING));
+                    TransferItem.Type.Incoming));
 
             primarySeat.receiveFiles(bridge, groupId);
         }
@@ -111,7 +111,7 @@ public class TransferTest extends DefaultTestBase
         secondarySession.start();
 
         try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
-            bridge.requestFileTransferStart(groupId, TransferItem.Type.INCOMING);
+            bridge.requestFileTransferStart(groupId, TransferItem.Type.Incoming);
             primarySeat.receiveFiles(bridge, groupId);
         }
 
@@ -137,7 +137,7 @@ public class TransferTest extends DefaultTestBase
         primarySession.start();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestFileTransferStart(groupId, TransferItem.Type.OUTGOING);
+            bridge.requestFileTransferStart(groupId, TransferItem.Type.Outgoing);
             secondarySeat.receiveFiles(bridge, groupId);
         } finally {
             primarySession.stop();
@@ -156,7 +156,7 @@ public class TransferTest extends DefaultTestBase
         primarySession.start();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestFileTransferStart(groupId, TransferItem.Type.OUTGOING);
+            bridge.requestFileTransferStart(groupId, TransferItem.Type.Outgoing);
             secondarySeat.receiveFiles(bridge, groupId);
         } finally {
             primarySession.stop();

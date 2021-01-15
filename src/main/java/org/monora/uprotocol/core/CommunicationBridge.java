@@ -378,7 +378,7 @@ public class CommunicationBridge implements Closeable
         sendSecure(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER_JOB)
                 .put(Keyword.TRANSFER_GROUP_ID, groupId)
-                .put(Keyword.TRANSFER_TYPE, type));
+                .put(Keyword.TRANSFER_TYPE, type.protocolValue));
         return receiveResult();
     }
 

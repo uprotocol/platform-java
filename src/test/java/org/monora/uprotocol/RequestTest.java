@@ -35,6 +35,11 @@ public class RequestTest extends DefaultTestBase
             Assert.assertEquals("Clients should be same.", bridge.getRemoteClient(), persistentClient);
             Assert.assertEquals("Clients should have the same username.", bridge.getRemoteClient().getClientNickname(),
                     persistentClient.getClientNickname());
+            Assert.assertEquals("Clients should be of the same type.", bridge.getRemoteClient().getClientType(),
+                    persistentClient.getClientType());
+            Assert.assertEquals("Client types should have the same protocol value.",
+                    bridge.getRemoteClient().getClientType().getProtocolValue(),
+                    persistentClient.getClientType().getProtocolValue());
         } finally {
             primarySession.stop();
         }
@@ -50,11 +55,11 @@ public class RequestTest extends DefaultTestBase
         final long groupId = 1;
 
         transferItemList.add(secondaryPersistence.createTransferItemFor(groupId, 1, "1.jpg",
-                "image/jpeg", 0, null, TransferItem.Type.OUTGOING));
+                "image/jpeg", 0, null, TransferItem.Type.Outgoing));
         transferItemList.add(secondaryPersistence.createTransferItemFor(groupId, 2, "2.jpg",
-                "image/jpeg", 0, null, TransferItem.Type.OUTGOING));
+                "image/jpeg", 0, null, TransferItem.Type.Outgoing));
         transferItemList.add(secondaryPersistence.createTransferItemFor(groupId, 3, "3.jpg",
-                "image/jpeg", 0, null, TransferItem.Type.OUTGOING));
+                "image/jpeg", 0, null, TransferItem.Type.Outgoing));
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             Assert.assertTrue("The request should be successful", bridge.requestFileTransfer(groupId,

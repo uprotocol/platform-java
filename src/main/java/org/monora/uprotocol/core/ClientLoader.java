@@ -74,27 +74,16 @@ public class ClientLoader
     private static void loadFrom(PersistenceProvider persistenceProvider, JSONObject object, Client client)
             throws JSONException
     {
-        boolean state = false;
-        Throwable exception = null;
-        try {
-            client.setClientLocal(persistenceProvider.getClientUid().equals(client.getClientUid()));
-            client.setClientManufacturer(object.getString(Keyword.CLIENT_MANUFACTURER));
-            client.setClientProduct(object.getString(Keyword.CLIENT_PRODUCT));
-            client.setClientNickname(object.getString(Keyword.CLIENT_NICKNAME));
-            client.setClientType(object.getEnum(ClientType.class, Keyword.CLIENT_TYPE));
-            client.setClientLastUsageTime(System.currentTimeMillis());
-            client.setClientVersionCode(object.getInt(Keyword.CLIENT_VERSION_CODE));
-            client.setClientVersionName(object.getString(Keyword.CLIENT_VERSION_NAME));
-            client.setClientProtocolVersion(object.getInt(Keyword.CLIENT_PROTOCOL_VERSION));
-            client.setClientProtocolVersionMin(object.getInt(Keyword.CLIENT_PROTOCOL_VERSION_MIN));
-            state = true;
-        } catch (Throwable e) {
-            e.printStackTrace();
-            exception = e;
-        } finally {
-            System.out.println("Generated info " + state);
-            System.out.println(exception);
-        }
+        client.setClientLocal(persistenceProvider.getClientUid().equals(client.getClientUid()));
+        client.setClientManufacturer(object.getString(Keyword.CLIENT_MANUFACTURER));
+        client.setClientProduct(object.getString(Keyword.CLIENT_PRODUCT));
+        client.setClientNickname(object.getString(Keyword.CLIENT_NICKNAME));
+        client.setClientType(ClientType.from(object.getString(Keyword.CLIENT_TYPE)));
+        client.setClientLastUsageTime(System.currentTimeMillis());
+        client.setClientVersionCode(object.getInt(Keyword.CLIENT_VERSION_CODE));
+        client.setClientVersionName(object.getString(Keyword.CLIENT_VERSION_NAME));
+        client.setClientProtocolVersion(object.getInt(Keyword.CLIENT_PROTOCOL_VERSION));
+        client.setClientProtocolVersionMin(object.getInt(Keyword.CLIENT_PROTOCOL_VERSION_MIN));
 
         if (client.getClientNickname().length() > LENGTH_CLIENT_USERNAME)
             client.setClientNickname(client.getClientNickname().substring(0, LENGTH_CLIENT_USERNAME));

@@ -26,9 +26,9 @@ public class DefaultTransportSeat implements TransportSeat
     public void beginFileTransfer(CommunicationBridge bridge, Client client, long groupId, TransferItem.Type type)
             throws PersistenceException, ProtocolException
     {
-        if (type.equals(TransferItem.Type.INCOMING))
+        if (type.equals(TransferItem.Type.Incoming))
             receiveFiles(bridge, groupId);
-        else if (type.equals(TransferItem.Type.OUTGOING))
+        else if (type.equals(TransferItem.Type.Outgoing))
             sendFiles(bridge, groupId);
     }
 

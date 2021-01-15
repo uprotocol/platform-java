@@ -18,7 +18,7 @@ public class DefaultTransferItemItem implements TransferItem
 
     public long lastChangeTime;
 
-    public Type type = Type.INCOMING;
+    public Type type = Type.Incoming;
 
     public DefaultTransferItemItem(long groupId, long id, String name, String mimeType, long size, String directory,
                                    TransferItem.Type type)

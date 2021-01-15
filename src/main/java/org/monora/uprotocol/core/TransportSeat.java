@@ -136,7 +136,7 @@ public interface TransportSeat
 
     /**
      * Handle the receive process. You can invoke this method in the {@link #beginFileTransfer} method when the type is
-     * {@link TransferItem.Type#INCOMING}.
+     * {@link TransferItem.Type#Incoming}.
      * <p>
      * You should not override this default method unless that is really what you need.
      *
@@ -236,7 +236,7 @@ public interface TransportSeat
 
     /**
      * Handle the sending process. You can invoke this method in the {@link #beginFileTransfer} method when the type is
-     * {@link TransferItem.Type#OUTGOING}.
+     * {@link TransferItem.Type#Outgoing}.
      * <p>
      * You should not override this default method unless that is what you need.
      *
@@ -266,7 +266,7 @@ public interface TransportSeat
                 try {
                     final TransferRequest transferRequest = Transfers.getTransferRequest(request);
                     item = persistenceProvider.loadTransferItem(client.getClientUid(), groupId, transferRequest.id,
-                            TransferItem.Type.OUTGOING);
+                            TransferItem.Type.Outgoing);
                     currentBytes = transferRequest.position;
 
                     try {

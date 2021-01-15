@@ -140,15 +140,15 @@ public class TransportSession extends CoolSocket
                 return;
             case (Keyword.REQUEST_TRANSFER_JOB):
                 int groupId = response.getInt(Keyword.TRANSFER_GROUP_ID);
-                TransferItem.Type type = response.getEnum(TransferItem.Type.class, Keyword.TRANSFER_TYPE);
+                TransferItem.Type type = TransferItem.Type.from(response.getString(Keyword.TRANSFER_TYPE));
 
                 // The type is reversed to match our side
-                if (TransferItem.Type.INCOMING.equals(type))
-                    type = TransferItem.Type.OUTGOING;
-                else if (TransferItem.Type.OUTGOING.equals(type))
-                    type = TransferItem.Type.INCOMING;
+                if (TransferItem.Type.Incoming.equals(type))
+                    type = TransferItem.Type.Outgoing;
+                else if (TransferItem.Type.Outgoing.equals(type))
+                    type = TransferItem.Type.Incoming;
 
-                if (TransferItem.Type.INCOMING.equals(type) && !client.isClientTrusted())
+                if (TransferItem.Type.Incoming.equals(type) && !client.isClientTrusted())
                     bridge.sendError(Keyword.ERROR_NOT_TRUSTED);
                 else if (transportSeat.hasOngoingTransferFor(groupId, client.getClientUid(), type))
                     throw new ContentException(ContentException.Error.NotAccessible);

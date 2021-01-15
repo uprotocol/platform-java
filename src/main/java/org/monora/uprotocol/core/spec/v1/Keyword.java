@@ -32,6 +32,11 @@ public class Keyword
             CLIENT_PROTOCOL_VERSION = "protocolVersion",
             CLIENT_PROTOCOL_VERSION_MIN = "minimumProtocolVersion",
             CLIENT_TYPE = "clientType",
+            CLIENT_TYPE_ANY = "any",
+            CLIENT_TYPE_DESKTOP = "desktop",
+            CLIENT_TYPE_IOT = "iot",
+            CLIENT_TYPE_PORTABLE = "portable",
+            CLIENT_TYPE_WEB = "web",
             CLIENT_UID = "clientUid",
             CLIENT_VERSION_NAME = "versionName",
             CLIENT_VERSION_CODE = "versionCode",
@@ -59,5 +64,7 @@ public class Keyword
             TRANSFER_ID = "id",
             TRANSFER_IS_ACCEPTED = "isAccepted",
             TRANSFER_TEXT = "text",
-            TRANSFER_TYPE = "type";
+            TRANSFER_TYPE = "type",
+            TRANSFER_TYPE_INCOMING = "incoming",
+            TRANSFER_TYPE_OUTGOING = "outgoing";
 }

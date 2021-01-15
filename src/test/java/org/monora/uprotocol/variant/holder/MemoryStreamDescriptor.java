@@ -7,7 +7,7 @@ import java.io.ByteArrayOutputStream;
 
 /**
  * This class will match with its other instances regardless of the direction of the{@link TransferItem} it holds, that
- * is, {@link TransferItem.Type#INCOMING} will <b>NOT</b> a difference.
+ * is, {@link TransferItem.Type#Incoming} will <b>NOT</b> a difference.
  */
 public class MemoryStreamDescriptor implements StreamDescriptor
 {

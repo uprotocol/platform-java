@@ -130,7 +130,7 @@ public interface PersistenceProvider
                 .put(Keyword.CLIENT_MANUFACTURER, client.getClientManufacturer())
                 .put(Keyword.CLIENT_PRODUCT, client.getClientProduct())
                 .put(Keyword.CLIENT_NICKNAME, client.getClientNickname())
-                .put(Keyword.CLIENT_TYPE, client.getClientType())
+                .put(Keyword.CLIENT_TYPE, client.getClientType().getProtocolValue())
                 .put(Keyword.CLIENT_VERSION_CODE, client.getClientVersionCode())
                 .put(Keyword.CLIENT_VERSION_NAME, client.getClientVersionName())
                 .put(Keyword.CLIENT_PROTOCOL_VERSION, client.getClientProtocolVersion())
@@ -557,7 +557,7 @@ public interface PersistenceProvider
                         ? jsonObject.getString(Keyword.INDEX_DIRECTORY) : null;
                 transferItemList.add(createTransferItemFor(groupId, jsonObject.getLong(Keyword.TRANSFER_ID),
                         jsonObject.getString(Keyword.INDEX_FILE_NAME), jsonObject.getString(Keyword.INDEX_FILE_MIME),
-                        jsonObject.getLong(Keyword.INDEX_FILE_SIZE), directory, TransferItem.Type.INCOMING));
+                        jsonObject.getLong(Keyword.INDEX_FILE_SIZE), directory, TransferItem.Type.Incoming));
             }
         }
 

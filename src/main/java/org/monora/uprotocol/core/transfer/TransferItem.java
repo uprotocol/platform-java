@@ -1,5 +1,7 @@
 package org.monora.uprotocol.core.transfer;
 
+import org.monora.uprotocol.core.spec.v1.Keyword;
+
 /**
  * Holds the details for a transfer item.
  */
@@ -144,11 +146,30 @@ public interface TransferItem
         /**
          * The item is incoming
          */
-        INCOMING,
+        Incoming(Keyword.TRANSFER_TYPE_INCOMING),
 
         /**
          * The item is outgoing.
          */
-        OUTGOING
+        Outgoing(Keyword.TRANSFER_TYPE_OUTGOING);
+
+        /**
+         * The value that the protocol specifies which is different from the platform-based enum value.
+         */
+        public final String protocolValue;
+
+        Type(String protocolValue)
+        {
+            this.protocolValue = protocolValue;
+        }
+
+        public static Type from(String value)
+        {
+            for (Type type : values())
+                if (type.protocolValue.equals(value))
+                    return type;
+
+            throw new IllegalArgumentException("Unknown type: " + value);
+        }
     }
 }
