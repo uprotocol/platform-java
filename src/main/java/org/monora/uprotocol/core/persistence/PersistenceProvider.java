@@ -161,13 +161,6 @@ public interface PersistenceProvider
     ClientAddress createClientAddressFor(InetAddress address);
 
     /**
-     * Request from the factory to create an empty {@link Client} instance.
-     *
-     * @return The client instance.
-     */
-    Client createClient();
-
-    /**
      * Create a client instance using the given unique identifier.
      * <p>
      * The resulting {@link Client} instance is not ready for use. To make it so, call {@link #sync(Client)}.

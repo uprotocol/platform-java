@@ -26,11 +26,10 @@ import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
+import org.monora.uprotocol.core.protocol.communication.CommunicationException;
+import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
-import org.monora.uprotocol.core.protocol.communication.*;
 import org.monora.uprotocol.core.protocol.communication.client.DifferentRemoteClientException;
-import org.monora.uprotocol.core.protocol.communication.client.UnauthorizedClientException;
-import org.monora.uprotocol.core.protocol.communication.client.UntrustedClientException;
 import org.monora.uprotocol.core.spec.v1.Keyword;
 import org.monora.uprotocol.core.transfer.TransferItem;
 
@@ -194,9 +193,11 @@ public class CommunicationBridge implements Closeable
         }
 
         activeConnection.reply(persistenceProvider.clientAsJson(pin));
+        JSONObject jsonObject = activeConnection.receive().getAsJson();
 
-        ClientLoader.loadAsClient(persistenceProvider, receiveSecure(activeConnection, client), client);
-        receiveResult(activeConnection, client);
+        ClientLoader.loadAsClient(persistenceProvider, jsonObject, client);
+        Responses.checkError(client, jsonObject);
+
         convertToSSL(connectionFactory, persistenceProvider, activeConnection, client, true);
 
         return new CommunicationBridge(persistenceProvider, activeConnection, client, clientAddress);
@@ -322,7 +323,7 @@ public class CommunicationBridge implements Closeable
      */
     public boolean requestAcquaintance() throws JSONException, IOException, ProtocolException
     {
-        sendSecure(true, new JSONObject().put(Keyword.REQUEST, Keyword.REQUEST_ACQUAINTANCE));
+        send(true, new JSONObject().put(Keyword.REQUEST, Keyword.REQUEST_ACQUAINTANCE));
         return receiveResult();
     }
 
@@ -347,7 +348,7 @@ public class CommunicationBridge implements Closeable
     public boolean requestFileTransfer(long groupId, List<TransferItem> transferItemList) throws JSONException, IOException,
             ProtocolException
     {
-        sendSecure(true, new JSONObject()
+        send(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER)
                 .put(Keyword.TRANSFER_GROUP_ID, groupId)
                 .put(Keyword.INDEX, getPersistenceProvider().toJson(transferItemList).toString()));
@@ -375,7 +376,7 @@ public class CommunicationBridge implements Closeable
     public boolean requestFileTransferStart(long groupId, TransferItem.Type type) throws JSONException, IOException,
             ProtocolException
     {
-        sendSecure(true, new JSONObject()
+        send(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER_JOB)
                 .put(Keyword.TRANSFER_GROUP_ID, groupId)
                 .put(Keyword.TRANSFER_TYPE, type.protocolValue));
@@ -395,7 +396,7 @@ public class CommunicationBridge implements Closeable
     public boolean requestNotifyTransferState(long groupId, boolean accepted) throws JSONException, IOException,
             ProtocolException
     {
-        sendSecure(true, new JSONObject()
+        send(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_NOTIFY_TRANSFER_STATE)
                 .put(Keyword.TRANSFER_GROUP_ID, groupId)
                 .put(Keyword.TRANSFER_IS_ACCEPTED, accepted));
@@ -413,7 +414,7 @@ public class CommunicationBridge implements Closeable
      */
     public boolean requestTextTransfer(String text) throws JSONException, IOException, ProtocolException
     {
-        sendSecure(true, new JSONObject()
+        send(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER_TEXT)
                 .put(Keyword.TRANSFER_TEXT, text));
         return receiveResult();
@@ -424,50 +425,6 @@ public class CommunicationBridge implements Closeable
      * <p>
      * This will throw the appropriate error when something is not right.
      * <p>
-     * The error messages are sent using {@link #sendError}.
-     *
-     * @param activeConnection The active connection instance.
-     * @param client           That we are receiving the response from.
-     * @return The JSON data that doesn't seem to contain an error.
-     * @throws IOException       If an IO error occurs.
-     * @throws JSONException     If something goes wrong when creating JSON object.
-     * @throws ProtocolException When there is a communication error due to misconfiguration.
-     * @see #receiveSecure()
-     * @see #sendError(ActiveConnection, String)
-     */
-    public static JSONObject receiveSecure(ActiveConnection activeConnection, Client client) throws IOException,
-            JSONException, ProtocolException
-    {
-        JSONObject jsonObject = activeConnection.receive().getAsJson();
-        if (jsonObject.has(Keyword.ERROR)) {
-            final String errorCode = jsonObject.getString(Keyword.ERROR);
-            switch (errorCode) {
-                case Keyword.ERROR_NOT_ALLOWED:
-                    throw new UnauthorizedClientException(client);
-                case Keyword.ERROR_NOT_TRUSTED:
-                    throw new UntrustedClientException(client);
-                case Keyword.ERROR_NOT_ACCESSIBLE:
-                    throw new ContentException(ContentException.Error.NotAccessible);
-                case Keyword.ERROR_ALREADY_EXISTS:
-                    throw new ContentException(ContentException.Error.AlreadyExists);
-                case Keyword.ERROR_NOT_FOUND:
-                    throw new ContentException(ContentException.Error.NotFound);
-                case Keyword.ERROR_UNKNOWN:
-                    throw new ProtocolException();
-                default:
-                    throw new UndefinedErrorCodeException(errorCode);
-            }
-        }
-        return jsonObject;
-    }
-
-    /**
-     * Receive a response from remote and validate it.
-     * <p>
-     * This will throw the appropriate error when something is not right.
-     * <p>
-     * The error messages are sent using {@link #sendError}.
-     * <p>
      * The active connection defaults to {@link #getActiveConnection()}.
      * <p>
      * The client defaults to {@link #getRemoteClient()}.
@@ -476,29 +433,10 @@ public class CommunicationBridge implements Closeable
      * @throws IOException       If an IO error occurs.
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
-     * @see #receiveSecure(ActiveConnection, Client)
-     * @see #sendError(ActiveConnection, String)
      */
-    public JSONObject receiveSecure() throws IOException, JSONException, ProtocolException
+    public JSONObject receiveChecked() throws IOException, JSONException, ProtocolException
     {
-        return receiveSecure(getActiveConnection(), getRemoteClient());
-    }
-
-    /**
-     * Receive and validate a response. If it doesn't contain an error, get the result.
-     *
-     * @param activeConnection The active connection instance.
-     * @param client           That we are receiving the response from.
-     * @return True if the result is positive.
-     * @throws IOException       If an IO error occurs.
-     * @throws JSONException     If something goes wrong when creating JSON object.
-     * @throws ProtocolException When there is a communication error due to misconfiguration.
-     * @see #sendResult(ActiveConnection, boolean)
-     */
-    public static boolean receiveResult(ActiveConnection activeConnection, Client client) throws IOException,
-            JSONException, ProtocolException
-    {
-        return resultOf(receiveSecure(activeConnection, client));
+        return Responses.receiveChecked(getActiveConnection(), getRemoteClient());
     }
 
     /**
@@ -512,78 +450,39 @@ public class CommunicationBridge implements Closeable
      * @throws IOException       If an IO error occurs.
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
-     * @see #sendResult(ActiveConnection, boolean)
      */
     public boolean receiveResult() throws IOException, JSONException, ProtocolException
     {
-        return receiveResult(getActiveConnection(), getRemoteClient());
+        return Responses.receiveResult(getActiveConnection(), getRemoteClient());
     }
 
     /**
-     * Read the result from a JSON object.
+     * Send a JSON data that includes the result.
+     * <p>
+     * The active connection defaults to {@link #getActiveConnection()}.
      *
-     * @param jsonObject Where to read the result from.
-     * @return True if it is positive.
-     * @throws JSONException If the JSON data does not contain a result.
-     * @see #sendResult(ActiveConnection, boolean)
-     */
-    public static boolean resultOf(JSONObject jsonObject) throws JSONException
-    {
-        return jsonObject.getBoolean(Keyword.RESULT);
-    }
-
-    /**
-     * Send an error to remote.
-     *
-     * @param activeConnection The active connection instance.
-     * @param exception        With which this will decide which error code to send.
-     * @throws IOException       If an IO error occurs.
-     * @throws JSONException     If something goes wrong when creating JSON object.
-     * @throws ProtocolException With the cause exception if the error is not known.
-     * @see #receiveSecure(ActiveConnection, Client)
-     */
-    public static void sendError(ActiveConnection activeConnection, Exception exception) throws IOException,
-            JSONException, ProtocolException
-    {
-        try {
-            throw exception;
-        } catch (UntrustedClientException e) {
-            sendError(activeConnection, Keyword.ERROR_NOT_TRUSTED);
-        } catch (UnauthorizedClientException e) {
-            sendError(activeConnection, Keyword.ERROR_NOT_ALLOWED);
-        } catch (PersistenceException e) {
-            sendError(activeConnection, Keyword.ERROR_NOT_FOUND);
-        } catch (ContentException e) {
-            switch (e.error) {
-                case NotFound:
-                    sendError(activeConnection, Keyword.ERROR_NOT_FOUND);
-                    break;
-                case NotAccessible:
-                    sendError(activeConnection, Keyword.ERROR_NOT_ACCESSIBLE);
-                    break;
-                case AlreadyExists:
-                    sendError(activeConnection, Keyword.ERROR_ALREADY_EXISTS);
-                    break;
-                default:
-                    sendError(activeConnection, Keyword.ERROR_UNKNOWN);
-            }
-        } catch (Exception e) {
-            throw new ProtocolException("An unknown error was thrown during the communication", e);
-        }
-    }
-
-    /**
-     * Send an error to remote.
-     *
-     * @param activeConnection The active connection instance.
-     * @param errorCode        To send.
+     * @param result     Of the operation to send.
+     * @param jsonObject To send along with the result.
      * @throws IOException   If an IO error occurs.
      * @throws JSONException If something goes wrong when creating JSON object.
-     * @see #receiveSecure(ActiveConnection, Client)
      */
-    public static void sendError(ActiveConnection activeConnection, String errorCode) throws IOException, JSONException
+    public void send(boolean result, JSONObject jsonObject) throws JSONException, IOException
     {
-        sendSecure(activeConnection, false, new JSONObject().put(Keyword.ERROR, errorCode));
+        Responses.send(getActiveConnection(), result, jsonObject);
+    }
+
+    /**
+     * Send a JSON data that includes the result.
+     * <p>
+     * The active connection defaults to {@link #getActiveConnection()}.
+     *
+     * @param result Of the operation to send.
+     * @throws IOException   If an IO error occurs.
+     * @throws JSONException If something goes wrong when creating JSON object.
+     */
+    public void send(boolean result) throws JSONException, IOException
+    {
+        send(result, new JSONObject());
     }
 
     /**
@@ -591,90 +490,62 @@ public class CommunicationBridge implements Closeable
      * <p>
      * The active connection defaults to {@link #getActiveConnection()}.
      *
+     * @param exception  With which this will decide which error code to send.
+     * @param jsonObject To send along with the error.
+     * @throws IOException       If an IO error occurs.
+     * @throws JSONException     If something goes wrong when creating JSON object.
+     * @throws ProtocolException With the cause exception if the error is not known.
+     */
+    public void send(Exception exception, JSONObject jsonObject) throws IOException, JSONException, ProtocolException
+    {
+        Responses.send(getActiveConnection(), exception, jsonObject);
+    }
+
+    /**
+     * Send error to remote.
+     * <p>
+     * The active connection defaults to {@link #getActiveConnection()}.
+     * <p>
+     * The JSON object defaults to a new instance.
+     *
      * @param exception With which this will decide which error code to send.
      * @throws IOException       If an IO error occurs.
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException With the cause exception if the error is not known.
-     * @see #receiveSecure(ActiveConnection, Client)
      */
-    public void sendError(Exception exception) throws IOException, JSONException, ProtocolException
+    public void send(Exception exception) throws IOException, JSONException, ProtocolException
     {
-        sendError(getActiveConnection(), exception);
+        send(exception, new JSONObject());
     }
 
     /**
-     * Send an error to remote.
+     * Send error to remote.
      * <p>
      * The active connection defaults to {@link #getActiveConnection()}.
+     *
+     * @param errorCode  To send.
+     * @param jsonObject To send along with the error.
+     * @throws IOException   If an IO error occurs.
+     * @throws JSONException If something goes wrong when creating JSON object.
+     */
+    public void send(String errorCode, JSONObject jsonObject) throws IOException, JSONException
+    {
+        Responses.send(getActiveConnection(), errorCode, jsonObject);
+    }
+
+    /**
+     * Send error to remote.
+     * <p>
+     * The active connection defaults to {@link #getActiveConnection()}.
+     * <p>
+     * The JSON object defaults to a new instance.
      *
      * @param errorCode To send.
      * @throws IOException   If an IO error occurs.
      * @throws JSONException If something goes wrong when creating JSON object.
-     * @see #receiveSecure(ActiveConnection, Client)
      */
-    public void sendError(String errorCode) throws IOException, JSONException
+    public void send(String errorCode) throws IOException, JSONException
     {
-        sendError(getActiveConnection(), errorCode);
-    }
-
-    /**
-     * Send a result to remote.
-     *
-     * @param activeConnection The active connection instance.
-     * @param result           True if positive.
-     * @throws IOException   If an IO error occurs.
-     * @throws JSONException If something goes wrong when creating JSON object.
-     * @see #receiveResult(ActiveConnection, Client)
-     */
-    public static void sendResult(ActiveConnection activeConnection, boolean result) throws IOException, JSONException
-    {
-        sendSecure(activeConnection, result, new JSONObject());
-    }
-
-    /**
-     * Send a result to remote.
-     * <p>
-     * The active connection defaults to {@link #getActiveConnection()}.
-     *
-     * @param result True if positive.
-     * @throws IOException   If an IO error occurs.
-     * @throws JSONException If something goes wrong when creating JSON object.
-     * @see #receiveResult(ActiveConnection, Client)
-     */
-    public void sendResult(boolean result) throws IOException, JSONException
-    {
-        sendResult(getActiveConnection(), result);
-    }
-
-    /**
-     * Send a JSON data that includes the result.
-     *
-     * @param activeConnection The active connection instance.
-     * @param result           If the result is successful.
-     * @param jsonObject       To send along with the result.
-     * @throws IOException   If an IO error occurs.
-     * @throws JSONException If something goes wrong when creating JSON object.
-     * @see #receiveResult(ActiveConnection, Client)
-     */
-    public static void sendSecure(ActiveConnection activeConnection, boolean result, JSONObject jsonObject)
-            throws JSONException, IOException
-    {
-        activeConnection.reply(jsonObject.put(Keyword.RESULT, result));
-    }
-
-    /**
-     * Send a JSON data that includes the result.
-     * <p>
-     * The active connection defaults to {@link #getActiveConnection()}.
-     *
-     * @param result     If the result is successful.
-     * @param jsonObject To send along with the result.
-     * @throws IOException   If an IO error occurs.
-     * @throws JSONException If something goes wrong when creating JSON object.
-     * @see #receiveResult(ActiveConnection, Client)
-     */
-    public void sendSecure(boolean result, JSONObject jsonObject) throws JSONException, IOException
-    {
-        sendSecure(getActiveConnection(), result, jsonObject);
+        send(errorCode, new JSONObject());
     }
 }

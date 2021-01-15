@@ -39,13 +39,8 @@ public class DefaultClient implements Client
 
     private boolean trusted;
 
-    public DefaultClient()
-    {
-    }
-
     public DefaultClient(String uid)
     {
-        this();
         this.uid = uid;
     }
 
@@ -53,7 +48,7 @@ public class DefaultClient implements Client
                          ClientType type, String versionName, int versionCode, int protocolVersion,
                          int protocolVersionMin)
     {
-        this();
+        this(uid);
         Clients.fill(this, uid, certificate, nickname, manufacturer, product, type, versionName, versionCode,
                 protocolVersion, protocolVersionMin, false, false);
     }

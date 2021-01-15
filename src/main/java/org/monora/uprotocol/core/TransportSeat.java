@@ -218,7 +218,7 @@ public interface TransportSeat
                 }
             }
 
-            CommunicationBridge.sendResult(activeConnection, false);
+            bridge.send(false);
 
             if (completedCount > 0) {
                 // TODO: 11/6/20 Notify the total number of files received.
@@ -227,7 +227,7 @@ public interface TransportSeat
 
         } catch (Exception e) {
             try {
-                bridge.sendError(e);
+                bridge.send(e);
             } catch (Exception e1) {
                 // TODO: 11/6/20 Notify errors
             }
@@ -258,9 +258,9 @@ public interface TransportSeat
         try {
             while (activeConnection.getSocket().isConnected()) {
                 // TODO: 11/6/20 Publish status here.
-                JSONObject request = bridge.receiveSecure();
+                JSONObject request = bridge.receiveChecked();
 
-                if (!CommunicationBridge.resultOf(request))
+                if (!Responses.getResult(request))
                     break;
 
                 try {
@@ -282,7 +282,7 @@ public interface TransportSeat
                             if (currentBytes > 0 && inputStream.skip(currentBytes) != currentBytes)
                                 throw new IOException("Failed to skip " + currentBytes + " bytes");
 
-                            bridge.sendResult(true);
+                            bridge.send(true);
 
                             persistenceProvider.setState(client.getClientUid(), item,
                                     PersistenceProvider.STATE_IN_PROGRESS, null);
@@ -330,11 +330,11 @@ public interface TransportSeat
                 } catch (CancelledException e) {
                     throw e;
                 } catch (FileNotFoundException | PersistenceException e) {
-                    bridge.sendError(Keyword.ERROR_NOT_FOUND);
+                    bridge.send(Keyword.ERROR_NOT_FOUND);
                 } catch (IOException e) {
-                    bridge.sendError(Keyword.ERROR_NOT_ACCESSIBLE);
+                    bridge.send(Keyword.ERROR_NOT_ACCESSIBLE);
                 } catch (Exception e) {
-                    bridge.sendError(Keyword.ERROR_UNKNOWN);
+                    bridge.send(Keyword.ERROR_UNKNOWN);
                 }
             }
         } catch (CancelledException ignored) {

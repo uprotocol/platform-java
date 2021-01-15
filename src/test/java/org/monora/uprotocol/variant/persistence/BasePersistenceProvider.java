@@ -164,12 +164,6 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public DefaultClient createClient()
-    {
-        return new DefaultClient();
-    }
-
-    @Override
     public DefaultClient createClientFor(String uid)
     {
         return new DefaultClient(uid);

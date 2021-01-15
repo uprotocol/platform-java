@@ -15,7 +15,7 @@ public class Transfers
 {
     /**
      * This is used after reading the JSON data for the operation safely using one of the
-     * {@link CommunicationBridge#receiveSecure} methods.
+     * {@link CommunicationBridge#receiveChecked} methods.
      *
      * @param jsonObject To read the requested item from.
      * @return The requested item holder.
@@ -42,7 +42,7 @@ public class Transfers
     public static boolean requestItem(CommunicationBridge bridge, long itemId, long currentPosition) throws IOException,
             JSONException, ProtocolException
     {
-        bridge.sendSecure(true, new JSONObject()
+        bridge.send(true, new JSONObject()
                 .put(Keyword.TRANSFER_ID, itemId)
                 .put(Keyword.TRANSFER_CURRENT_POSITION, currentPosition));
         return bridge.receiveResult();

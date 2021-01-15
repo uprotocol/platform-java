@@ -59,34 +59,31 @@ public class TransportSession extends CoolSocket
     @Override
     public void onConnected(ActiveConnection activeConnection)
     {
+        final JSONObject clientIndex = persistenceProvider.clientAsJson(0);
+
         try {
             activeConnection.reply(persistenceProvider.getClientUid());
 
-            JSONObject response = activeConnection.receive().getAsJson();
+            final JSONObject response = activeConnection.receive().getAsJson();
             final int activePin = persistenceProvider.getNetworkPin();
             final boolean hasPin = activePin != 0 && activePin == response.getInt(Keyword.CLIENT_PIN);
-            final Client client = persistenceProvider.createClient();
-            final ClientAddress clientAddress = persistenceProvider.createClientAddressFor(
-                    activeConnection.getAddress());
-
             if (hasPin)
                 persistenceProvider.revokeNetworkPin();
 
-            try {
-                ClientLoader.loadAsServer(persistenceProvider, response, client, hasPin);
-                CommunicationBridge.sendSecure(activeConnection, true, persistenceProvider.clientAsJson(0));
-            } finally {
-                persistenceProvider.broadcast();
-            }
+            final ClientAddress clientAddress = persistenceProvider.createClientAddressFor(
+                    activeConnection.getAddress());
+            final Client client = persistenceProvider.createClientFor(response.getString(Keyword.CLIENT_UID));
 
-            CommunicationBridge.sendResult(activeConnection, true);
+            ClientLoader.loadAsServer(persistenceProvider, response, client, hasPin);
+            Responses.send(activeConnection, true, clientIndex);
+
             CommunicationBridge.convertToSSL(connectionFactory, persistenceProvider, activeConnection, client,
                     false);
 
             activeConnection.setInternalCacheLimit(1073741824); // 1MB
 
             JSONObject request = activeConnection.receive().getAsJson();
-            if (!CommunicationBridge.resultOf(request))
+            if (!Responses.getResult(request))
                 return;
 
             handleRequest(new CommunicationBridge(persistenceProvider, activeConnection, client, clientAddress),
@@ -98,10 +95,12 @@ public class TransportSession extends CoolSocket
             }
         } catch (Exception e) {
             try {
-                CommunicationBridge.sendError(activeConnection, e);
+                Responses.send(activeConnection, e, clientIndex);
             } catch (Exception e1) {
                 e1.printStackTrace();
             }
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
         }
     }
 
@@ -118,7 +117,7 @@ public class TransportSession extends CoolSocket
                     throw new ContentException(ContentException.Error.AlreadyExists);
                 else {
                     transportSeat.handleFileTransferRequest(client, hasPin, groupId, jsonIndex);
-                    bridge.sendResult(true);
+                    bridge.send(true);
                 }
                 return;
             }
@@ -127,16 +126,16 @@ public class TransportSession extends CoolSocket
                 boolean isAccepted = response.getBoolean(Keyword.TRANSFER_IS_ACCEPTED);
 
                 transportSeat.handleFileTransferState(client, groupId, isAccepted);
-                bridge.sendResult(true);
+                bridge.send(true);
                 return;
             }
             case (Keyword.REQUEST_TRANSFER_TEXT):
                 transportSeat.handleTextTransfer(client, response.getString(Keyword.TRANSFER_TEXT));
-                bridge.sendResult(true);
+                bridge.send(true);
                 return;
             case (Keyword.REQUEST_ACQUAINTANCE):
                 transportSeat.handleAcquaintanceRequest(client, clientAddress);
-                bridge.sendResult(true);
+                bridge.send(true);
                 return;
             case (Keyword.REQUEST_TRANSFER_JOB):
                 int groupId = response.getInt(Keyword.TRANSFER_GROUP_ID);
@@ -149,16 +148,16 @@ public class TransportSession extends CoolSocket
                     type = TransferItem.Type.Incoming;
 
                 if (TransferItem.Type.Incoming.equals(type) && !client.isClientTrusted())
-                    bridge.sendError(Keyword.ERROR_NOT_TRUSTED);
+                    bridge.send(Keyword.ERROR_NOT_TRUSTED);
                 else if (transportSeat.hasOngoingTransferFor(groupId, client.getClientUid(), type))
                     throw new ContentException(ContentException.Error.NotAccessible);
                 else {
-                    bridge.sendResult(true);
+                    bridge.send(true);
                     transportSeat.beginFileTransfer(bridge, client, groupId, type);
                 }
                 return;
             default:
-                bridge.sendResult(false);
+                bridge.send(false);
         }
     }
 }

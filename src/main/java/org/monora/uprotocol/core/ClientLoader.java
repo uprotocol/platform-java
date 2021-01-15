@@ -52,10 +52,6 @@ public class ClientLoader
     public static void loadAsServer(PersistenceProvider persistenceProvider, JSONObject object, Client client,
                                     boolean hasPin) throws JSONException, BlockedRemoteClientException
     {
-        client.setClientUid(object.getString(Keyword.CLIENT_UID));
-        if (hasPin)
-            client.setClientTrusted(true);
-
         try {
             try {
                 persistenceProvider.sync(client);
@@ -64,6 +60,7 @@ public class ClientLoader
 
             if (hasPin) {
                 client.setClientBlocked(false);
+                client.setClientTrusted(true);
             } else if (client.isClientBlocked())
                 throw new BlockedRemoteClientException(client);
         } finally {
@@ -71,19 +68,19 @@ public class ClientLoader
         }
     }
 
-    private static void loadFrom(PersistenceProvider persistenceProvider, JSONObject object, Client client)
+    private static void loadFrom(PersistenceProvider persistenceProvider, JSONObject response, Client client)
             throws JSONException
     {
         client.setClientLocal(persistenceProvider.getClientUid().equals(client.getClientUid()));
-        client.setClientManufacturer(object.getString(Keyword.CLIENT_MANUFACTURER));
-        client.setClientProduct(object.getString(Keyword.CLIENT_PRODUCT));
-        client.setClientNickname(object.getString(Keyword.CLIENT_NICKNAME));
-        client.setClientType(ClientType.from(object.getString(Keyword.CLIENT_TYPE)));
+        client.setClientManufacturer(response.getString(Keyword.CLIENT_MANUFACTURER));
+        client.setClientProduct(response.getString(Keyword.CLIENT_PRODUCT));
+        client.setClientNickname(response.getString(Keyword.CLIENT_NICKNAME));
+        client.setClientType(ClientType.from(response.getString(Keyword.CLIENT_TYPE)));
         client.setClientLastUsageTime(System.currentTimeMillis());
-        client.setClientVersionCode(object.getInt(Keyword.CLIENT_VERSION_CODE));
-        client.setClientVersionName(object.getString(Keyword.CLIENT_VERSION_NAME));
-        client.setClientProtocolVersion(object.getInt(Keyword.CLIENT_PROTOCOL_VERSION));
-        client.setClientProtocolVersionMin(object.getInt(Keyword.CLIENT_PROTOCOL_VERSION_MIN));
+        client.setClientVersionCode(response.getInt(Keyword.CLIENT_VERSION_CODE));
+        client.setClientVersionName(response.getString(Keyword.CLIENT_VERSION_NAME));
+        client.setClientProtocolVersion(response.getInt(Keyword.CLIENT_PROTOCOL_VERSION));
+        client.setClientProtocolVersionMin(response.getInt(Keyword.CLIENT_PROTOCOL_VERSION_MIN));
 
         if (client.getClientNickname().length() > LENGTH_CLIENT_USERNAME)
             client.setClientNickname(client.getClientNickname().substring(0, LENGTH_CLIENT_USERNAME));
@@ -92,7 +89,7 @@ public class ClientLoader
 
         byte[] clientPicture;
         try {
-            clientPicture = Base64.getDecoder().decode(object.getString(Keyword.CLIENT_PICTURE));
+            clientPicture = Base64.getDecoder().decode(response.getString(Keyword.CLIENT_PICTURE));
         } catch (Exception ignored) {
             clientPicture = new byte[0];
         }
@@ -113,7 +110,7 @@ public class ClientLoader
     {
         try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, persistenceProvider,
                 clientAddress, null, 0)) {
-            bridge.sendResult(false);
+            bridge.send(false);
             return bridge.getRemoteClient();
         }
     }
