@@ -1,8 +1,8 @@
 package org.monora.uprotocol.variant;
 
 import org.monora.uprotocol.core.protocol.Client;
-import org.monora.uprotocol.core.protocol.Clients;
 import org.monora.uprotocol.core.protocol.ClientType;
+import org.monora.uprotocol.core.protocol.Clients;
 
 import java.security.cert.X509Certificate;
 

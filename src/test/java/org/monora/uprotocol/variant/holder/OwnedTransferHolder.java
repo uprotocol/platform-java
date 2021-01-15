@@ -1,7 +1,7 @@
 package org.monora.uprotocol.variant.holder;
 
-import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
+import org.monora.uprotocol.core.transfer.TransferItem;
 
 public class OwnedTransferHolder
 {

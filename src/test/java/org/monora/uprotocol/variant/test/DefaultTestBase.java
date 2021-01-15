@@ -2,8 +2,8 @@ package org.monora.uprotocol.variant.test;
 
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSession;
-import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
+import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.variant.DefaultConnectionFactory;

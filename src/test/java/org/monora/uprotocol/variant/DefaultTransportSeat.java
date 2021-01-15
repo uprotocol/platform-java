@@ -2,12 +2,12 @@ package org.monora.uprotocol.variant;
 
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSeat;
-import org.monora.uprotocol.core.protocol.Client;
-import org.monora.uprotocol.core.protocol.ClientAddress;
-import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
+import org.monora.uprotocol.core.protocol.Client;
+import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
+import org.monora.uprotocol.core.transfer.TransferItem;
 
 import java.util.List;
 

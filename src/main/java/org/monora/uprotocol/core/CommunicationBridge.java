@@ -21,10 +21,10 @@ package org.monora.uprotocol.core;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.session.ActiveConnection;
-import org.monora.uprotocol.core.protocol.Client;
-import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
+import org.monora.uprotocol.core.protocol.Client;
+import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
 import org.monora.uprotocol.core.protocol.communication.*;
@@ -337,7 +337,7 @@ public class CommunicationBridge implements Closeable
      * If the initial response is positive, the items will be saved to the persistence provider using
      * {@link PersistenceProvider#save(String, List)}.
      *
-     * @param groupId      That ties a group of {@link TransferItem} as in {@link TransferItem#getItemGroupId()}.
+     * @param groupId          That ties a group of {@link TransferItem} as in {@link TransferItem#getItemGroupId()}.
      * @param transferItemList That you will send.
      * @return True if successful.
      * @throws IOException       If an IO error occurs.
