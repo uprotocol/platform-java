@@ -55,6 +55,7 @@ public class Responses
     /**
      * Find the appropriate error code of the protocol for the given exception.
      *
+     * @param exception The error for which the appropriate error string will be generated.
      * @return The error code that represents the given exception.
      * @throws ProtocolException If the error is undefined.
      */

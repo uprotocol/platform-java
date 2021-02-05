@@ -105,6 +105,9 @@ public class ClientLoader
      * @param persistenceProvider That stores the persistent data.
      * @param clientAddress       Where the remote client resides on the network.
      * @return The remote client.
+     * @throws IOException          If an IO related error occurs.
+     * @throws ProtocolException    If a protocol related error occurs.
+     * @throws CertificateException If the existing certificates fail to allow an ecrypted communication.
      */
     public static Client load(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
                               ClientAddress clientAddress) throws IOException, ProtocolException, CertificateException

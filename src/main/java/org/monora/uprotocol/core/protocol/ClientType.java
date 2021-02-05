@@ -55,6 +55,8 @@ public enum ClientType
 
     /**
      * The value that the protocol specifies which is different from the platform-based enum value.
+     *
+     * @return The value as defined in the protocol.
      */
     public String getProtocolValue()
     {

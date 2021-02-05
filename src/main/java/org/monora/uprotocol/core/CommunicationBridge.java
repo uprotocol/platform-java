@@ -129,6 +129,7 @@ public class CommunicationBridge implements Closeable
      * @throws ProtocolException              When there is a communication error due to misconfiguration.
      * @throws SecurityException              If something goes wrong while establishing a secure connection.
      * @throws DifferentRemoteClientException If the connected client is different from the one that was provided.
+     * @throws CertificateException           If an error related to encryption or authentication occurs.
      */
     public static CommunicationBridge connect(ConnectionFactory connectionFactory,
                                               PersistenceProvider persistenceProvider, List<ClientAddress> addressList,
@@ -166,7 +167,8 @@ public class CommunicationBridge implements Closeable
      * @throws JSONException                  If something goes wrong when creating JSON object.
      * @throws ProtocolException              When there is a communication error due to misconfiguration.
      * @throws SecurityException              If something goes wrong while establishing a secure connection.
-     * @throws DifferentRemoteClientException If the connected client is different from the one that was provided.
+     * @throws DifferentRemoteClientException If the connected client is different from the one that was provided
+     * @throws CertificateException           If an error related to encryption or authentication occurs.
      */
     public static CommunicationBridge connect(ConnectionFactory connectionFactory,
                                               PersistenceProvider persistenceProvider, ClientAddress clientAddress,

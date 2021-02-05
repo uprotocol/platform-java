@@ -54,8 +54,7 @@ public interface TransferOperation
     /**
      * The total number of content that has been exchanged during this operation.
      *
-     * @return The total number of content.
-     * @
+     * @return The total number of successful delivery of content.
      */
     int getCount();
 

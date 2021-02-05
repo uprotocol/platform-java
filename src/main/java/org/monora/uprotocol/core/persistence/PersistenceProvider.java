@@ -303,6 +303,7 @@ public interface PersistenceProvider
      *
      * @param client For which the context will be generated.
      * @return The SSL context.
+     * @throws CertificateException If the generation of the context fails.
      */
     default SSLContext getSSLContextFor(Client client) throws CertificateException
     {
