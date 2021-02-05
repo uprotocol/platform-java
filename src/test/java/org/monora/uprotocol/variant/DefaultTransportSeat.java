@@ -8,6 +8,8 @@ import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.transfer.TransferItem;
+import org.monora.uprotocol.core.transfer.TransferOperation;
+import org.monora.uprotocol.core.transfer.Transfers;
 
 import java.util.List;
 
@@ -15,11 +17,14 @@ public class DefaultTransportSeat implements TransportSeat
 {
     public final PersistenceProvider persistenceProvider;
 
+    public final TransferOperation transferOperation;
+
     private boolean autoAcceptNewKeys;
 
-    public DefaultTransportSeat(PersistenceProvider persistenceProvider)
+    public DefaultTransportSeat(PersistenceProvider persistenceProvider, TransferOperation transferOperation)
     {
         this.persistenceProvider = persistenceProvider;
+        this.transferOperation = transferOperation;
     }
 
     @Override
@@ -27,9 +32,9 @@ public class DefaultTransportSeat implements TransportSeat
             throws PersistenceException, ProtocolException
     {
         if (type.equals(TransferItem.Type.Incoming))
-            receiveFiles(bridge, groupId);
+            Transfers.receive(bridge, transferOperation, groupId);
         else if (type.equals(TransferItem.Type.Outgoing))
-            sendFiles(bridge, groupId);
+            Transfers.send(bridge, transferOperation, groupId);
     }
 
     @Override

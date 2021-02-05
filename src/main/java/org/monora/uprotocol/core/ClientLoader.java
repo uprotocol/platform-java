@@ -47,7 +47,8 @@ public class ClientLoader
      * @param hasPin              Whether the request has a valid PIN. When it does, the remote client will be unblocked
      *                            if blocked.
      * @throws JSONException                If something goes wrong when inflating the JSON data.
-     * @throws BlockedRemoteClientException If remote is blocked and has no valid PIN.
+     * @throws BlockedRemoteClientException If remote is blocked and has no valid PIN. The underlying data is loaded
+     *                                      after this is thrown.
      */
     public static void loadAsServer(PersistenceProvider persistenceProvider, JSONObject object, Client client,
                                     boolean hasPin) throws JSONException, BlockedRemoteClientException

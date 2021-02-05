@@ -12,6 +12,7 @@ import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.client.UntrustedClientException;
 import org.monora.uprotocol.core.transfer.TransferItem;
+import org.monora.uprotocol.core.transfer.Transfers;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
 import org.monora.uprotocol.variant.holder.OwnedTransferHolder;
 import org.monora.uprotocol.variant.test.DefaultTestBase;
@@ -81,7 +82,7 @@ public class TransferTest extends DefaultTestBase
             Assert.assertTrue("The result should be positive", bridge.requestFileTransferStart(groupId,
                     TransferItem.Type.Incoming));
 
-            primarySeat.receiveFiles(bridge, groupId);
+            Transfers.receive(bridge, transferOperation, groupId);
         }
 
         secondarySession.stop();
@@ -112,7 +113,7 @@ public class TransferTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
             bridge.requestFileTransferStart(groupId, TransferItem.Type.Incoming);
-            primarySeat.receiveFiles(bridge, groupId);
+            Transfers.receive(bridge, transferOperation, groupId);
         }
 
         secondarySession.stop();
@@ -138,7 +139,7 @@ public class TransferTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestFileTransferStart(groupId, TransferItem.Type.Outgoing);
-            secondarySeat.receiveFiles(bridge, groupId);
+            Transfers.receive(bridge, transferOperation, groupId);
         } finally {
             primarySession.stop();
         }
@@ -157,7 +158,7 @@ public class TransferTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestFileTransferStart(groupId, TransferItem.Type.Outgoing);
-            secondarySeat.receiveFiles(bridge, groupId);
+            Transfers.receive(bridge, transferOperation, groupId);
         } finally {
             primarySession.stop();
         }

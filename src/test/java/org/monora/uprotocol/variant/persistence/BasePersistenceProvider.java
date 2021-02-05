@@ -9,7 +9,7 @@ import org.monora.uprotocol.core.protocol.Clients;
 import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.variant.DefaultClient;
 import org.monora.uprotocol.variant.DefaultClientAddress;
-import org.monora.uprotocol.variant.DefaultTransferItemItem;
+import org.monora.uprotocol.variant.DefaultTransferItem;
 import org.monora.uprotocol.variant.holder.ClientPicture;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
 import org.monora.uprotocol.variant.holder.OwnedTransferHolder;
@@ -173,7 +173,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     public TransferItem createTransferItemFor(long groupId, long id, String name, String mimeType, long size,
                                               String directory, TransferItem.Type type)
     {
-        return new DefaultTransferItemItem(groupId, id, name, mimeType, size, directory, type);
+        return new DefaultTransferItem(groupId, id, name, mimeType, size, directory, type);
     }
 
     @Override

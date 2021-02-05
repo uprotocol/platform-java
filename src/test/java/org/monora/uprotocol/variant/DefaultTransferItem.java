@@ -2,26 +2,26 @@ package org.monora.uprotocol.variant;
 
 import org.monora.uprotocol.core.transfer.TransferItem;
 
-public class DefaultTransferItemItem implements TransferItem
+public class DefaultTransferItem implements TransferItem
 {
-    public long id;
+    private long id;
 
-    public long groupId;
+    private long groupId;
 
-    public String name;
+    private String name;
 
-    public String directory;
+    private String directory;
 
-    public String mimeType;
+    private String mimeType;
 
-    public long size = 0;
+    private long size = 0;
 
-    public long lastChangeTime;
+    private long lastChangeTime;
 
-    public Type type = Type.Incoming;
+    private Type type = Type.Incoming;
 
-    public DefaultTransferItemItem(long groupId, long id, String name, String mimeType, long size, String directory,
-                                   TransferItem.Type type)
+    public DefaultTransferItem(long groupId, long id, String name, String mimeType, long size, String directory,
+                               TransferItem.Type type)
     {
         setItemGroupId(groupId);
         setItemId(id);
