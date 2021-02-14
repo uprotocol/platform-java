@@ -14,22 +14,22 @@ public class DefaultTransferItem implements TransferItem
 
     private String mimeType;
 
-    private long size = 0;
+    private long size;
 
     private long lastChangeTime;
 
-    private Type type = Type.Incoming;
+    private Type type;
 
     public DefaultTransferItem(long groupId, long id, String name, String mimeType, long size, String directory,
                                TransferItem.Type type)
     {
-        setItemGroupId(groupId);
-        setItemId(id);
-        setItemName(name);
-        setItemMimeType(mimeType);
-        setItemSize(size);
-        setItemDirectory(directory);
-        setItemType(type);
+        this.groupId = groupId;
+        this.id = id;
+        this.name = name;
+        this.mimeType = mimeType;
+        this.size = size;
+        this.directory = directory;
+        this.type = type;
     }
 
     @Override

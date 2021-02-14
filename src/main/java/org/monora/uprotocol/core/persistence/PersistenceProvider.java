@@ -165,7 +165,15 @@ public interface PersistenceProvider
     /**
      * Create a client instance for the given input.
      *
-     * @param uid The client's unique identifier.
+     * @param uid                Points to {@link Client#getClientUid()}.
+     * @param nickname           Points to {@link Client#getClientNickname()}.
+     * @param manufacturer       Points to {@link Client#getClientManufacturer()}.
+     * @param product            Points to {@link Client#getClientProduct()}.
+     * @param type               Points to {@link Client#getClientType()}.
+     * @param versionName        Points to {@link Client#getClientVersionName()}
+     * @param versionCode        Points to {@link Client#getClientVersionCode()}.
+     * @param protocolVersion    Points to {@link Client#getClientProtocolVersion()}.
+     * @param protocolVersionMin Points {@link Client#getClientProtocolVersionMin()}.
      * @return The client instance.
      * @see #save(Client)
      * @see #getClientFor(String)

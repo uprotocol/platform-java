@@ -28,6 +28,8 @@ public class ClientLoader
      *
      * @param persistenceProvider That stores persistent data.
      * @param object              To load the details from.
+     * @param clientUid           For which this method invocation is being made.
+     * @return The client produced from the JSON object and persistence database.
      * @throws JSONException If something goes wrong when inflating the JSON data.
      */
     public static Client loadAsClient(PersistenceProvider persistenceProvider, JSONObject object, String clientUid)
@@ -44,12 +46,13 @@ public class ClientLoader
      * @param clientUid           For which this method invocation is being made.
      * @param hasPin              Whether the request has a valid PIN. When it does, the remote client will be unblocked
      *                            if blocked.
+     * @return The client produced from the JSON object and persistence database.
      * @throws JSONException                If something goes wrong when inflating the JSON data.
      * @throws BlockedRemoteClientException If remote is blocked and has no valid PIN. The underlying data is loaded
      *                                      after this is thrown.
      */
     public static Client loadAsServer(PersistenceProvider persistenceProvider, JSONObject object, String clientUid,
-                                    boolean hasPin) throws JSONException, BlockedRemoteClientException
+                                      boolean hasPin) throws JSONException, BlockedRemoteClientException
     {
         Client client = loadFrom(persistenceProvider, object, clientUid, false, hasPin);
 
