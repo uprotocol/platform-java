@@ -29,8 +29,7 @@ public class RequestTest extends DefaultTestBase
                 clientAddress, null, 0)) {
             Assert.assertTrue("Remote should send a positive message.", bridge.requestAcquaintance());
 
-            Client persistentClient = secondaryPersistence.createClientFor(bridge.getRemoteClient().getClientUid());
-            secondaryPersistence.sync(persistentClient);
+            Client persistentClient = secondaryPersistence.getClientFor(bridge.getRemoteClient().getClientUid());
 
             Assert.assertEquals("Clients should be same.", bridge.getRemoteClient(), persistentClient);
             Assert.assertEquals("Clients should have the same username.", bridge.getRemoteClient().getClientNickname(),

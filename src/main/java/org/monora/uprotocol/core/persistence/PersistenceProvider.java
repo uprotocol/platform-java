@@ -8,6 +8,7 @@ import org.monora.uprotocol.core.TransportSession;
 import org.monora.uprotocol.core.io.StreamDescriptor;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
+import org.monora.uprotocol.core.protocol.ClientType;
 import org.monora.uprotocol.core.spec.v1.Keyword;
 import org.monora.uprotocol.core.transfer.TransferItem;
 
@@ -155,20 +156,22 @@ public interface PersistenceProvider
     /**
      * Create client address instance.
      *
-     * @param address To which this will be pointing.
+     * @param address   To which this will be pointing.
+     * @param clientUid That owns the address.
      * @return The client address instance.
      */
-    ClientAddress createClientAddressFor(InetAddress address);
+    ClientAddress createClientAddressFor(InetAddress address, String clientUid);
 
     /**
-     * Create a client instance using the given unique identifier.
-     * <p>
-     * The resulting {@link Client} instance is not ready for use. To make it so, call {@link #sync(Client)}.
+     * Create a client instance for the given input.
      *
      * @param uid The client's unique identifier.
      * @return The client instance.
+     * @see #save(Client)
+     * @see #getClientFor(String)
      */
-    Client createClientFor(String uid);
+    Client createClientFor(String uid, String nickname, String manufacturer, String product, ClientType type,
+                           String versionName, int versionCode, int protocolVersion, int protocolVersionMin);
 
     /**
      * Create a transfer item instance for the given parameters.
@@ -200,6 +203,14 @@ public interface PersistenceProvider
      * @return The client instance.
      */
     Client getClient();
+
+    /**
+     * Finds and returns a known client using its unique identifier.
+     *
+     * @param uid To associate with the client.
+     * @return The associated client or null if there weren't one.
+     */
+    Client getClientFor(String uid);
 
     /**
      * This client's user-friendly optional nickname.
@@ -490,15 +501,6 @@ public interface PersistenceProvider
      * @see #STATE_DONE
      */
     void setState(String clientUid, TransferItem item, int state, Exception e);
-
-    /**
-     * Sync the client with the persistence database.
-     *
-     * @param client To sync.
-     * @throws PersistenceException When there is no client associated with the unique identifier
-     *                              {@link Client#getClientUid()}.
-     */
-    void sync(Client client) throws PersistenceException;
 
     /**
      * Transform a given {@link TransferItem} list into its {@link JSONArray} equivalent.

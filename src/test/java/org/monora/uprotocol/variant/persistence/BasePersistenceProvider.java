@@ -5,6 +5,7 @@ import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
+import org.monora.uprotocol.core.protocol.ClientType;
 import org.monora.uprotocol.core.protocol.Clients;
 import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.variant.DefaultClient;
@@ -158,15 +159,18 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public ClientAddress createClientAddressFor(InetAddress address)
+    public ClientAddress createClientAddressFor(InetAddress address, String clientUid)
     {
-        return new DefaultClientAddress(address);
+        return new DefaultClientAddress(address, clientUid, System.currentTimeMillis());
     }
-
+    
     @Override
-    public DefaultClient createClientFor(String uid)
+    public Client createClientFor(String uid, String nickname, String manufacturer,
+                                  String product, ClientType type, String versionName, int versionCode,
+                                  int protocolVersion, int protocolVersionMin)
     {
-        return new DefaultClient(uid);
+        return new DefaultClient(uid, nickname, manufacturer, product, type, versionName, versionCode,
+                protocolVersion, protocolVersionMin);
     }
 
     @Override
@@ -174,6 +178,20 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
                                               String directory, TransferItem.Type type)
     {
         return new DefaultTransferItem(groupId, id, name, mimeType, size, directory, type);
+    }
+
+    @Override
+    public Client getClientFor(String clientUid)
+    {
+        synchronized (clientList) {
+            for (Client persistentClient : clientList) {
+                if (clientUid.equals(persistentClient.getClientUid())) {
+                    return persistentClient;
+                }
+            }
+        }
+
+        return null;
     }
 
     @Override
@@ -391,20 +409,5 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
                     holder.state = state;
             }
         }
-    }
-
-    @Override
-    public void sync(Client client) throws PersistenceException
-    {
-        synchronized (clientList) {
-            for (Client persistentClient : clientList) {
-                if (client.equals(persistentClient)) {
-                    Clients.copy(persistentClient, client);
-                    return;
-                }
-            }
-        }
-
-        throw new PersistenceException("The requested client does not exist and failed to sync.");
     }
 }

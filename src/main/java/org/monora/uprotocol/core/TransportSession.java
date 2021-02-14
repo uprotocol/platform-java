@@ -67,14 +67,16 @@ public class TransportSession extends CoolSocket
             final JSONObject response = activeConnection.receive().getAsJson();
             final int activePin = persistenceProvider.getNetworkPin();
             final boolean hasPin = activePin != 0 && activePin == response.getInt(Keyword.CLIENT_PIN);
-            if (hasPin)
+
+            if (hasPin) {
                 persistenceProvider.revokeNetworkPin();
+            }
 
+            final String clientUid = response.getString(Keyword.CLIENT_UID);
             final ClientAddress clientAddress = persistenceProvider.createClientAddressFor(
-                    activeConnection.getAddress());
-            final Client client = persistenceProvider.createClientFor(response.getString(Keyword.CLIENT_UID));
+                    activeConnection.getAddress(), clientUid);
+            final Client client = ClientLoader.loadAsServer(persistenceProvider, response, clientUid, hasPin);
 
-            ClientLoader.loadAsServer(persistenceProvider, response, client, hasPin);
             Responses.send(activeConnection, true, clientIndex);
 
             CommunicationBridge.convertToSSL(connectionFactory, persistenceProvider, activeConnection, client,

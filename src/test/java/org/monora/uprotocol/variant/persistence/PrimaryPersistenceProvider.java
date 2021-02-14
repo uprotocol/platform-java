@@ -5,7 +5,6 @@ import org.monora.uprotocol.variant.DefaultClient;
 
 public class PrimaryPersistenceProvider extends BasePersistenceProvider
 {
-    @Override
     public Client getClient()
     {
         return new DefaultClient(getClientUid(), getClientNickname(), "Abc", "Def", getCertificate());

@@ -21,7 +21,6 @@ package org.monora.uprotocol.core;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.session.ActiveConnection;
-import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
@@ -110,16 +109,16 @@ public class CommunicationBridge implements Closeable
      * try rest of the addresses.
      * <p>
      * If all addresses fail, this will still throw an error to simulate what
-     * {@link #connect(ConnectionFactory, PersistenceProvider, ClientAddress, Client, int)} does.
+     * {@link #connect(ConnectionFactory, PersistenceProvider, InetAddress, String, int)} does.
      * <p>
      * The rest of the behavior is the same with
-     * {@link #connect(ConnectionFactory, PersistenceProvider, ClientAddress, Client, int)}.
+     * {@link #connect(ConnectionFactory, PersistenceProvider, InetAddress, String, int)}.
      *
      * @param connectionFactory   To start and set up connections with.
      * @param persistenceProvider To store and query objects with.
      * @param addressList         To try.
-     * @param client              That this should connect to. Passing null means it is not yet known who the remote
-     *                            client is. If the given address connects to a different client, it will cause and
+     * @param clientUid           That this should connect to. Passing null means it is not yet known who the remote
+     *                            client is. If the given address connects to a different client, it will cause an
      *                            error.
      * @param pin                 To bypass errors (i.e. this client is blocked on the remote client), and to be flagged
      *                            as trusted. Pass '0' if no PIN is available.
@@ -132,16 +131,16 @@ public class CommunicationBridge implements Closeable
      * @throws CertificateException           If an error related to encryption or authentication occurs.
      */
     public static CommunicationBridge connect(ConnectionFactory connectionFactory,
-                                              PersistenceProvider persistenceProvider, List<ClientAddress> addressList,
-                                              Client client, int pin) throws JSONException, IOException,
+                                              PersistenceProvider persistenceProvider, List<InetAddress> addressList,
+                                              String clientUid, int pin) throws JSONException, IOException,
             ProtocolException, CertificateException
     {
         if (addressList.size() < 1)
             throw new IllegalArgumentException("The address list should contain at least one item.");
 
-        for (ClientAddress address : addressList) {
+        for (InetAddress address : addressList) {
             try {
-                return connect(connectionFactory, persistenceProvider, address, client, pin);
+                return connect(connectionFactory, persistenceProvider, address, clientUid, pin);
             } catch (IOException | DifferentRemoteClientException ignored) {
             }
         }
@@ -156,8 +155,8 @@ public class CommunicationBridge implements Closeable
      *
      * @param connectionFactory   To start and set up connections with.
      * @param persistenceProvider To store and query objects.
-     * @param clientAddress       To try.
-     * @param client              That this should connect to. Passing null means it is not yet known who the remote
+     * @param inetAddress         To try.
+     * @param clientUid           That this should connect to. Passing null means it is not yet known who the remote
      *                            client is. If the given address connects to a different client, it will cause and
      *                            error.
      * @param pin                 To bypass errors (i.e. this client is blocked on the remote client), and to be flagged
@@ -171,35 +170,26 @@ public class CommunicationBridge implements Closeable
      * @throws CertificateException           If an error related to encryption or authentication occurs.
      */
     public static CommunicationBridge connect(ConnectionFactory connectionFactory,
-                                              PersistenceProvider persistenceProvider, ClientAddress clientAddress,
-                                              Client client, int pin)
+                                              PersistenceProvider persistenceProvider, InetAddress inetAddress,
+                                              String clientUid, int pin)
             throws IOException, JSONException, ProtocolException, CertificateException
     {
-        ActiveConnection activeConnection = connectionFactory.openConnection(clientAddress.getClientAddress());
+        ActiveConnection activeConnection = connectionFactory.openConnection(inetAddress);
         String remoteClientUid = activeConnection.receive().getAsString();
 
-        clientAddress.setClientAddressOwnerUid(remoteClientUid);
+        ClientAddress clientAddress = persistenceProvider.createClientAddressFor(inetAddress, remoteClientUid);
         persistenceProvider.save(clientAddress);
 
-        if (client != null && client.getClientUid() != null && !client.getClientUid().equals(remoteClientUid)) {
+        if (clientUid != null && !clientUid.equals(remoteClientUid)) {
             activeConnection.closeSafely();
-            throw new DifferentRemoteClientException(client, remoteClientUid);
-        }
-
-        if (client == null)
-            client = persistenceProvider.createClientFor(remoteClientUid);
-
-        try {
-            persistenceProvider.sync(client);
-        } catch (PersistenceException ignored) {
+            throw new DifferentRemoteClientException(clientUid, remoteClientUid);
         }
 
         activeConnection.reply(persistenceProvider.clientAsJson(pin));
         JSONObject jsonObject = activeConnection.receive().getAsJson();
+        Client client = ClientLoader.loadAsClient(persistenceProvider, jsonObject, remoteClientUid);
 
-        ClientLoader.loadAsClient(persistenceProvider, jsonObject, client);
         Responses.checkError(client, jsonObject);
-
         convertToSSL(connectionFactory, persistenceProvider, activeConnection, client, true);
 
         return new CommunicationBridge(persistenceProvider, activeConnection, client, clientAddress);
@@ -244,6 +234,7 @@ public class CommunicationBridge implements Closeable
                     throw new CertificateException("The certificate is not in X.509 format");
             } catch (Exception e) {
                 client.setClientCertificate(null);
+                persistenceProvider.save(client);
                 e.printStackTrace();
             }
         });

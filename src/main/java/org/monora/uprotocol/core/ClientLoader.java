@@ -2,17 +2,17 @@ package org.monora.uprotocol.core;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
-import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.ClientType;
+import org.monora.uprotocol.core.protocol.Clients;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.client.BlockedRemoteClientException;
 import org.monora.uprotocol.core.spec.v1.Keyword;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.security.cert.CertificateException;
 import java.util.Base64;
 
@@ -28,14 +28,12 @@ public class ClientLoader
      *
      * @param persistenceProvider That stores persistent data.
      * @param object              To load the details from.
-     * @param client              To load into.
      * @throws JSONException If something goes wrong when inflating the JSON data.
      */
-    public static void loadAsClient(PersistenceProvider persistenceProvider, JSONObject object, Client client)
+    public static Client loadAsClient(PersistenceProvider persistenceProvider, JSONObject object, String clientUid)
             throws JSONException
     {
-        client.setClientBlocked(false);
-        loadFrom(persistenceProvider, object, client);
+        return loadFrom(persistenceProvider, object, clientUid, true, false);
     }
 
     /**
@@ -43,50 +41,40 @@ public class ClientLoader
      *
      * @param persistenceProvider That stores persistent data.
      * @param object              To load the details from.
-     * @param client              To load into.
+     * @param clientUid           For which this method invocation is being made.
      * @param hasPin              Whether the request has a valid PIN. When it does, the remote client will be unblocked
      *                            if blocked.
      * @throws JSONException                If something goes wrong when inflating the JSON data.
      * @throws BlockedRemoteClientException If remote is blocked and has no valid PIN. The underlying data is loaded
      *                                      after this is thrown.
      */
-    public static void loadAsServer(PersistenceProvider persistenceProvider, JSONObject object, Client client,
+    public static Client loadAsServer(PersistenceProvider persistenceProvider, JSONObject object, String clientUid,
                                     boolean hasPin) throws JSONException, BlockedRemoteClientException
     {
-        try {
-            try {
-                persistenceProvider.sync(client);
-            } catch (PersistenceException ignored) {
-            }
+        Client client = loadFrom(persistenceProvider, object, clientUid, false, hasPin);
 
-            if (hasPin) {
-                client.setClientBlocked(false);
-                client.setClientTrusted(true);
-            } else if (client.isClientBlocked())
-                throw new BlockedRemoteClientException(client);
-        } finally {
-            loadFrom(persistenceProvider, object, client);
-        }
+        if (client.isClientBlocked())
+            throw new BlockedRemoteClientException(client);
+
+        return client;
     }
 
-    private static void loadFrom(PersistenceProvider persistenceProvider, JSONObject response, Client client)
-            throws JSONException
+    private static Client loadFrom(PersistenceProvider persistenceProvider, JSONObject response, String clientUid,
+                                   boolean asClient, boolean hasPin) throws JSONException
     {
-        client.setClientLocal(persistenceProvider.getClientUid().equals(client.getClientUid()));
-        client.setClientManufacturer(response.getString(Keyword.CLIENT_MANUFACTURER));
-        client.setClientProduct(response.getString(Keyword.CLIENT_PRODUCT));
-        client.setClientNickname(response.getString(Keyword.CLIENT_NICKNAME));
-        client.setClientType(ClientType.from(response.getString(Keyword.CLIENT_TYPE)));
-        client.setClientLastUsageTime(System.currentTimeMillis());
-        client.setClientVersionCode(response.getInt(Keyword.CLIENT_VERSION_CODE));
-        client.setClientVersionName(response.getString(Keyword.CLIENT_VERSION_NAME));
-        client.setClientProtocolVersion(response.getInt(Keyword.CLIENT_PROTOCOL_VERSION));
-        client.setClientProtocolVersionMin(response.getInt(Keyword.CLIENT_PROTOCOL_VERSION_MIN));
+        String nickname = response.getString(Keyword.CLIENT_NICKNAME);
+        String manufacturer = response.getString(Keyword.CLIENT_MANUFACTURER);
+        String product = response.getString(Keyword.CLIENT_PRODUCT);
+        ClientType clientType = ClientType.from(response.getString(Keyword.CLIENT_TYPE));
+        String versionName = response.getString(Keyword.CLIENT_VERSION_NAME);
+        int versionCode = response.getInt(Keyword.CLIENT_VERSION_CODE);
+        int protocolVersion = response.getInt(Keyword.CLIENT_PROTOCOL_VERSION);
+        int protocolVersionMin = response.getInt(Keyword.CLIENT_PROTOCOL_VERSION_MIN);
+        long lastUsageTime = System.currentTimeMillis();
+        boolean local = persistenceProvider.getClientUid().equals(clientUid);
 
-        if (client.getClientNickname().length() > LENGTH_CLIENT_USERNAME)
-            client.setClientNickname(client.getClientNickname().substring(0, LENGTH_CLIENT_USERNAME));
-
-        persistenceProvider.save(client);
+        if (nickname.length() > LENGTH_CLIENT_USERNAME)
+            nickname = nickname.substring(0, LENGTH_CLIENT_USERNAME);
 
         byte[] clientPicture;
         try {
@@ -95,7 +83,29 @@ public class ClientLoader
             clientPicture = new byte[0];
         }
 
+        Client client = persistenceProvider.getClientFor(clientUid);
+        if (client == null) {
+            client = persistenceProvider.createClientFor(clientUid, nickname, manufacturer, product, clientType,
+                    versionName, versionCode, protocolVersion, protocolVersionMin);
+        } else {
+            Clients.fill(client, clientUid, client.getClientCertificate(), nickname, manufacturer, product, clientType,
+                    versionName, versionCode, protocolVersion, protocolVersionMin, client.isClientTrusted(),
+                    client.isClientBlocked());
+        }
+
+        if (asClient) {
+            client.setClientBlocked(false);
+        } else if (hasPin) {
+            client.setClientBlocked(false);
+            client.setClientTrusted(true);
+        }
+
+        client.setClientLastUsageTime(lastUsageTime);
+        client.setClientLocal(local);
+        persistenceProvider.save(client);
         persistenceProvider.saveClientPicture(client.getClientUid(), clientPicture);
+
+        return client;
     }
 
     /**
@@ -103,17 +113,17 @@ public class ClientLoader
      *
      * @param connectionFactory   That will set up the connection.
      * @param persistenceProvider That stores the persistent data.
-     * @param clientAddress       Where the remote client resides on the network.
+     * @param inetAddress         Where the remote client resides on the network.
      * @return The remote client.
      * @throws IOException          If an IO related error occurs.
      * @throws ProtocolException    If a protocol related error occurs.
-     * @throws CertificateException If the existing certificates fail to allow an ecrypted communication.
+     * @throws CertificateException If the existing certificates fail to allow an encrypted communication.
      */
     public static Client load(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
-                              ClientAddress clientAddress) throws IOException, ProtocolException, CertificateException
+                              InetAddress inetAddress) throws IOException, ProtocolException, CertificateException
     {
         try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, persistenceProvider,
-                clientAddress, null, 0)) {
+                inetAddress, null, 0)) {
             bridge.send(false);
             return bridge.getRemoteClient();
         }

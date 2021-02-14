@@ -2,7 +2,6 @@ package org.monora.uprotocol.variant;
 
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientType;
-import org.monora.uprotocol.core.protocol.Clients;
 
 import java.security.cert.X509Certificate;
 
@@ -39,24 +38,26 @@ public class DefaultClient implements Client
 
     private boolean trusted;
 
-    public DefaultClient(String uid)
-    {
-        this.uid = uid;
-    }
-
-    public DefaultClient(String uid, X509Certificate certificate, String nickname, String manufacturer, String product,
+    public DefaultClient(String uid, String nickname, String manufacturer, String product,
                          ClientType type, String versionName, int versionCode, int protocolVersion,
                          int protocolVersionMin)
     {
-        this(uid);
-        Clients.fill(this, uid, certificate, nickname, manufacturer, product, type, versionName, versionCode,
-                protocolVersion, protocolVersionMin, false, false);
+        this.uid = uid;
+        this.nickname = nickname;
+        this.manufacturer = manufacturer;
+        this.product = product;
+        this.type = type;
+        this.versionName = versionName;
+        this.versionCode = versionCode;
+        this.protocolVersion = protocolVersion;
+        this.protocolVersionMin = protocolVersionMin;
     }
 
     public DefaultClient(String uid, String nickname, String manufacturer, String product, X509Certificate certificate)
     {
-        this(uid, certificate, nickname, manufacturer, product, ClientType.Desktop, "1.0", 1,
+        this(uid, nickname, manufacturer, product, ClientType.Desktop, "1.0", 1,
                 VERSION_UPROTOCOL, VERSION_UPROTOCOL_MIN);
+        this.certificate = certificate;
     }
 
     @Override

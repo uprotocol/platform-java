@@ -12,14 +12,8 @@ public class DefaultClientAddress implements ClientAddress
 
     private long lastUsageTime;
 
-    public DefaultClientAddress(InetAddress inetAddress)
-    {
-        this.inetAddress = inetAddress;
-    }
-
     public DefaultClientAddress(InetAddress inetAddress, String clientUid, long lastUsageTime)
     {
-        this(inetAddress);
         this.clientUid = clientUid;
         this.lastUsageTime = lastUsageTime;
     }

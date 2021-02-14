@@ -1,5 +1,8 @@
 package org.monora.uprotocol.core.protocol;
 
+import org.monora.uprotocol.core.persistence.PersistenceException;
+import org.monora.uprotocol.core.persistence.PersistenceProvider;
+
 import java.security.cert.X509Certificate;
 
 /**
@@ -39,9 +42,8 @@ public class Clients
      * @param isBlocked          Whether the client is blocked or not.
      */
     public static void fill(Client client, String uid, X509Certificate certificate, String nickname, String manufacturer,
-                            String product, ClientType clientType, String versionName,
-                            int versionCode, int protocolVersion, int protocolVersionMin, boolean isTrusted,
-                            boolean isBlocked)
+                            String product, ClientType clientType, String versionName, int versionCode,
+                            int protocolVersion, int protocolVersionMin, boolean isTrusted, boolean isBlocked)
     {
         client.setClientUid(uid);
         client.setClientCertificate(certificate);
@@ -55,5 +57,25 @@ public class Clients
         client.setClientProtocolVersionMin(protocolVersionMin);
         client.setClientTrusted(isTrusted);
         client.setClientBlocked(isBlocked);
+    }
+
+    /**
+     * Find and return a known client using its unique identifier or fail if the client is unknown.
+     *
+     * @param persistenceProvider On which this will search.
+     * @param uid                 Of the client.
+     * @return The known client instance.
+     * @throws PersistenceException If the client isn't known yet.
+     */
+    public static Client getClientOrFail(PersistenceProvider persistenceProvider, String uid)
+            throws PersistenceException
+    {
+        Client client = persistenceProvider.getClientFor(uid);
+
+        if (client == null) {
+            throw new PersistenceException("There is no client for the requested unique identifier");
+        }
+
+        return client;
     }
 }

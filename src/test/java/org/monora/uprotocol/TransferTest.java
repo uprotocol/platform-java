@@ -8,7 +8,6 @@ import org.monora.uprotocol.core.io.StreamDescriptor;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
-import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.client.UntrustedClientException;
 import org.monora.uprotocol.core.transfer.TransferItem;
@@ -18,7 +17,6 @@ import org.monora.uprotocol.variant.holder.OwnedTransferHolder;
 import org.monora.uprotocol.variant.test.DefaultTestBase;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +29,6 @@ import java.util.List;
  */
 public class TransferTest extends DefaultTestBase
 {
-    private ClientAddress clientAddress;
     private TransferItem demoTransferItem1;
     private TransferItem demoTransferItem2;
 
@@ -52,8 +49,6 @@ public class TransferTest extends DefaultTestBase
 
         secondaryPersistence.openOutputStream(descriptor1).write(data1);
         secondaryPersistence.openOutputStream(descriptor2).write(data2);
-
-        clientAddress = primaryPersistence.createClientAddressFor(InetAddress.getLocalHost());
     }
 
     @Before
@@ -149,8 +144,7 @@ public class TransferTest extends DefaultTestBase
     public void senderStartsTransferIfTrusted() throws IOException, InterruptedException, ProtocolException,
             PersistenceException, CertificateException
     {
-        Client secondaryOnPrimary = primaryPersistence.createClientFor(secondaryPersistence.getClientUid());
-        primaryPersistence.sync(secondaryOnPrimary);
+        Client secondaryOnPrimary = primaryPersistence.getClientFor(secondaryPersistence.getClientUid());
         secondaryOnPrimary.setClientTrusted(true);
         primaryPersistence.save(secondaryOnPrimary);
 

@@ -20,19 +20,21 @@ package org.monora.uprotocol.core.protocol.communication.client;
 
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.protocol.Client;
-import org.monora.uprotocol.core.protocol.communication.CommunicationException;
+import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 
 /**
  * This error concerns a remote client and is thrown when {@link CommunicationBridge} communicates with a peer that has
  * a different {@link Client#getClientUid()} mismatching with the one that it intends to connect to.
  */
-public class DifferentRemoteClientException extends CommunicationException
+public class DifferentRemoteClientException extends ProtocolException
 {
+    public final String expectedUid;
     public final String gotUid;
 
-    public DifferentRemoteClientException(Client expected, String gotUid)
+    public DifferentRemoteClientException(String expectedUid, String gotUid)
     {
-        super(expected);
+        super();
+        this.expectedUid = expectedUid;
         this.gotUid = gotUid;
     }
 }
