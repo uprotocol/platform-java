@@ -12,7 +12,6 @@ import org.monora.uprotocol.core.protocol.ClientType;
 import org.monora.uprotocol.core.spec.v1.Keyword;
 import org.monora.uprotocol.core.transfer.TransferItem;
 
-import javax.activation.MimetypesFileTypeMap;
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.io.InputStream;
@@ -71,11 +70,6 @@ public interface PersistenceProvider
      * The item is done.
      */
     int STATE_DONE = 4;
-
-    /**
-     * Type map provides the mime-type for filenames and file objects.
-     */
-    MimetypesFileTypeMap typeMap = new MimetypesFileTypeMap();
 
     /**
      * Accept the request for invalidation of a client's credentials.
