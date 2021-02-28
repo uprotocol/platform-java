@@ -18,6 +18,7 @@
 
 package org.monora.uprotocol.core.protocol.communication.client;
 
+import org.jetbrains.annotations.NotNull;
 import org.monora.uprotocol.core.protocol.Client;
 
 /**
@@ -26,7 +27,7 @@ import org.monora.uprotocol.core.protocol.Client;
  */
 public class UntrustedClientException extends UnauthorizedClientException
 {
-    public UntrustedClientException(Client client)
+    public UntrustedClientException(@NotNull Client client)
     {
         super(client);
     }

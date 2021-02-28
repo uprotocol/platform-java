@@ -4,7 +4,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.monora.uprotocol.core.ClientLoader;
 import org.monora.uprotocol.core.CommunicationBridge;
-import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
@@ -21,7 +20,7 @@ public class RequestTest extends DefaultTestBase
 {
     @Test
     public void requestAcquaintanceTest() throws IOException, InterruptedException, ProtocolException,
-            PersistenceException, CertificateException
+            CertificateException
     {
         primarySession.start();
 
@@ -31,6 +30,7 @@ public class RequestTest extends DefaultTestBase
 
             Client persistentClient = secondaryPersistence.getClientFor(bridge.getRemoteClient().getClientUid());
 
+            Assert.assertNotNull("The client should not be null on the remote db",persistentClient);
             Assert.assertEquals("Clients should be same.", bridge.getRemoteClient(), persistentClient);
             Assert.assertEquals("Clients should have the same username.", bridge.getRemoteClient().getClientNickname(),
                     persistentClient.getClientNickname());

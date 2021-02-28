@@ -1,19 +1,21 @@
 package org.monora.uprotocol.variant;
 
+import org.jetbrains.annotations.NotNull;
 import org.monora.uprotocol.core.protocol.ClientAddress;
 
 import java.net.InetAddress;
 
 public class DefaultClientAddress implements ClientAddress
 {
-    private InetAddress inetAddress;
+    private @NotNull InetAddress inetAddress;
 
-    private String clientUid;
+    private @NotNull String clientUid;
 
     private long lastUsageTime;
 
-    public DefaultClientAddress(InetAddress inetAddress, String clientUid, long lastUsageTime)
+    public DefaultClientAddress(@NotNull InetAddress inetAddress, @NotNull String clientUid, long lastUsageTime)
     {
+        this.inetAddress = inetAddress;
         this.clientUid = clientUid;
         this.lastUsageTime = lastUsageTime;
     }
@@ -22,13 +24,13 @@ public class DefaultClientAddress implements ClientAddress
     public boolean equals(Object obj)
     {
         if (obj instanceof ClientAddress) {
-            return inetAddress != null && inetAddress.equals(((ClientAddress) obj).getClientAddress());
+            return inetAddress.equals(((ClientAddress) obj).getClientAddress());
         }
         return super.equals(obj);
     }
 
     @Override
-    public InetAddress getClientAddress()
+    public @NotNull InetAddress getClientAddress()
     {
         return inetAddress;
     }
@@ -40,13 +42,13 @@ public class DefaultClientAddress implements ClientAddress
     }
 
     @Override
-    public String getClientAddressOwnerUid()
+    public @NotNull String getClientAddressOwnerUid()
     {
         return clientUid;
     }
 
     @Override
-    public void setClientAddress(InetAddress inetAddress)
+    public void setClientAddress(@NotNull InetAddress inetAddress)
     {
         this.inetAddress = inetAddress;
     }
@@ -58,7 +60,7 @@ public class DefaultClientAddress implements ClientAddress
     }
 
     @Override
-    public void setClientAddressOwnerUid(String clientUid)
+    public void setClientAddressOwnerUid(@NotNull String clientUid)
     {
         this.clientUid = clientUid;
     }

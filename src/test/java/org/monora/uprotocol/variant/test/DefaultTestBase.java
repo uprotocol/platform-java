@@ -1,5 +1,6 @@
 package org.monora.uprotocol.variant.test;
 
+import org.jetbrains.annotations.NotNull;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSession;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
@@ -41,8 +42,9 @@ public class DefaultTestBase
         }
     }
 
-    protected CommunicationBridge openConnection(PersistenceProvider persistenceProvider, InetAddress address)
-            throws IOException, ProtocolException, CertificateException
+    protected @NotNull CommunicationBridge openConnection(@NotNull PersistenceProvider persistenceProvider,
+                                                          @NotNull InetAddress address) throws IOException,
+            ProtocolException, CertificateException
     {
         return CommunicationBridge.connect(connectionFactory, persistenceProvider, address, null, 0);
     }

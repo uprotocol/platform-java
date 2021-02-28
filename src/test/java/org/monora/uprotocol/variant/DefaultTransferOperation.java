@@ -1,12 +1,14 @@
 package org.monora.uprotocol.variant;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.monora.uprotocol.core.io.StreamDescriptor;
 import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.transfer.TransferOperation;
 
 public class DefaultTransferOperation implements TransferOperation
 {
-    private TransferItem transferItem;
+    private @Nullable TransferItem transferItem;
 
     private long bytesOngoing;
 
@@ -51,13 +53,13 @@ public class DefaultTransferOperation implements TransferOperation
     }
 
     @Override
-    public TransferItem getOngoing()
+    public @Nullable TransferItem getOngoing()
     {
         return transferItem;
     }
 
     @Override
-    public void installReceivedContent(StreamDescriptor descriptor)
+    public void installReceivedContent(@NotNull StreamDescriptor descriptor)
     {
 
     }
@@ -69,7 +71,7 @@ public class DefaultTransferOperation implements TransferOperation
     }
 
     @Override
-    public void onUnhandledException(Exception e)
+    public void onUnhandledException(@NotNull Exception e)
     {
 
     }
@@ -99,7 +101,7 @@ public class DefaultTransferOperation implements TransferOperation
     }
 
     @Override
-    public void setOngoing(TransferItem transferItem)
+    public void setOngoing(@NotNull TransferItem transferItem)
     {
         this.transferItem = transferItem;
     }

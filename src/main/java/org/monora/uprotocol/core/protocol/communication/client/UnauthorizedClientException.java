@@ -18,6 +18,7 @@
 
 package org.monora.uprotocol.core.protocol.communication.client;
 
+import org.jetbrains.annotations.NotNull;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 
@@ -30,7 +31,7 @@ import org.monora.uprotocol.core.protocol.communication.CommunicationException;
  */
 public class UnauthorizedClientException extends CommunicationException
 {
-    public UnauthorizedClientException(Client client)
+    public UnauthorizedClientException(@NotNull Client client)
     {
         super(client);
     }

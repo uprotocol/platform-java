@@ -18,6 +18,7 @@
 
 package org.monora.uprotocol.core.protocol.communication.client;
 
+import org.jetbrains.annotations.NotNull;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
@@ -28,10 +29,10 @@ import org.monora.uprotocol.core.protocol.communication.ProtocolException;
  */
 public class DifferentRemoteClientException extends ProtocolException
 {
-    public final String expectedUid;
-    public final String gotUid;
+    public final @NotNull String expectedUid;
+    public final @NotNull String gotUid;
 
-    public DifferentRemoteClientException(String expectedUid, String gotUid)
+    public DifferentRemoteClientException(@NotNull String expectedUid, @NotNull String gotUid)
     {
         super();
         this.expectedUid = expectedUid;

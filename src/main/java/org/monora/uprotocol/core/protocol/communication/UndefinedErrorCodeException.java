@@ -18,14 +18,16 @@
 
 package org.monora.uprotocol.core.protocol.communication;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Thrown when remote sends an undefined error code.
  */
 public class UndefinedErrorCodeException extends ProtocolException
 {
-    public final String errorCode;
+    public final @NotNull String errorCode;
 
-    public UndefinedErrorCodeException(String errorCode)
+    public UndefinedErrorCodeException(@NotNull String errorCode)
     {
         super();
         this.errorCode = errorCode;

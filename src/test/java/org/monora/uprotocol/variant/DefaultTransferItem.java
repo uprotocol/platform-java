@@ -1,5 +1,7 @@
 package org.monora.uprotocol.variant;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.monora.uprotocol.core.transfer.TransferItem;
 
 public class DefaultTransferItem implements TransferItem
@@ -8,20 +10,20 @@ public class DefaultTransferItem implements TransferItem
 
     private long groupId;
 
-    private String name;
+    private @NotNull String name;
 
-    private String directory;
+    private @Nullable String directory;
 
-    private String mimeType;
+    private @NotNull String mimeType;
 
     private long size;
 
     private long lastChangeTime;
 
-    private Type type;
+    private @NotNull Type type;
 
-    public DefaultTransferItem(long groupId, long id, String name, String mimeType, long size, String directory,
-                               TransferItem.Type type)
+    public DefaultTransferItem(long groupId, long id, @NotNull String name, @NotNull String mimeType, long size,
+                               @Nullable String directory, TransferItem.@NotNull Type type)
     {
         this.groupId = groupId;
         this.id = id;
@@ -37,15 +39,15 @@ public class DefaultTransferItem implements TransferItem
     {
         if (obj instanceof TransferItem) {
             TransferItem other = (TransferItem) obj;
-            return getItemType() != null && getItemType().equals(other.getItemType())
-                    && getItemGroupId() == other.getItemGroupId() && getItemId() == other.getItemId();
+            return getItemType().equals(other.getItemType()) && getItemGroupId() == other.getItemGroupId()
+                    && getItemId() == other.getItemId();
         }
 
         return super.equals(obj);
     }
 
     @Override
-    public String getItemDirectory()
+    public @Nullable String getItemDirectory()
     {
         return directory;
     }
@@ -63,13 +65,13 @@ public class DefaultTransferItem implements TransferItem
     }
 
     @Override
-    public String getItemMimeType()
+    public @NotNull String getItemMimeType()
     {
         return mimeType;
     }
 
     @Override
-    public String getItemName()
+    public @NotNull String getItemName()
     {
         return name;
     }
@@ -81,7 +83,7 @@ public class DefaultTransferItem implements TransferItem
     }
 
     @Override
-    public Type getItemType()
+    public @NotNull Type getItemType()
     {
         return type;
     }
@@ -105,19 +107,19 @@ public class DefaultTransferItem implements TransferItem
     }
 
     @Override
-    public void setItemName(String name)
+    public void setItemName(@NotNull String name)
     {
         this.name = name;
     }
 
     @Override
-    public void setItemDirectory(String directory)
+    public void setItemDirectory(@Nullable String directory)
     {
         this.directory = directory;
     }
 
     @Override
-    public void setItemMimeType(String mimeType)
+    public void setItemMimeType(@NotNull String mimeType)
     {
         this.mimeType = mimeType;
     }
@@ -135,7 +137,7 @@ public class DefaultTransferItem implements TransferItem
     }
 
     @Override
-    public void setItemType(Type type)
+    public void setItemType(@NotNull Type type)
     {
         this.type = type;
     }

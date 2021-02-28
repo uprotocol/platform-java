@@ -1,5 +1,6 @@
 package org.monora.uprotocol.core.protocol.communication.client;
 
+import org.jetbrains.annotations.NotNull;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 
@@ -10,7 +11,7 @@ import org.monora.uprotocol.core.protocol.communication.CommunicationException;
  */
 public class BlockedRemoteClientException extends CommunicationException
 {
-    public BlockedRemoteClientException(Client client)
+    public BlockedRemoteClientException(@NotNull Client client)
     {
         super(client);
     }

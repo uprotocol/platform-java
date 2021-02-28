@@ -1,5 +1,7 @@
 package org.monora.uprotocol.core.persistence;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -82,20 +84,7 @@ public interface PersistenceProvider
      * @see #hasRequestForInvalidationOfCredentials(String)
      * @see #saveRequestForInvalidationOfCredentials(String)
      */
-    boolean approveInvalidationOfCredentials(Client client);
-
-    /**
-     * Broadcast the awaiting operation reports.
-     * <p>
-     * This will be invoked whenever there is a change in the persistence database.
-     * <p>
-     * Notice that you should not report every change as soon as it happens. That can lead to performance drawbacks.
-     * We'd like to do them whenever necessary or whenever the right amount of time passes.
-     * <p>
-     * If your implementation has a built-in support for notifying listeners, then you can skip using method
-     * altogether.
-     */
-    void broadcast();
+    boolean approveInvalidationOfCredentials(@NotNull Client client);
 
     /**
      * Convert this client into {@link JSONObject}.
@@ -117,7 +106,7 @@ public interface PersistenceProvider
      * @return The JSON object
      * @throws JSONException If the creation of the JSON object fails for some reason.
      */
-    default JSONObject clientAsJson(int pin) throws JSONException
+    default @NotNull JSONObject clientAsJson(int pin) throws JSONException
     {
         Client client = getClient();
         JSONObject object = new JSONObject()
@@ -133,7 +122,7 @@ public interface PersistenceProvider
                 .put(Keyword.CLIENT_PIN, pin);
 
         byte[] clientAvatar = getClientPicture();
-        if (clientAvatar.length > 0)
+        if (clientAvatar != null && clientAvatar.length > 0)
             object.put(Keyword.CLIENT_PICTURE, Base64.getEncoder().encodeToString(clientAvatar));
 
         return object;
@@ -154,7 +143,7 @@ public interface PersistenceProvider
      * @param clientUid That owns the address.
      * @return The client address instance.
      */
-    ClientAddress createClientAddressFor(InetAddress address, String clientUid);
+    @NotNull ClientAddress createClientAddressFor(@NotNull InetAddress address, @NotNull String clientUid);
 
     /**
      * Create a client instance for the given input.
@@ -172,8 +161,9 @@ public interface PersistenceProvider
      * @see #persist(Client, boolean)
      * @see #getClientFor(String)
      */
-    Client createClientFor(String uid, String nickname, String manufacturer, String product, ClientType type,
-                           String versionName, int versionCode, int protocolVersion, int protocolVersionMin);
+    @NotNull Client createClientFor(@NotNull String uid, @NotNull String nickname, @NotNull String manufacturer,
+                                    @NotNull String product, @NotNull ClientType type, @NotNull String versionName,
+                                    int versionCode, int protocolVersion, int protocolVersionMin);
 
     /**
      * todo: Should this really exist? This user can avoid using. The benefit may be to use it as a factory.
@@ -188,8 +178,8 @@ public interface PersistenceProvider
      * @param type      Points to {@link TransferItem#getItemType()}
      * @return The transfer item instance.
      */
-    TransferItem createTransferItemFor(long groupId, long id, String name, String mimeType, long size, String directory,
-                                       TransferItem.Type type);
+    @NotNull TransferItem createTransferItemFor(long groupId, long id, @NotNull String name, @NotNull String mimeType,
+                                                long size, @Nullable String directory, @NotNull TransferItem.Type type);
 
     /**
      * Returns this client's certificate.
@@ -198,14 +188,14 @@ public interface PersistenceProvider
      *
      * @return This client's certificate.
      */
-    X509Certificate getCertificate();
+    @NotNull X509Certificate getCertificate();
 
     /**
      * This will return the {@link Client} instance representing this client.
      *
      * @return The client instance.
      */
-    Client getClient();
+    @NotNull Client getClient();
 
     /**
      * Finds and returns a known client using its unique identifier.
@@ -213,21 +203,21 @@ public interface PersistenceProvider
      * @param uid To associate with the client.
      * @return The associated client or null if there weren't one.
      */
-    Client getClientFor(String uid);
+    @Nullable Client getClientFor(@NotNull String uid);
 
     /**
      * This client's user-friendly optional nickname.
      *
      * @return The nickname.
      */
-    String getClientNickname();
+    @NotNull String getClientNickname();
 
     /**
      * Returns the avatar for this client.
      *
      * @return The bitmap data for the avatar if exists, or zero-length byte array if it doesn't.
      */
-    byte[] getClientPicture();
+    byte @Nullable [] getClientPicture();
 
     /**
      * Returns the given client's picture.
@@ -238,7 +228,7 @@ public interface PersistenceProvider
      * @param client For which the avatar will be provided.
      * @return The bitmap data for the avatar if exists, or zero-length byte array if it doesn't.
      */
-    byte[] getClientPictureFor(Client client);
+    byte @Nullable [] getClientPictureFor(@NotNull Client client);
 
     /**
      * This should return the unique identifier for this client. It should be both unique and persistent.
@@ -247,7 +237,7 @@ public interface PersistenceProvider
      *
      * @return The unique identifier for this client.
      */
-    String getClientUid();
+    @NotNull String getClientUid();
 
     /**
      * This will return the descriptor that points to the file that is received or sent.
@@ -257,10 +247,11 @@ public interface PersistenceProvider
      *
      * @param transferItem For which the descriptor will be generated.
      * @return The generated descriptor.
+     * @throws IOException When this fails to create a descriptor for this transfer item.
      * @see #openInputStream(StreamDescriptor)
      * @see #openOutputStream(StreamDescriptor)
      */
-    StreamDescriptor getDescriptorFor(TransferItem transferItem);
+    @NotNull StreamDescriptor getDescriptorFor(@NotNull TransferItem transferItem) throws IOException;
 
     /**
      * This will return the first valid item that that this side can receive.
@@ -268,7 +259,7 @@ public interface PersistenceProvider
      * @param groupId Points to {@link TransferItem#getItemGroupId()}.
      * @return The transfer receivable item or null if there are none.
      */
-    TransferItem getFirstReceivableItem(long groupId);
+    @Nullable TransferItem getFirstReceivableItem(long groupId);
 
     /**
      * This method is invoked when there is a new connection to the server.
@@ -288,14 +279,14 @@ public interface PersistenceProvider
      *
      * @return The private key.
      */
-    PrivateKey getPrivateKey();
+    @NotNull PrivateKey getPrivateKey();
 
     /**
      * The public key that belongs to this client.
      *
      * @return The public key.
      */
-    PublicKey getPublicKey();
+    @NotNull PublicKey getPublicKey();
 
     /**
      * Generates a cryptographically strong random number.
@@ -305,7 +296,7 @@ public interface PersistenceProvider
      * @return The secure random number instance.
      * @see #getSSLContextFor(Client)
      */
-    default SecureRandom getSecureRandom()
+    default @NotNull SecureRandom getSecureRandom()
     {
         return new SecureRandom();
     }
@@ -319,7 +310,7 @@ public interface PersistenceProvider
      * @return The SSL context.
      * @throws CertificateException If the generation of the context fails.
      */
-    default SSLContext getSSLContextFor(Client client) throws CertificateException
+    default @NotNull SSLContext getSSLContextFor(@NotNull Client client) throws CertificateException
     {
         try {
             // Get this client's private key
@@ -345,7 +336,7 @@ public interface PersistenceProvider
                 // Set up custom trust manager if we don't have the certificate for the peer.
                 X509TrustManager trustManager = new X509TrustManager()
                 {
-                    public java.security.cert.X509Certificate[] getAcceptedIssuers()
+                    public java.security.cert.X509Certificate @NotNull [] getAcceptedIssuers()
                     {
                         return new X509Certificate[0];
                     }
@@ -391,7 +382,7 @@ public interface PersistenceProvider
      * @see #saveRequestForInvalidationOfCredentials(String)
      * @see #approveInvalidationOfCredentials(Client)
      */
-    boolean hasRequestForInvalidationOfCredentials(String clientUid);
+    boolean hasRequestForInvalidationOfCredentials(@NotNull String clientUid);
 
     /**
      * Load transfer item for the given parameters.
@@ -403,8 +394,8 @@ public interface PersistenceProvider
      * @return The transfer item that points to the given parameters or null if there is no match.
      * @throws PersistenceException When the given parameters don't point to a valid item.
      */
-    TransferItem loadTransferItem(String clientUid, long groupId, long id, TransferItem.Type type)
-            throws PersistenceException;
+    @NotNull TransferItem loadTransferItem(@NotNull String clientUid, long groupId, long id,
+                                           @NotNull TransferItem.Type type) throws PersistenceException;
 
     /**
      * Open the input stream for the given descriptor.
@@ -413,7 +404,7 @@ public interface PersistenceProvider
      * @return The open input stream.
      * @throws IOException If an IO error occurs.
      */
-    InputStream openInputStream(StreamDescriptor descriptor) throws IOException;
+    @NotNull InputStream openInputStream(@NotNull StreamDescriptor descriptor) throws IOException;
 
     /**
      * Open the output stream for this descriptor.
@@ -422,7 +413,7 @@ public interface PersistenceProvider
      * @return The open output stream.
      * @throws IOException If an IO error occurs.
      */
-    OutputStream openOutputStream(StreamDescriptor descriptor) throws IOException;
+    @NotNull OutputStream openOutputStream(@NotNull StreamDescriptor descriptor) throws IOException;
 
     /**
      * Insert or update this client in the persistence database.
@@ -432,7 +423,7 @@ public interface PersistenceProvider
      * @param client   To save.
      * @param updating True if this should update the existing rows instead of inserting a new one.
      */
-    void persist(Client client, boolean updating);
+    void persist(@NotNull Client client, boolean updating);
 
     /**
      * Insert this client address in the persistence database, replacing the old instance if exists.
@@ -442,7 +433,7 @@ public interface PersistenceProvider
      *
      * @param clientAddress To save.
      */
-    void persist(ClientAddress clientAddress);
+    void persist(@NotNull ClientAddress clientAddress);
 
     /**
      * Update this transfer item in the persistence database.
@@ -452,7 +443,7 @@ public interface PersistenceProvider
      * @param clientUid That owns the item.
      * @param item      To save.
      */
-    void persist(String clientUid, TransferItem item);
+    void persist(@NotNull String clientUid, @NotNull TransferItem item);
 
     /**
      * Insert all the items into the persistence database.
@@ -462,17 +453,16 @@ public interface PersistenceProvider
      * @param clientUid That owns the items.
      * @param itemList  To save.
      */
-    void persist(String clientUid, List<? extends TransferItem> itemList);
+    void persist(@NotNull String clientUid, @NotNull List<? extends @NotNull TransferItem> itemList);
 
     /**
      * Alter the client picture as the given bitmap data.
      * <p>
      * This will always be invoked whether or not the bitmap is empty.
-     *
-     * @param clientUid The client that the picture belongs to.
+     *  @param clientUid The client that the picture belongs to.
      * @param bitmap    The bitmap data for the picture.
      */
-    void persistClientPicture(String clientUid, byte[] bitmap);
+    void persistClientPicture(@NotNull String clientUid, byte @NotNull [] bitmap);
 
     /**
      * Revoke the current valid network PIN.
@@ -492,7 +482,7 @@ public interface PersistenceProvider
      * @see #hasRequestForInvalidationOfCredentials(String)
      * @see #approveInvalidationOfCredentials(Client)
      */
-    void saveRequestForInvalidationOfCredentials(String clientUid);
+    void saveRequestForInvalidationOfCredentials(@NotNull String clientUid);
 
     /**
      * Change the state of the given item.
@@ -510,7 +500,7 @@ public interface PersistenceProvider
      * @see #STATE_IN_PROGRESS
      * @see #STATE_DONE
      */
-    void setState(String clientUid, TransferItem item, int state, Exception e);
+    void setState(@NotNull String clientUid, @NotNull TransferItem item, int state, @Nullable Exception e);
 
     /**
      * Transform a given {@link TransferItem} list into its {@link JSONArray} equivalent.
@@ -523,7 +513,7 @@ public interface PersistenceProvider
      * @param transferItemList To convert.
      * @return The JSON equivalent of the same list.
      */
-    default JSONArray toJson(List<TransferItem> transferItemList)
+    default @NotNull JSONArray toJson(@NotNull List<@NotNull TransferItem> transferItemList)
     {
         JSONArray jsonArray = new JSONArray();
 
@@ -551,7 +541,8 @@ public interface PersistenceProvider
      * @return The list of items inflated from the JSON data.
      * @throws JSONException If the JSON data is corrupted or has missing/mismatch values.
      */
-    default List<TransferItem> toTransferItemList(long groupId, String jsonArray) throws JSONException
+    default @NotNull List<@NotNull TransferItem> toTransferItemList(long groupId, @NotNull String jsonArray)
+            throws JSONException
     {
         // TODO: 2/26/21 Should json array to transfer item list function exist?
         JSONArray json = new JSONArray(jsonArray);

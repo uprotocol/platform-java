@@ -18,6 +18,8 @@
 
 package org.monora.uprotocol.core.protocol.communication;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Thrown when any error that
  */
@@ -28,17 +30,17 @@ public class ProtocolException extends Exception
         super();
     }
 
-    public ProtocolException(String message)
+    public ProtocolException(@NotNull String message)
     {
         super(message);
     }
 
-    public ProtocolException(String message, Throwable cause)
+    public ProtocolException(@NotNull String message, @NotNull Throwable cause)
     {
         super(message, cause);
     }
 
-    public ProtocolException(Throwable cause)
+    public ProtocolException(@NotNull Throwable cause)
     {
         super(cause);
     }

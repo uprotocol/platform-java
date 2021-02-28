@@ -1,5 +1,7 @@
 package org.monora.uprotocol.core.protocol.communication;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.monora.uprotocol.core.protocol.Client;
 
 /**
@@ -9,7 +11,7 @@ import org.monora.uprotocol.core.protocol.Client;
  */
 public class SecurityException extends CommunicationException
 {
-    public SecurityException(Client client, Throwable cause)
+    public SecurityException(@NotNull Client client, @Nullable Throwable cause)
     {
         super(client, cause);
 

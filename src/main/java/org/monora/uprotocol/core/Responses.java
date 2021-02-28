@@ -1,5 +1,6 @@
 package org.monora.uprotocol.core;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.session.ActiveConnection;
@@ -29,7 +30,7 @@ public class Responses
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException If the response has an error description
      */
-    public static void checkError(Client client, JSONObject jsonObject) throws JSONException, ProtocolException
+    public static void checkError(Client client, @NotNull JSONObject jsonObject) throws JSONException, ProtocolException
     {
         if (jsonObject.has(Keyword.ERROR)) {
             final String errorCode = jsonObject.getString(Keyword.ERROR);
@@ -59,7 +60,7 @@ public class Responses
      * @return The error code that represents the given exception.
      * @throws ProtocolException If the error is undefined.
      */
-    public static String getError(Exception exception) throws ProtocolException
+    public static @NotNull String getError(@NotNull Exception exception) throws ProtocolException
     {
         try {
             throw exception;
@@ -94,7 +95,7 @@ public class Responses
      * @return True if the result is positive.
      * @throws JSONException If the object does not contain a result.
      */
-    public static boolean getResult(JSONObject jsonObject) throws JSONException
+    public static boolean getResult(@NotNull JSONObject jsonObject) throws JSONException
     {
         return jsonObject.getBoolean(Keyword.RESULT);
     }
@@ -106,7 +107,7 @@ public class Responses
      * @param errorCode  To insert.
      * @throws JSONException If something goes wrong when inserting into the JSON object.
      */
-    public static void insertError(JSONObject jsonObject, String errorCode) throws JSONException
+    public static void insertError(@NotNull JSONObject jsonObject, @NotNull String errorCode) throws JSONException
     {
         jsonObject.put(Keyword.ERROR, errorCode);
     }
@@ -119,7 +120,8 @@ public class Responses
      * @throws JSONException     If something goes wrong when inserting into the JSON object.
      * @throws ProtocolException With the cause exception if the error is not known.
      */
-    public static void insertError(JSONObject jsonObject, Exception exception) throws JSONException, ProtocolException
+    public static void insertError(@NotNull JSONObject jsonObject, @NotNull Exception exception) throws JSONException,
+            ProtocolException
     {
         insertError(jsonObject, getError(exception));
     }
@@ -132,7 +134,7 @@ public class Responses
      * @throws JSONException If inserting the result into the JSON object fails.
      * @see #receiveResult(ActiveConnection, Client)
      */
-    public static void insertResult(JSONObject jsonObject, boolean result) throws JSONException
+    public static void insertResult(@NotNull JSONObject jsonObject, boolean result) throws JSONException
     {
         jsonObject.put(Keyword.RESULT, result);
     }
@@ -151,7 +153,7 @@ public class Responses
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public static JSONObject receiveChecked(ActiveConnection activeConnection, Client client) throws IOException,
+    public static JSONObject receiveChecked(@NotNull ActiveConnection activeConnection, Client client) throws IOException,
             JSONException, ProtocolException
     {
         JSONObject jsonObject = activeConnection.receive().getAsJson();
@@ -169,8 +171,8 @@ public class Responses
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public static boolean receiveResult(ActiveConnection activeConnection, Client client) throws IOException,
-            JSONException, ProtocolException
+    public static boolean receiveResult(@NotNull ActiveConnection activeConnection, @NotNull Client client)
+            throws IOException, JSONException, ProtocolException
     {
         return getResult(receiveChecked(activeConnection, client));
     }
@@ -185,7 +187,7 @@ public class Responses
      * @throws JSONException If something goes wrong when creating JSON object.
      * @see #receiveResult(ActiveConnection, Client)
      */
-    public static void send(ActiveConnection activeConnection, boolean result, JSONObject jsonObject)
+    public static void send(@NotNull ActiveConnection activeConnection, boolean result, @NotNull JSONObject jsonObject)
             throws JSONException, IOException
     {
         insertResult(jsonObject, result);
@@ -203,8 +205,8 @@ public class Responses
      * @throws ProtocolException With the cause exception if the error is undefined.
      * @see #receiveChecked(ActiveConnection, Client)
      */
-    public static void send(ActiveConnection activeConnection, Exception exception, JSONObject jsonObject)
-            throws IOException, JSONException, ProtocolException
+    public static void send(@NotNull ActiveConnection activeConnection, Exception exception,
+                            @NotNull JSONObject jsonObject) throws IOException, JSONException, ProtocolException
     {
         send(activeConnection, getError(exception), jsonObject);
     }
@@ -220,8 +222,8 @@ public class Responses
      * @throws JSONException If something goes wrong when creating JSON object.
      * @see #receiveChecked(ActiveConnection, Client)
      */
-    public static void send(ActiveConnection activeConnection, String errorCode, JSONObject jsonObject)
-            throws IOException, JSONException
+    public static void send(@NotNull ActiveConnection activeConnection, @NotNull String errorCode,
+                            @NotNull JSONObject jsonObject) throws IOException, JSONException
     {
         insertError(jsonObject, errorCode);
         send(activeConnection, false, jsonObject);

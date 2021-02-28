@@ -1,5 +1,7 @@
 package org.monora.uprotocol.core.protocol;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.net.InetAddress;
 
 /**
@@ -16,7 +18,7 @@ public interface ClientAddress
      * @return The internet address.
      * @see #setClientAddress(InetAddress)
      */
-    InetAddress getClientAddress();
+    @NotNull InetAddress getClientAddress();
 
     /**
      * The last usage time of this address.
@@ -32,7 +34,7 @@ public interface ClientAddress
      * @return The client uid.
      * @see #setClientAddressOwnerUid(String)
      */
-    String getClientAddressOwnerUid();
+    @NotNull String getClientAddressOwnerUid();
 
     /**
      * Change the address of this instance.
@@ -40,7 +42,7 @@ public interface ClientAddress
      * @param inetAddress The internet address.
      * @see #getClientAddress()
      */
-    void setClientAddress(InetAddress inetAddress);
+    void setClientAddress(@NotNull InetAddress inetAddress);
 
     /**
      * Change the time that this address was used.
@@ -57,5 +59,5 @@ public interface ClientAddress
      * @see #getClientAddressLastUsageTime()
      * @see System#currentTimeMillis()
      */
-    void setClientAddressOwnerUid(String clientUid);
+    void setClientAddressOwnerUid(@NotNull String clientUid);
 }

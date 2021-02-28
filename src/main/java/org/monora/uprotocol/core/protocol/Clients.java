@@ -1,5 +1,7 @@
 package org.monora.uprotocol.core.protocol;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 
@@ -16,7 +18,7 @@ public class Clients
      * @param from The instance to copy from.
      * @param to   The instance to copy to.
      */
-    public static void copy(Client from, Client to)
+    public static void copy(@NotNull Client from, @NotNull Client to)
     {
         fill(to, from.getClientUid(), from.getClientCertificate(), from.getClientNickname(), from.getClientManufacturer(),
                 from.getClientProduct(), from.getClientType(), from.getClientVersionName(), from.getClientVersionCode(),
@@ -41,8 +43,9 @@ public class Clients
      * @param isTrusted          Whether the client is trusted or not.
      * @param isBlocked          Whether the client is blocked or not.
      */
-    public static void fill(Client client, String uid, X509Certificate certificate, String nickname, String manufacturer,
-                            String product, ClientType clientType, String versionName, int versionCode,
+    public static void fill(@NotNull Client client, @NotNull String uid, @Nullable X509Certificate certificate,
+                            @NotNull String nickname, @NotNull String manufacturer, @NotNull String product,
+                            @NotNull ClientType clientType, @NotNull String versionName, int versionCode,
                             int protocolVersion, int protocolVersionMin, boolean isTrusted, boolean isBlocked)
     {
         client.setClientUid(uid);
@@ -67,7 +70,7 @@ public class Clients
      * @return The known client instance.
      * @throws PersistenceException If the client isn't known yet.
      */
-    public static Client getClientOrFail(PersistenceProvider persistenceProvider, String uid)
+    public static @NotNull Client getClientOrFail(@NotNull PersistenceProvider persistenceProvider, @NotNull String uid)
             throws PersistenceException
     {
         Client client = persistenceProvider.getClientFor(uid);

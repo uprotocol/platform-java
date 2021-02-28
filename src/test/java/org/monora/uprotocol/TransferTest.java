@@ -1,11 +1,11 @@
 package org.monora.uprotocol;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.io.StreamDescriptor;
-import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
@@ -29,8 +29,8 @@ import java.util.List;
  */
 public class TransferTest extends DefaultTestBase
 {
-    private TransferItem demoTransferItem1;
-    private TransferItem demoTransferItem2;
+    private @NotNull TransferItem demoTransferItem1;
+    private @NotNull TransferItem demoTransferItem2;
 
     private final static byte[] data1 = "This is the first demo data".getBytes();
     private final static byte[] data2 = "This is the second demo data".getBytes();
@@ -142,9 +142,12 @@ public class TransferTest extends DefaultTestBase
 
     @Test
     public void senderStartsTransferIfTrusted() throws IOException, InterruptedException, ProtocolException,
-            PersistenceException, CertificateException
+            CertificateException
     {
         Client secondaryOnPrimary = primaryPersistence.getClientFor(secondaryPersistence.getClientUid());
+
+        Assert.assertNotNull(secondaryOnPrimary);
+
         secondaryOnPrimary.setClientTrusted(true);
         primaryPersistence.persist(secondaryOnPrimary, true);
 

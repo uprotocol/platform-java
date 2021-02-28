@@ -1,5 +1,6 @@
 package org.monora.uprotocol.core.protocol;
 
+import org.jetbrains.annotations.NotNull;
 import org.monora.coolsocket.core.session.ActiveConnection;
 
 import java.io.IOException;
@@ -22,7 +23,7 @@ public interface ConnectionFactory
      * @return The class representing the connection.
      * @throws IOException If an IO related error occurs.
      */
-    ActiveConnection openConnection(InetAddress address) throws IOException;
+    @NotNull ActiveConnection openConnection(@NotNull InetAddress address) throws IOException;
 
     /**
      * Invoked before establishing a secure connection with a remote client.
@@ -33,7 +34,6 @@ public interface ConnectionFactory
      *
      * @param supportedCipherSuites  You can enable.
      * @param enabledCipherSuiteList To which you can add more cipher suites which will be enabled during the SSL
-     *                               communication.
      */
-    void enableCipherSuites(String[] supportedCipherSuites, List<String> enabledCipherSuiteList);
+    void enableCipherSuites(String @NotNull [] supportedCipherSuites, List<@NotNull String> enabledCipherSuiteList);
 }

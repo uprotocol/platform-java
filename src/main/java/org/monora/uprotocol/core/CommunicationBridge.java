@@ -18,6 +18,8 @@
 
 package org.monora.uprotocol.core;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.session.ActiveConnection;
@@ -45,7 +47,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import static org.monora.uprotocol.core.spec.v1.Config.PORT_UPROTOCOL;
 import static org.monora.uprotocol.core.spec.v1.Config.TIMEOUT_SOCKET_DEFAULT;
@@ -65,8 +66,6 @@ public class CommunicationBridge implements Closeable
 
     private final ClientAddress clientAddress;
 
-    private Logger logger;
-
     /**
      * Create a new instance.
      * <p>
@@ -77,8 +76,9 @@ public class CommunicationBridge implements Closeable
      * @param client              The remote that this client has connected to.
      * @param clientAddress       Where the remote client resides on the network.
      */
-    public CommunicationBridge(PersistenceProvider persistenceProvider, ActiveConnection activeConnection,
-                               Client client, ClientAddress clientAddress)
+    public CommunicationBridge(@NotNull PersistenceProvider persistenceProvider,
+                               @NotNull ActiveConnection activeConnection,
+                               @NotNull Client client, @NotNull ClientAddress clientAddress)
     {
         this.persistenceProvider = persistenceProvider;
         this.activeConnection = activeConnection;
@@ -130,9 +130,9 @@ public class CommunicationBridge implements Closeable
      * @throws DifferentRemoteClientException If the connected client is different from the one that was provided.
      * @throws CertificateException           If an error related to encryption or authentication occurs.
      */
-    public static CommunicationBridge connect(ConnectionFactory connectionFactory,
-                                              PersistenceProvider persistenceProvider, List<InetAddress> addressList,
-                                              String clientUid, int pin) throws JSONException, IOException,
+    public static @NotNull CommunicationBridge connect(@NotNull ConnectionFactory connectionFactory,
+                                                       @NotNull PersistenceProvider persistenceProvider, @NotNull List<InetAddress> addressList,
+                                                       String clientUid, int pin) throws JSONException, IOException,
             ProtocolException, CertificateException
     {
         if (addressList.size() < 1)
@@ -141,7 +141,7 @@ public class CommunicationBridge implements Closeable
         for (InetAddress address : addressList) {
             try {
                 return connect(connectionFactory, persistenceProvider, address, clientUid, pin);
-            } catch (IOException | DifferentRemoteClientException ignored) {
+            } catch (@NotNull IOException | DifferentRemoteClientException ignored) {
             }
         }
 
@@ -169,9 +169,9 @@ public class CommunicationBridge implements Closeable
      * @throws DifferentRemoteClientException If the connected client is different from the one that was provided
      * @throws CertificateException           If an error related to encryption or authentication occurs.
      */
-    public static CommunicationBridge connect(ConnectionFactory connectionFactory,
-                                              PersistenceProvider persistenceProvider, InetAddress inetAddress,
-                                              String clientUid, int pin)
+    public static @NotNull CommunicationBridge connect(@NotNull ConnectionFactory connectionFactory,
+                                                       @NotNull PersistenceProvider persistenceProvider, @NotNull InetAddress inetAddress,
+                                                       @Nullable String clientUid, int pin)
             throws IOException, JSONException, ProtocolException, CertificateException
     {
         ActiveConnection activeConnection = connectionFactory.openConnection(inetAddress);
@@ -195,8 +195,8 @@ public class CommunicationBridge implements Closeable
         return new CommunicationBridge(persistenceProvider, activeConnection, client, clientAddress);
     }
 
-    static void convertToSSL(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
-                             ActiveConnection activeConnection, Client client, boolean isClient)
+    static void convertToSSL(@NotNull ConnectionFactory connectionFactory, @NotNull PersistenceProvider persistenceProvider,
+                             @NotNull ActiveConnection activeConnection, @NotNull Client client, boolean isClient)
             throws IOException, CommunicationException, CertificateException
     {
         Socket socket = activeConnection.getSocket();
@@ -255,7 +255,7 @@ public class CommunicationBridge implements Closeable
      *
      * @return The active connection instance.
      */
-    public ActiveConnection getActiveConnection()
+    public @NotNull ActiveConnection getActiveConnection()
     {
         return activeConnection;
     }
@@ -265,7 +265,7 @@ public class CommunicationBridge implements Closeable
      *
      * @return The persistence provider instance.
      */
-    public PersistenceProvider getPersistenceProvider()
+    public @NotNull PersistenceProvider getPersistenceProvider()
     {
         return persistenceProvider;
     }
@@ -275,7 +275,7 @@ public class CommunicationBridge implements Closeable
      *
      * @return The connected remote client.
      */
-    public Client getRemoteClient()
+    public @NotNull Client getRemoteClient()
     {
         return client;
     }
@@ -285,7 +285,7 @@ public class CommunicationBridge implements Closeable
      *
      * @return The client address.
      */
-    public ClientAddress getRemoteClientAddress()
+    public @NotNull ClientAddress getRemoteClientAddress()
     {
         return clientAddress;
     }
@@ -297,7 +297,7 @@ public class CommunicationBridge implements Closeable
      * @return The object representing a valid connection.
      * @throws IOException If an IO error occurs.
      */
-    public static ActiveConnection openConnection(InetAddress inetAddress) throws IOException
+    public static @NotNull ActiveConnection openConnection(@NotNull InetAddress inetAddress) throws IOException
     {
         return ActiveConnection.connect(new InetSocketAddress(inetAddress, PORT_UPROTOCOL), TIMEOUT_SOCKET_DEFAULT);
     }
@@ -338,8 +338,8 @@ public class CommunicationBridge implements Closeable
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public boolean requestFileTransfer(long groupId, List<TransferItem> transferItemList) throws JSONException, IOException,
-            ProtocolException
+    public boolean requestFileTransfer(long groupId, @NotNull List<@NotNull TransferItem> transferItemList)
+            throws JSONException, IOException, ProtocolException
     {
         send(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER)
@@ -367,8 +367,8 @@ public class CommunicationBridge implements Closeable
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public boolean requestFileTransferStart(long groupId, TransferItem.Type type) throws JSONException, IOException,
-            ProtocolException
+    public boolean requestFileTransferStart(long groupId, @NotNull TransferItem.Type type) throws JSONException,
+            IOException, ProtocolException
     {
         send(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER_JOB)
@@ -406,7 +406,7 @@ public class CommunicationBridge implements Closeable
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public boolean requestTextTransfer(String text) throws JSONException, IOException, ProtocolException
+    public boolean requestTextTransfer(@NotNull String text) throws JSONException, IOException, ProtocolException
     {
         send(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER_TEXT)
@@ -428,7 +428,7 @@ public class CommunicationBridge implements Closeable
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public JSONObject receiveChecked() throws IOException, JSONException, ProtocolException
+    public @NotNull JSONObject receiveChecked() throws IOException, JSONException, ProtocolException
     {
         return Responses.receiveChecked(getActiveConnection(), getRemoteClient());
     }
@@ -460,7 +460,7 @@ public class CommunicationBridge implements Closeable
      * @throws IOException   If an IO error occurs.
      * @throws JSONException If something goes wrong when creating JSON object.
      */
-    public void send(boolean result, JSONObject jsonObject) throws JSONException, IOException
+    public void send(boolean result, @NotNull JSONObject jsonObject) throws JSONException, IOException
     {
         Responses.send(getActiveConnection(), result, jsonObject);
     }
@@ -490,7 +490,8 @@ public class CommunicationBridge implements Closeable
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException With the cause exception if the error is not known.
      */
-    public void send(Exception exception, JSONObject jsonObject) throws IOException, JSONException, ProtocolException
+    public void send(@NotNull Exception exception, @NotNull JSONObject jsonObject) throws IOException, JSONException,
+            ProtocolException
     {
         Responses.send(getActiveConnection(), exception, jsonObject);
     }
@@ -507,7 +508,7 @@ public class CommunicationBridge implements Closeable
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException With the cause exception if the error is not known.
      */
-    public void send(Exception exception) throws IOException, JSONException, ProtocolException
+    public void send(@NotNull Exception exception) throws IOException, JSONException, ProtocolException
     {
         send(exception, new JSONObject());
     }
@@ -522,7 +523,7 @@ public class CommunicationBridge implements Closeable
      * @throws IOException   If an IO error occurs.
      * @throws JSONException If something goes wrong when creating JSON object.
      */
-    public void send(String errorCode, JSONObject jsonObject) throws IOException, JSONException
+    public void send(@NotNull String errorCode, @NotNull JSONObject jsonObject) throws IOException, JSONException
     {
         Responses.send(getActiveConnection(), errorCode, jsonObject);
     }
@@ -538,7 +539,7 @@ public class CommunicationBridge implements Closeable
      * @throws IOException   If an IO error occurs.
      * @throws JSONException If something goes wrong when creating JSON object.
      */
-    public void send(String errorCode) throws IOException, JSONException
+    public void send(@NotNull String errorCode) throws IOException, JSONException
     {
         send(errorCode, new JSONObject());
     }

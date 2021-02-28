@@ -1,5 +1,7 @@
 package org.monora.uprotocol.core.transfer;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.monora.uprotocol.core.spec.v1.Keyword;
 
 /**
@@ -13,7 +15,7 @@ public interface TransferItem
      * @return The relative path.
      * @see #setItemDirectory(String)
      */
-    String getItemDirectory();
+    @Nullable String getItemDirectory();
 
     /**
      * The group id of the item that specifies the group it belongs to.
@@ -47,7 +49,7 @@ public interface TransferItem
      * @return The MIME-type.
      * @see #setItemMimeType(String)
      */
-    String getItemMimeType();
+    @NotNull String getItemMimeType();
 
     /**
      * The name of this item.
@@ -55,7 +57,7 @@ public interface TransferItem
      * @return The item name.
      * @see #setItemName(String)
      */
-    String getItemName();
+    @NotNull String getItemName();
 
     /**
      * The length (size) of the item in bytes.
@@ -68,16 +70,16 @@ public interface TransferItem
      * The type of this item showing whether it is an incoming or outgoing transfer.
      *
      * @return The item type.
-     * @see #setItemType(TransferItem.Type)
+     * @see #setItemType(Type)
      */
-    TransferItem.Type getItemType();
+    @NotNull Type getItemType();
 
     /**
      * Sets the relative path that this item should be in.
      *
      * @param directory Or the relative path that the item should be in.
      */
-    void setItemDirectory(String directory);
+    void setItemDirectory(@Nullable String directory);
 
     /**
      * Sets the group id that this item belongs to.
@@ -103,7 +105,7 @@ public interface TransferItem
      * @param name Of the item.
      * @see #getItemName()
      */
-    void setItemName(String name);
+    void setItemName(@NotNull String name);
 
     /**
      * Sets the last time this item was interacted with
@@ -120,7 +122,7 @@ public interface TransferItem
      * @param mimeType Of the item.
      * @see #getItemMimeType()
      */
-    void setItemMimeType(String mimeType);
+    void setItemMimeType(@NotNull String mimeType);
 
     /**
      * The total length (size) of the item.
@@ -136,7 +138,7 @@ public interface TransferItem
      * @param type Of the item.
      * @see #getItemType()
      */
-    void setItemType(TransferItem.Type type);
+    void setItemType(@NotNull Type type);
 
     /**
      * The enum for the type of the transfer item.
@@ -163,7 +165,7 @@ public interface TransferItem
             this.protocolValue = protocolValue;
         }
 
-        public static Type from(String value)
+        public static @NotNull Type from(String value)
         {
             for (Type type : values())
                 if (type.protocolValue.equals(value))

@@ -1,5 +1,6 @@
 package org.monora.uprotocol.core;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.CoolSocket;
@@ -32,11 +33,11 @@ import java.io.IOException;
  */
 public class TransportSession extends CoolSocket
 {
-    private final ConnectionFactory connectionFactory;
+    private final @NotNull ConnectionFactory connectionFactory;
 
-    private final PersistenceProvider persistenceProvider;
+    private final @NotNull PersistenceProvider persistenceProvider;
 
-    private final TransportSeat transportSeat;
+    private final @NotNull TransportSeat transportSeat;
 
     /**
      * Create a new session instance.
@@ -45,8 +46,8 @@ public class TransportSession extends CoolSocket
      * @param persistenceProvider Where persistent data will be stored.
      * @param transportSeat       Which will manage the requests and do appropriate actions.
      */
-    public TransportSession(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
-                            TransportSeat transportSeat)
+    public TransportSession(@NotNull ConnectionFactory connectionFactory,
+                            @NotNull PersistenceProvider persistenceProvider, @NotNull TransportSeat transportSeat)
     {
         super(Config.PORT_UPROTOCOL);
 
@@ -57,7 +58,7 @@ public class TransportSession extends CoolSocket
     }
 
     @Override
-    public void onConnected(ActiveConnection activeConnection)
+    public void onConnected(@NotNull ActiveConnection activeConnection)
     {
         final JSONObject clientIndex = persistenceProvider.clientAsJson(0);
 
@@ -106,9 +107,9 @@ public class TransportSession extends CoolSocket
         }
     }
 
-    private void handleRequest(CommunicationBridge bridge, Client client, ClientAddress clientAddress, boolean hasPin,
-                               JSONObject response) throws JSONException, IOException,
-            PersistenceException, ProtocolException
+    private void handleRequest(@NotNull CommunicationBridge bridge, @NotNull Client client,
+                               @NotNull ClientAddress clientAddress, boolean hasPin, @NotNull JSONObject response)
+            throws JSONException, IOException, PersistenceException, ProtocolException
     {
         switch (response.getString(Keyword.REQUEST)) {
             case (Keyword.REQUEST_TRANSFER): {

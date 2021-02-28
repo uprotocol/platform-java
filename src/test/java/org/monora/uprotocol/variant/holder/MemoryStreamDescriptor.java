@@ -1,5 +1,6 @@
 package org.monora.uprotocol.variant.holder;
 
+import org.jetbrains.annotations.NotNull;
 import org.monora.uprotocol.core.io.StreamDescriptor;
 import org.monora.uprotocol.core.transfer.TransferItem;
 
@@ -11,17 +12,17 @@ import java.io.ByteArrayOutputStream;
  */
 public class MemoryStreamDescriptor implements StreamDescriptor
 {
-    public final ByteArrayOutputStream data;
+    public final @NotNull ByteArrayOutputStream data;
 
-    public final TransferItem transferItem;
+    public final @NotNull TransferItem transferItem;
 
-    MemoryStreamDescriptor(TransferItem transferItem)
+    MemoryStreamDescriptor(@NotNull TransferItem transferItem)
     {
         this.transferItem = transferItem;
         this.data = new ByteArrayOutputStream((int) transferItem.getItemSize());
     }
 
-    public static MemoryStreamDescriptor newInstance(TransferItem transferItem)
+    public static @NotNull MemoryStreamDescriptor newInstance(@NotNull TransferItem transferItem)
     {
         if (transferItem.getItemSize() < 0 || transferItem.getItemSize() >= Short.MAX_VALUE)
             throw new ArrayIndexOutOfBoundsException("Transfer item size cannot be larger than " + Short.MAX_VALUE

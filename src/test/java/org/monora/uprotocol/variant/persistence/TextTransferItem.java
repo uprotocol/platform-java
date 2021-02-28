@@ -1,16 +1,17 @@
 package org.monora.uprotocol.variant.persistence;
 
+import org.jetbrains.annotations.NotNull;
 import org.monora.uprotocol.core.protocol.Client;
 
 public class TextTransferItem
 {
-    public final Client sender;
+    public final @NotNull Client sender;
 
-    public final String text;
+    public final @NotNull String text;
 
     public final long time;
 
-    public TextTransferItem(Client sender, String text, long time)
+    public TextTransferItem(@NotNull Client sender, @NotNull String text, long time)
     {
         this.sender = sender;
         this.text = text;

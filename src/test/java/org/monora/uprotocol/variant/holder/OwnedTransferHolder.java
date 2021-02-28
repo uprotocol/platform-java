@@ -1,24 +1,20 @@
 package org.monora.uprotocol.variant.holder;
 
+import org.jetbrains.annotations.NotNull;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.transfer.TransferItem;
 
 public class OwnedTransferHolder
 {
-    public TransferItem item;
+    public @NotNull TransferItem item;
 
-    public String clientUid;
+    public @NotNull String clientUid;
 
     public int state = PersistenceProvider.STATE_PENDING;
 
-    public OwnedTransferHolder(TransferItem item)
+    public OwnedTransferHolder(@NotNull TransferItem item, @NotNull String clientUid)
     {
         this.item = item;
-    }
-
-    public OwnedTransferHolder(TransferItem item, String clientUid)
-    {
-        this(item);
         this.clientUid = clientUid;
     }
 }

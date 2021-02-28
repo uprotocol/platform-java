@@ -1,5 +1,6 @@
 package org.monora.uprotocol.core;
 
+import org.jetbrains.annotations.NotNull;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
@@ -36,7 +37,8 @@ public interface TransportSeat
      *                              some permissions enabled in the database).
      * @throws ProtocolException    If the remote doesn't have satisfactory permissions or sent invalid values.
      */
-    void beginFileTransfer(CommunicationBridge bridge, Client client, long groupId, TransferItem.Type type)
+    void beginFileTransfer(@NotNull CommunicationBridge bridge, @NotNull Client client, long groupId,
+                           @NotNull TransferItem.Type type)
             throws PersistenceException, ProtocolException;
 
     /**
@@ -49,7 +51,7 @@ public interface TransportSeat
      * @return True if the request will be fulfilled.
      * @see CommunicationBridge#requestAcquaintance()
      */
-    boolean handleAcquaintanceRequest(Client client, ClientAddress clientAddress);
+    boolean handleAcquaintanceRequest(@NotNull Client client, @NotNull ClientAddress clientAddress);
 
     /**
      * Handle the file transfer request.
@@ -67,7 +69,7 @@ public interface TransportSeat
      * @throws PersistenceException If anything related to handling of the persistent data goes wrong.
      * @throws ProtocolException    If something related to permissions or similar goes wrong.
      */
-    void handleFileTransferRequest(Client client, boolean hasPin, long groupId, String jsonArray)
+    void handleFileTransferRequest(@NotNull Client client, boolean hasPin, long groupId, @NotNull String jsonArray)
             throws PersistenceException, ProtocolException;
 
     /**
@@ -80,7 +82,7 @@ public interface TransportSeat
      * @param groupId    That points to the transfer request.
      * @param isAccepted True if the remote has accepted the request.
      */
-    void handleFileTransferState(Client client, long groupId, boolean isAccepted);
+    void handleFileTransferState(@NotNull Client client, long groupId, boolean isAccepted);
 
     /**
      * Handle the text transfer request.
@@ -88,7 +90,7 @@ public interface TransportSeat
      * @param client That sent the request.
      * @param text   That has been received.
      */
-    void handleTextTransfer(Client client, String text);
+    void handleTextTransfer(@NotNull Client client, @NotNull String text);
 
     /**
      * Check whether there is an ongoing transfer for the given parameters.
@@ -99,7 +101,7 @@ public interface TransportSeat
      * @param type      To limit the type of the transfer as in {@link TransferItem#getItemType()}.
      * @return True if there is an ongoing transfer for the given parameters.
      */
-    boolean hasOngoingTransferFor(long groupId, String clientUid, TransferItem.Type type);
+    boolean hasOngoingTransferFor(long groupId, @NotNull String clientUid, @NotNull TransferItem.Type type);
 
     /**
      * Check whether there is an indexing process for the given transfer id.
@@ -123,6 +125,5 @@ public interface TransportSeat
      * @param client That has accessed the server.
      * @see PersistenceProvider#saveRequestForInvalidationOfCredentials(String)
      */
-    void notifyClientCredentialsChanged(Client client);
-
+    void notifyClientCredentialsChanged(@NotNull Client client);
 }

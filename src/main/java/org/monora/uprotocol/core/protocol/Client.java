@@ -1,5 +1,8 @@
 package org.monora.uprotocol.core.protocol;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.security.cert.X509Certificate;
 
 /**
@@ -15,7 +18,7 @@ public interface Client
      * @return The client's X.509 certificate used for authentication and encryption.
      * @see #setClientCertificate(X509Certificate)
      */
-    X509Certificate getClientCertificate();
+    @Nullable X509Certificate getClientCertificate();
 
     /**
      * The last time contacted with this client.
@@ -32,7 +35,7 @@ public interface Client
      * @see #setClientManufacturer(String)
      * @see #getClientProduct()
      */
-    String getClientManufacturer();
+    @NotNull String getClientManufacturer();
 
     /**
      * The preferred nickname for the client.
@@ -40,7 +43,7 @@ public interface Client
      * @return The client's nickname of choice.
      * @see #setClientNickname(String)
      */
-    String getClientNickname();
+    @NotNull String getClientNickname();
 
     /**
      * The product is an extra information under {@link #getClientManufacturer()}.
@@ -49,7 +52,7 @@ public interface Client
      * @see #setClientProduct(String)
      * @see #getClientManufacturer()
      */
-    String getClientProduct();
+    @NotNull String getClientProduct();
 
     /**
      * The protocol version the specific version that the client was designed to work with.
@@ -75,7 +78,7 @@ public interface Client
      * @return The type of device that the client runs on.
      * @see #setClientType(ClientType)
      */
-    ClientType getClientType();
+    @NotNull ClientType getClientType();
 
     /**
      * Represents the unique identifier for the client.
@@ -83,7 +86,7 @@ public interface Client
      * @return The unique identifier of the client.
      * @see #setClientUid(String)
      */
-    String getClientUid();
+     @NotNull String getClientUid();
 
     /**
      * The client specific version code.
@@ -105,7 +108,7 @@ public interface Client
      * @see #setClientVersionName(String)
      * @see #getClientProtocolVersion()
      */
-    String getClientVersionName();
+    @NotNull String getClientVersionName();
 
     /**
      * Whether or not the (remote) client is blocked on this client.
@@ -147,7 +150,7 @@ public interface Client
      * @param certificate The certificate.
      * @see #getClientCertificate()
      */
-    void setClientCertificate(X509Certificate certificate);
+    void setClientCertificate(@Nullable X509Certificate certificate);
 
     /**
      * Set the last usage time of this client.
@@ -172,7 +175,7 @@ public interface Client
      * @see #getClientManufacturer()
      * @see #setClientProduct(String)
      */
-    void setClientManufacturer(String manufacturer);
+    void setClientManufacturer(@NotNull String manufacturer);
 
     /**
      * Set the nickname of this client.
@@ -180,7 +183,7 @@ public interface Client
      * @param nickname To be set.
      * @see #getClientNickname()
      */
-    void setClientNickname(String nickname);
+    void setClientNickname(@NotNull String nickname);
 
     /**
      * Set the product name of this client (sub-brand)
@@ -189,7 +192,7 @@ public interface Client
      * @see #getClientProduct()
      * @see #setClientManufacturer(String)
      */
-    void setClientProduct(String product);
+    void setClientProduct(@NotNull String product);
 
     /**
      * Set the target protocol version of the client.
@@ -223,7 +226,7 @@ public interface Client
      * @param type That the client runs on.
      * @see #getClientType()
      */
-    void setClientType(ClientType type);
+    void setClientType(@NotNull ClientType type);
 
     /**
      * Set the client's unique identifier.
@@ -231,7 +234,7 @@ public interface Client
      * @param uid To be set.
      * @see #getClientUid()
      */
-    void setClientUid(String uid);
+    void setClientUid(@NotNull String uid);
 
     /**
      * Set the client's version code.
@@ -249,5 +252,5 @@ public interface Client
      * @see #getClientVersionName()
      * @see #setClientVersionCode(int)
      */
-    void setClientVersionName(String versionName);
+    void setClientVersionName(@NotNull String versionName);
 }

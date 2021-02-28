@@ -1,5 +1,7 @@
 package org.monora.uprotocol.variant.persistence;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.monora.uprotocol.core.io.StreamDescriptor;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
@@ -55,19 +57,20 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     private final List<MemoryStreamDescriptor> streamDescriptorList = new ArrayList<>();
     private final List<String> invalidationRequestList = new ArrayList<>();
     private final BouncyCastleProvider bouncyCastleProvider = new BouncyCastleProvider();
-    private final KeyFactory keyFactory;
+    private final @NotNull KeyFactory keyFactory;
 
-    private KeyPair keyPair;
-    private X509Certificate certificate;
+    private @NotNull KeyPair keyPair;
+    private @NotNull X509Certificate certificate;
 
-    private KeyPair keyPairBackup;
-    private X509Certificate certificateBackup;
+    private @Nullable KeyPair keyPairBackup;
+    private @Nullable X509Certificate certificateBackup;
 
     private int networkPin;
 
     public BasePersistenceProvider()
     {
-        regenerateSecrets();
+        keyPair = generateKeyPair();
+        certificate = generateCertificate();
 
         try {
             keyFactory = KeyFactory.getInstance("RSA");
@@ -76,20 +79,8 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         }
     }
 
-    public void regenerateSecrets()
+    private @NotNull X509Certificate generateCertificate()
     {
-        if (keyPairBackup == null)
-            keyPairBackup = keyPair;
-
-        if (certificateBackup == null)
-            certificateBackup = certificate;
-
-        try {
-            keyPair = KeyPairGenerator.getInstance("RSA").genKeyPair();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Could not generate PKI key pair.");
-        }
-
         try {
             // don't forget to change the locale to English in production environments when it is set to Persian to fix
             // the issue: https://issuetracker.google.com/issues/37095309
@@ -105,11 +96,32 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
                     BigInteger.ONE, Date.from(notBefore), Date.from(notAfter), nameBuilder.build(), keyPair.getPublic());
             ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
                     .setProvider(bouncyCastleProvider).build(keyPair.getPrivate());
-            certificate = new JcaX509CertificateConverter().setProvider(bouncyCastleProvider)
+            return new JcaX509CertificateConverter().setProvider(bouncyCastleProvider)
                     .getCertificate(certificateBuilder.build(contentSigner));
         } catch (Exception e) {
             throw new RuntimeException("Could not generate the certificate for this client.", e);
         }
+    }
+
+    public @NotNull KeyPair generateKeyPair()
+    {
+        try {
+            return KeyPairGenerator.getInstance("RSA").genKeyPair();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Could not generate PKI key pair.");
+        }
+    }
+
+    public void regenerateSecrets()
+    {
+        if (keyPairBackup == null)
+            keyPairBackup = keyPair;
+
+        if (certificateBackup == null)
+            certificateBackup = certificate;
+
+        keyPair = generateKeyPair();
+        certificate = generateCertificate();
     }
 
     public void restoreSecrets()
@@ -126,7 +138,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public boolean approveInvalidationOfCredentials(Client client)
+    public boolean approveInvalidationOfCredentials(@NotNull Client client)
     {
         synchronized (invalidationRequestList) {
             if (!invalidationRequestList.remove(client.getClientUid()))
@@ -136,12 +148,6 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         client.setClientCertificate(null);
         persist(client, true);
         return true;
-    }
-
-    @Override
-    public void broadcast()
-    {
-
     }
 
     @Override
@@ -159,29 +165,31 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public ClientAddress createClientAddressFor(InetAddress address, String clientUid)
+    public @NotNull ClientAddress createClientAddressFor(@NotNull InetAddress address, @NotNull String clientUid)
     {
         return new DefaultClientAddress(address, clientUid, System.currentTimeMillis());
     }
 
     @Override
-    public Client createClientFor(String uid, String nickname, String manufacturer,
-                                  String product, ClientType type, String versionName, int versionCode,
-                                  int protocolVersion, int protocolVersionMin)
+    public @NotNull Client createClientFor(@NotNull String uid, @NotNull String nickname, @NotNull String manufacturer,
+                                           @NotNull String product, @NotNull ClientType type,
+                                           @NotNull String versionName, int versionCode, int protocolVersion,
+                                           int protocolVersionMin)
     {
         return new DefaultClient(uid, nickname, manufacturer, product, type, versionName, versionCode,
                 protocolVersion, protocolVersionMin);
     }
 
     @Override
-    public TransferItem createTransferItemFor(long groupId, long id, String name, String mimeType, long size,
-                                              String directory, TransferItem.Type type)
+    public @NotNull TransferItem createTransferItemFor(long groupId, long id, @NotNull String name,
+                                                       @NotNull String mimeType, long size, @Nullable String directory,
+                                                       @NotNull TransferItem.Type type)
     {
         return new DefaultTransferItem(groupId, id, name, mimeType, size, directory, type);
     }
 
     @Override
-    public Client getClientFor(String clientUid)
+    public @Nullable Client getClientFor(@NotNull String clientUid)
     {
         synchronized (clientList) {
             for (Client persistentClient : clientList) {
@@ -195,13 +203,13 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public byte[] getClientPicture()
+    public byte @NotNull [] getClientPicture()
     {
         return new byte[0];
     }
 
     @Override
-    public byte[] getClientPictureFor(Client client)
+    public byte @Nullable [] getClientPictureFor(@NotNull Client client)
     {
         synchronized (clientPictureList) {
             for (ClientPicture clientPicture : clientPictureList) {
@@ -213,13 +221,13 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public X509Certificate getCertificate()
+    public @NotNull X509Certificate getCertificate()
     {
         return certificate;
     }
 
     @Override
-    public StreamDescriptor getDescriptorFor(TransferItem transferItem)
+    public @NotNull StreamDescriptor getDescriptorFor(@NotNull TransferItem transferItem)
     {
         synchronized (streamDescriptorList) {
             for (MemoryStreamDescriptor streamDescriptor : streamDescriptorList) {
@@ -234,7 +242,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public TransferItem getFirstReceivableItem(long groupId)
+    public @Nullable TransferItem getFirstReceivableItem(long groupId)
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {
@@ -256,7 +264,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public PrivateKey getPrivateKey()
+    public @NotNull PrivateKey getPrivateKey()
     {
         try {
             return keyFactory.generatePrivate(new PKCS8EncodedKeySpec(keyPair.getPrivate().getEncoded()));
@@ -266,7 +274,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public PublicKey getPublicKey()
+    public @NotNull PublicKey getPublicKey()
     {
         try {
             return keyFactory.generatePublic(new X509EncodedKeySpec(keyPair.getPublic().getEncoded()));
@@ -275,18 +283,18 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         }
     }
 
-    public List<MemoryStreamDescriptor> getStreamDescriptorList()
+    public @NotNull List<MemoryStreamDescriptor> getStreamDescriptorList()
     {
         return Collections.unmodifiableList(streamDescriptorList);
     }
 
-    public List<OwnedTransferHolder> getTransferHolderList()
+    public @NotNull List<OwnedTransferHolder> getTransferHolderList()
     {
         return Collections.unmodifiableList(transferHolderList);
     }
 
     @Override
-    public boolean hasRequestForInvalidationOfCredentials(String clientUid)
+    public boolean hasRequestForInvalidationOfCredentials(@NotNull String clientUid)
     {
         synchronized (invalidationRequestList) {
             return invalidationRequestList.contains(clientUid);
@@ -294,7 +302,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public TransferItem loadTransferItem(String clientUid, long groupId, long id, TransferItem.Type type)
+    public @NotNull TransferItem loadTransferItem(@NotNull String clientUid, long groupId, long id, TransferItem.@NotNull Type type)
             throws PersistenceException
     {
         synchronized (transferHolderList) {
@@ -309,7 +317,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public InputStream openInputStream(StreamDescriptor descriptor) throws IOException
+    public @NotNull InputStream openInputStream(@NotNull StreamDescriptor descriptor) throws IOException
     {
         if (descriptor instanceof MemoryStreamDescriptor)
             return new ByteArrayInputStream(((MemoryStreamDescriptor) descriptor).data.toByteArray());
@@ -318,7 +326,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public OutputStream openOutputStream(StreamDescriptor descriptor) throws IOException
+    public @NotNull OutputStream openOutputStream(@NotNull StreamDescriptor descriptor) throws IOException
     {
         if (descriptor instanceof MemoryStreamDescriptor) {
             return ((MemoryStreamDescriptor) descriptor).data;
@@ -328,7 +336,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void persist(Client client, boolean updating)
+    public void persist(@NotNull Client client, boolean updating)
     {
         synchronized (clientList) {
             clientList.remove(client);
@@ -337,7 +345,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void persist(ClientAddress clientAddress)
+    public void persist(@NotNull ClientAddress clientAddress)
     {
         synchronized (clientAddressList) {
             clientAddressList.remove(clientAddress);
@@ -346,7 +354,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void persist(String clientUid, TransferItem item)
+    public void persist(@NotNull String clientUid, @NotNull TransferItem item)
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {
@@ -362,7 +370,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void persist(String clientUid, List<? extends TransferItem> itemList)
+    public void persist(@NotNull String clientUid, @NotNull List<? extends @NotNull TransferItem> itemList)
     {
         for (TransferItem item : itemList) {
             // This doesn't reflect the correct use case. In production, this should only insert
@@ -372,7 +380,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void persistClientPicture(String clientUid, byte[] bitmap)
+    public void persistClientPicture(@NotNull String clientUid, byte @NotNull [] bitmap)
     {
         synchronized (clientPictureList) {
             clientPictureList.add(new ClientPicture(clientUid, bitmap));
@@ -386,7 +394,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void saveRequestForInvalidationOfCredentials(String clientUid)
+    public void saveRequestForInvalidationOfCredentials(@NotNull String clientUid)
     {
         if (hasRequestForInvalidationOfCredentials(clientUid))
             return;
@@ -397,7 +405,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void setState(String clientUid, TransferItem item, int state, Exception e)
+    public void setState(@NotNull String clientUid, @NotNull TransferItem item, int state, @Nullable Exception e)
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {

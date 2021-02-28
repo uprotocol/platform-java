@@ -1,5 +1,6 @@
 package org.monora.uprotocol.core;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
@@ -32,7 +33,8 @@ public class ClientLoader
      * @return The client produced from the JSON object and persistence database.
      * @throws JSONException If something goes wrong when inflating the JSON data.
      */
-    public static Client loadAsClient(PersistenceProvider persistenceProvider, JSONObject object, String clientUid)
+    public static @NotNull Client loadAsClient(@NotNull PersistenceProvider persistenceProvider,
+                                               @NotNull JSONObject object, @NotNull String clientUid)
             throws JSONException
     {
         return loadFrom(persistenceProvider, object, clientUid, true, false);
@@ -51,8 +53,9 @@ public class ClientLoader
      * @throws BlockedRemoteClientException If remote is blocked and has no valid PIN. The underlying data is loaded
      *                                      after this is thrown.
      */
-    public static Client loadAsServer(PersistenceProvider persistenceProvider, JSONObject object, String clientUid,
-                                      boolean hasPin) throws JSONException, BlockedRemoteClientException
+    public static @NotNull Client loadAsServer(@NotNull PersistenceProvider persistenceProvider,
+                                               @NotNull JSONObject object, @NotNull String clientUid, boolean hasPin)
+            throws JSONException, BlockedRemoteClientException
     {
         Client client = loadFrom(persistenceProvider, object, clientUid, false, hasPin);
 
@@ -62,8 +65,9 @@ public class ClientLoader
         return client;
     }
 
-    private static Client loadFrom(PersistenceProvider persistenceProvider, JSONObject response, String clientUid,
-                                   boolean asClient, boolean hasPin) throws JSONException
+    private static @NotNull Client loadFrom(@NotNull PersistenceProvider persistenceProvider,
+                                            @NotNull JSONObject response, @NotNull String clientUid, boolean asClient,
+                                            boolean hasPin) throws JSONException
     {
         String nickname = response.getString(Keyword.CLIENT_NICKNAME);
         String manufacturer = response.getString(Keyword.CLIENT_MANUFACTURER);
@@ -126,8 +130,10 @@ public class ClientLoader
      * @throws ProtocolException    If a protocol related error occurs.
      * @throws CertificateException If the existing certificates fail to allow an encrypted communication.
      */
-    public static Client load(ConnectionFactory connectionFactory, PersistenceProvider persistenceProvider,
-                              InetAddress inetAddress) throws IOException, ProtocolException, CertificateException
+    public static @NotNull Client load(@NotNull ConnectionFactory connectionFactory,
+                                       @NotNull PersistenceProvider persistenceProvider,
+                                       @NotNull InetAddress inetAddress)
+            throws IOException, ProtocolException, CertificateException
     {
         try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, persistenceProvider,
                 inetAddress, null, 0)) {

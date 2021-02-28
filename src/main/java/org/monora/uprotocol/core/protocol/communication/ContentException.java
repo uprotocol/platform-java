@@ -18,14 +18,16 @@
 
 package org.monora.uprotocol.core.protocol.communication;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Thrown when the remote faces an error with the content that this client wants to work with.
  */
 public class ContentException extends ProtocolException
 {
-    public final Error error;
+    public final @NotNull Error error;
 
-    public ContentException(Error error)
+    public ContentException(@NotNull Error error)
     {
         this.error = error;
     }

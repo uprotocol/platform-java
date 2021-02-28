@@ -1,5 +1,6 @@
 package org.monora.uprotocol.core.protocol;
 
+import org.jetbrains.annotations.NotNull;
 import org.monora.uprotocol.core.spec.v1.Keyword;
 
 /**
@@ -41,7 +42,7 @@ public enum ClientType
         this.protocolValue = protocolValue;
     }
 
-    public static ClientType from(String value)
+    public static @NotNull ClientType from(String value)
     {
         for (ClientType type : values()) {
             if (type.protocolValue.equals(value))

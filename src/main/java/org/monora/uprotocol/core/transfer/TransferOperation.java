@@ -1,5 +1,7 @@
 package org.monora.uprotocol.core.transfer;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.io.StreamDescriptor;
 
@@ -64,14 +66,14 @@ public interface TransferOperation
      * @return The content.
      * @see #setOngoing(TransferItem)
      */
-    TransferItem getOngoing();
+    @Nullable TransferItem getOngoing();
 
     /**
      * Install a received file to its final location.
      *
      * @param descriptor That belongs to the content and specifies its location.
      */
-    void installReceivedContent(StreamDescriptor descriptor);
+    void installReceivedContent(@NotNull StreamDescriptor descriptor);
 
     /**
      * Invoked when an operation is cancelled by the user.
@@ -83,7 +85,7 @@ public interface TransferOperation
      *
      * @param e The unhandled exception.
      */
-    void onUnhandledException(Exception e);
+    void onUnhandledException(@NotNull Exception e);
 
     /**
      * Update and save the existing data.
@@ -128,5 +130,5 @@ public interface TransferOperation
      * @param transferItem That is ongoing. This is a non-null value.
      * @see #getOngoing()
      */
-    void setOngoing(TransferItem transferItem);
+    void setOngoing(@NotNull TransferItem transferItem);
 }

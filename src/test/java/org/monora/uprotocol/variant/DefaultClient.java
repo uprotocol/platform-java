@@ -1,5 +1,7 @@
 package org.monora.uprotocol.variant;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientType;
 
@@ -10,19 +12,19 @@ import static org.monora.uprotocol.core.spec.v1.Config.VERSION_UPROTOCOL_MIN;
 
 public class DefaultClient implements Client
 {
-    private X509Certificate certificate;
+    private @Nullable X509Certificate certificate;
 
-    private String manufacturer;
+    private @NotNull String manufacturer;
 
-    private String nickname;
+    private @NotNull String nickname;
 
-    private String product;
+    private @NotNull String product;
 
-    private ClientType type;
+    private @NotNull ClientType type;
 
-    private String uid;
+    private @NotNull String uid;
 
-    private String versionName;
+    private @NotNull String versionName;
 
     private int protocolVersion;
 
@@ -38,9 +40,9 @@ public class DefaultClient implements Client
 
     private boolean trusted;
 
-    public DefaultClient(String uid, String nickname, String manufacturer, String product,
-                         ClientType type, String versionName, int versionCode, int protocolVersion,
-                         int protocolVersionMin)
+    public DefaultClient(@NotNull String uid, @NotNull String nickname, @NotNull String manufacturer,
+                         @NotNull String product, @NotNull ClientType type, @NotNull String versionName,
+                         int versionCode, int protocolVersion, int protocolVersionMin)
     {
         this.uid = uid;
         this.nickname = nickname;
@@ -53,7 +55,8 @@ public class DefaultClient implements Client
         this.protocolVersionMin = protocolVersionMin;
     }
 
-    public DefaultClient(String uid, String nickname, String manufacturer, String product, X509Certificate certificate)
+    public DefaultClient(@NotNull String uid, @NotNull String nickname, @NotNull String manufacturer,
+                         @NotNull String product, @Nullable X509Certificate certificate)
     {
         this(uid, nickname, manufacturer, product, ClientType.Desktop, "1.0", 1,
                 VERSION_UPROTOCOL, VERSION_UPROTOCOL_MIN);
@@ -64,13 +67,13 @@ public class DefaultClient implements Client
     public boolean equals(Object obj)
     {
         if (obj instanceof Client) {
-            return uid != null && uid.equals(((Client) obj).getClientUid());
+            return uid.equals(((Client) obj).getClientUid());
         }
         return super.equals(obj);
     }
 
     @Override
-    public X509Certificate getClientCertificate()
+    public @Nullable X509Certificate getClientCertificate()
     {
         return certificate;
     }
@@ -82,19 +85,19 @@ public class DefaultClient implements Client
     }
 
     @Override
-    public String getClientManufacturer()
+    public @NotNull String getClientManufacturer()
     {
         return manufacturer;
     }
 
     @Override
-    public String getClientNickname()
+    public @NotNull String getClientNickname()
     {
         return nickname;
     }
 
     @Override
-    public String getClientProduct()
+    public @NotNull String getClientProduct()
     {
         return product;
     }
@@ -112,13 +115,13 @@ public class DefaultClient implements Client
     }
 
     @Override
-    public ClientType getClientType()
+    public @NotNull ClientType getClientType()
     {
         return type;
     }
 
     @Override
-    public String getClientUid()
+    public @NotNull String getClientUid()
     {
         return uid;
     }
@@ -130,7 +133,7 @@ public class DefaultClient implements Client
     }
 
     @Override
-    public String getClientVersionName()
+    public @NotNull String getClientVersionName()
     {
         return versionName;
     }
@@ -160,7 +163,7 @@ public class DefaultClient implements Client
     }
 
     @Override
-    public void setClientCertificate(X509Certificate certificate)
+    public void setClientCertificate(@Nullable X509Certificate certificate)
     {
         this.certificate = certificate;
     }
@@ -178,19 +181,19 @@ public class DefaultClient implements Client
     }
 
     @Override
-    public void setClientManufacturer(String manufacturer)
+    public void setClientManufacturer(@NotNull String manufacturer)
     {
         this.manufacturer = manufacturer;
     }
 
     @Override
-    public void setClientNickname(String nickname)
+    public void setClientNickname(@NotNull String nickname)
     {
         this.nickname = nickname;
     }
 
     @Override
-    public void setClientProduct(String product)
+    public void setClientProduct(@NotNull String product)
     {
         this.product = product;
     }
@@ -214,13 +217,13 @@ public class DefaultClient implements Client
     }
 
     @Override
-    public void setClientType(ClientType type)
+    public void setClientType(@NotNull ClientType type)
     {
         this.type = type;
     }
 
     @Override
-    public void setClientUid(String uid)
+    public void setClientUid(@NotNull String uid)
     {
         this.uid = uid;
     }
@@ -232,7 +235,7 @@ public class DefaultClient implements Client
     }
 
     @Override
-    public void setClientVersionName(String versionName)
+    public void setClientVersionName(@NotNull String versionName)
     {
         this.versionName = versionName;
     }

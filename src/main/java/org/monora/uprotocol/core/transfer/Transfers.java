@@ -1,5 +1,6 @@
 package org.monora.uprotocol.core.transfer;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.response.SizeOverflowException;
@@ -36,7 +37,7 @@ public class Transfers
      * @return The requested item holder.
      * @throws JSONException If something goes wrong when inflating the JSON data.
      */
-    public static TransferRequest getTransferRequest(JSONObject jsonObject) throws JSONException
+    public static @NotNull TransferRequest getTransferRequest(@NotNull JSONObject jsonObject) throws JSONException
     {
         return new TransferRequest(jsonObject.getLong(Keyword.TRANSFER_ID),
                 jsonObject.getLong(Keyword.TRANSFER_CURRENT_POSITION));
@@ -54,8 +55,8 @@ public class Transfers
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public static boolean requestItem(CommunicationBridge bridge, long itemId, long currentPosition) throws IOException,
-            JSONException, ProtocolException
+    public static boolean requestItem(@NotNull CommunicationBridge bridge, long itemId, long currentPosition)
+            throws IOException, JSONException, ProtocolException
     {
         bridge.send(true, new JSONObject()
                 .put(Keyword.TRANSFER_ID, itemId)
@@ -71,7 +72,7 @@ public class Transfers
      * @param operation The operation object that handles the GUI side of things.
      * @param groupId   As in {@link TransferItem#getItemGroupId()}.
      */
-    public static void receive(CommunicationBridge bridge, TransferOperation operation, long groupId)
+    public static void receive(@NotNull CommunicationBridge bridge, @NotNull TransferOperation operation, long groupId)
     {
         PersistenceProvider persistenceProvider = bridge.getPersistenceProvider();
         ActiveConnection activeConnection = bridge.getActiveConnection();
@@ -165,7 +166,7 @@ public class Transfers
      * @param operation The operation object that handles the GUI side of things.
      * @param groupId   As in {@link TransferItem#getItemId()}.
      */
-    public static void send(CommunicationBridge bridge, TransferOperation operation, long groupId)
+    public static void send(@NotNull CommunicationBridge bridge, @NotNull TransferOperation operation, long groupId)
     {
         PersistenceProvider persistenceProvider = bridge.getPersistenceProvider();
         ActiveConnection activeConnection = bridge.getActiveConnection();
@@ -194,9 +195,6 @@ public class Transfers
                             throw new FileNotFoundException("File size has changed. It is probably a different file.");
 
                         try (InputStream inputStream = persistenceProvider.openInputStream(descriptor)) {
-                            if (inputStream == null)
-                                throw new FileNotFoundException("The input stream failed to open.");
-
                             if (transferRequest.position > 0
                                     && inputStream.skip(transferRequest.position) != transferRequest.position)
                                 throw new IOException("Failed to skip " + transferRequest.position + " bytes");
@@ -249,7 +247,7 @@ public class Transfers
                     }
                 } catch (CancelledException e) {
                     throw e;
-                } catch (FileNotFoundException | PersistenceException e) {
+                } catch (@NotNull FileNotFoundException | PersistenceException e) {
                     bridge.send(Keyword.ERROR_NOT_FOUND);
                 } catch (IOException e) {
                     bridge.send(Keyword.ERROR_NOT_ACCESSIBLE);

@@ -1,5 +1,6 @@
 package org.monora.uprotocol.core.protocol.communication;
 
+import org.jetbrains.annotations.NotNull;
 import org.monora.uprotocol.core.protocol.Client;
 
 /**
@@ -9,15 +10,15 @@ import org.monora.uprotocol.core.protocol.Client;
  */
 public class CommunicationException extends ProtocolException
 {
-    public final Client client;
+    public final @NotNull Client client;
 
-    public CommunicationException(Client client)
+    public CommunicationException(@NotNull Client client)
     {
         super();
         this.client = client;
     }
 
-    public CommunicationException(Client client, Throwable cause)
+    public CommunicationException(@NotNull Client client, @NotNull Throwable cause)
     {
         super(cause);
         this.client = client;
