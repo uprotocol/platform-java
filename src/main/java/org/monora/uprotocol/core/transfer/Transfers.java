@@ -136,7 +136,7 @@ public class Transfers
                             PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
                     throw e;
                 } finally {
-                    persistenceProvider.save(client.getClientUid(), item);
+                    persistenceProvider.persist(client.getClientUid(), item);
                     operation.clearOngoing();
                 }
             }
@@ -205,7 +205,7 @@ public class Transfers
 
                             persistenceProvider.setState(client.getClientUid(), item,
                                     PersistenceProvider.STATE_IN_PROGRESS, null);
-                            persistenceProvider.save(client.getClientUid(), item);
+                            persistenceProvider.persist(client.getClientUid(), item);
 
                             ActiveConnection.Description description = activeConnection.writeBegin(0,
                                     item.getItemSize() - transferRequest.position);
@@ -244,7 +244,7 @@ public class Transfers
                                 PersistenceProvider.STATE_INVALIDATED_TEMPORARILY, e);
                         throw e;
                     } finally {
-                        persistenceProvider.save(client.getClientUid(), item);
+                        persistenceProvider.persist(client.getClientUid(), item);
                         operation.clearOngoing();
                     }
                 } catch (CancelledException e) {

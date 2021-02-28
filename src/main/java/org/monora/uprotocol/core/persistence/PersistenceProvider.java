@@ -169,13 +169,14 @@ public interface PersistenceProvider
      * @param protocolVersion    Points to {@link Client#getClientProtocolVersion()}.
      * @param protocolVersionMin Points {@link Client#getClientProtocolVersionMin()}.
      * @return The client instance.
-     * @see #save(Client)
+     * @see #persist(Client, boolean)
      * @see #getClientFor(String)
      */
     Client createClientFor(String uid, String nickname, String manufacturer, String product, ClientType type,
                            String versionName, int versionCode, int protocolVersion, int protocolVersionMin);
 
     /**
+     * todo: Should this really exist? This user can avoid using. The benefit may be to use it as a factory.
      * Create a transfer item instance for the given parameters.
      *
      * @param groupId   Points to {@link TransferItem#getItemGroupId()}.
@@ -330,8 +331,9 @@ public interface PersistenceProvider
             keyStore.load(null, null);
             keyStore.setKeyEntry("key", privateKey, password, new Certificate[]{getCertificate()});
 
-            if (client.getClientCertificate() != null)
+            if (client.getClientCertificate() != null) {
                 keyStore.setCertificateEntry(client.getClientUid(), client.getClientCertificate());
+            }
 
             // Setup key manager factory
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
@@ -423,6 +425,56 @@ public interface PersistenceProvider
     OutputStream openOutputStream(StreamDescriptor descriptor) throws IOException;
 
     /**
+     * Insert or update this client in the persistence database.
+     * <p>
+     * Do not hold any duplicates, and verify it using the {@link Client#getClientUid()} field.
+     *
+     * @param client   To save.
+     * @param updating True if this should update the existing rows instead of inserting a new one.
+     */
+    void persist(Client client, boolean updating);
+
+    /**
+     * Insert this client address in the persistence database, replacing the old instance if exists.
+     * <p>
+     * {@link ClientAddress} does not support updating. The idea is to replace it all the time. The reason is an
+     * address may belong to different clients in a short amount of time.
+     *
+     * @param clientAddress To save.
+     */
+    void persist(ClientAddress clientAddress);
+
+    /**
+     * Update this transfer item in the persistence database.
+     * <p>
+     * NOTE: This should only update and not try to insert a new row.
+     *
+     * @param clientUid That owns the item.
+     * @param item      To save.
+     */
+    void persist(String clientUid, TransferItem item);
+
+    /**
+     * Insert all the items into the persistence database.
+     * <p>
+     * This should avoid updating objects.
+     *
+     * @param clientUid That owns the items.
+     * @param itemList  To save.
+     */
+    void persist(String clientUid, List<? extends TransferItem> itemList);
+
+    /**
+     * Alter the client picture as the given bitmap data.
+     * <p>
+     * This will always be invoked whether or not the bitmap is empty.
+     *
+     * @param clientUid The client that the picture belongs to.
+     * @param bitmap    The bitmap data for the picture.
+     */
+    void persistClientPicture(String clientUid, byte[] bitmap);
+
+    /**
      * Revoke the current valid network PIN.
      *
      * @see #getNetworkPin()
@@ -430,51 +482,7 @@ public interface PersistenceProvider
     void revokeNetworkPin();
 
     /**
-     * Save this client in the persistence database.
-     * <p>
-     * Do not hold any duplicates, and verify it using the {@link Client#getClientUid()} field.
-     *
-     * @param client To save.
-     */
-    void save(Client client);
-
-    /**
-     * Save this client address in the persistence database.
-     *
-     * @param clientAddress To save.
-     */
-    void save(ClientAddress clientAddress);
-
-    /**
-     * Save this transfer item in the persistence database.
-     * <p>
-     * Note: ensure there are no duplicates.
-     *
-     * @param clientUid That owns the item.
-     * @param item      To save.
-     */
-    void save(String clientUid, TransferItem item);
-
-    /**
-     * Save all the items in the given list.
-     *
-     * @param clientUid That owns the items.
-     * @param itemList  To save.
-     */
-    void save(String clientUid, List<? extends TransferItem> itemList);
-
-    /**
-     * Save the client's picture.
-     * <p>
-     * This will always be invoked whether or not the bitmap is empty.
-     *
-     * @param clientUid The client that the picture belongs to.
-     * @param bitmap    The bitmap data for the picture.
-     */
-    void saveClientPicture(String clientUid, byte[] bitmap);
-
-    /**
-     * Invoken when a known clients sends invalid credentials and now cannot connect.
+     * Invoke when a known clients sends invalid credentials and now cannot connect.
      * <p>
      * You can show the error to the user so that they can decide for themselves.
      * <p>
@@ -489,8 +497,8 @@ public interface PersistenceProvider
     /**
      * Change the state of the given item.
      * <p>
-     * Note: this should set the state but should not save it since saving it is spared for
-     * {@link #save(String, TransferItem)}.
+     * Note: this should set the state but should not update it since saving it is spared for
+     * {@link #persist(String, TransferItem)} unless the state is held on a different location.
      *
      * @param clientUid That owns the copy of the 'item'.
      * @param item      Of which the given state will be applied.
@@ -545,6 +553,7 @@ public interface PersistenceProvider
      */
     default List<TransferItem> toTransferItemList(long groupId, String jsonArray) throws JSONException
     {
+        // TODO: 2/26/21 Should json array to transfer item list function exist?
         JSONArray json = new JSONArray(jsonArray);
         List<TransferItem> transferItemList = new ArrayList<>();
 

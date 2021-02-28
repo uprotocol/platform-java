@@ -6,7 +6,6 @@ import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.ClientType;
-import org.monora.uprotocol.core.protocol.Clients;
 import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.variant.DefaultClient;
 import org.monora.uprotocol.variant.DefaultClientAddress;
@@ -135,7 +134,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         }
 
         client.setClientCertificate(null);
-        save(client);
+        persist(client, true);
         return true;
     }
 
@@ -150,8 +149,9 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {
-                if (holder.item.getItemGroupId() == groupId)
+                if (holder.item.getItemGroupId() == groupId) {
                     return true;
+                }
             }
         }
 
@@ -163,7 +163,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     {
         return new DefaultClientAddress(address, clientUid, System.currentTimeMillis());
     }
-    
+
     @Override
     public Client createClientFor(String uid, String nickname, String manufacturer,
                                   String product, ClientType type, String versionName, int versionCode,
@@ -320,27 +320,15 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     @Override
     public OutputStream openOutputStream(StreamDescriptor descriptor) throws IOException
     {
-        if (descriptor instanceof MemoryStreamDescriptor)
+        if (descriptor instanceof MemoryStreamDescriptor) {
             return ((MemoryStreamDescriptor) descriptor).data;
+        }
 
         throw new IOException("Unknown descriptor type");
     }
 
-    public void remove(Client client)
-    {
-        synchronized (clientList) {
-            clientList.remove(client);
-        }
-    }
-
     @Override
-    public void revokeNetworkPin()
-    {
-        networkPin = 0;
-    }
-
-    @Override
-    public void save(Client client)
+    public void persist(Client client, boolean updating)
     {
         synchronized (clientList) {
             clientList.remove(client);
@@ -349,7 +337,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void save(ClientAddress clientAddress)
+    public void persist(ClientAddress clientAddress)
     {
         synchronized (clientAddressList) {
             clientAddressList.remove(clientAddress);
@@ -358,7 +346,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void save(String clientUid, TransferItem item)
+    public void persist(String clientUid, TransferItem item)
     {
         synchronized (transferHolderList) {
             for (OwnedTransferHolder holder : transferHolderList) {
@@ -374,19 +362,27 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void save(String clientUid, List<? extends TransferItem> itemList)
+    public void persist(String clientUid, List<? extends TransferItem> itemList)
     {
         for (TransferItem item : itemList) {
-            save(clientUid, item);
+            // This doesn't reflect the correct use case. In production, this should only insert
+            // while single item counterpart below is updating.
+            persist(clientUid, item);
         }
     }
 
     @Override
-    public void saveClientPicture(String clientUid, byte[] bitmap)
+    public void persistClientPicture(String clientUid, byte[] bitmap)
     {
         synchronized (clientPictureList) {
             clientPictureList.add(new ClientPicture(clientUid, bitmap));
         }
+    }
+
+    @Override
+    public void revokeNetworkPin()
+    {
+        networkPin = 0;
     }
 
     @Override

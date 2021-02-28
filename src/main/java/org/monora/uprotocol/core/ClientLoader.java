@@ -87,6 +87,8 @@ public class ClientLoader
         }
 
         Client client = persistenceProvider.getClientFor(clientUid);
+        boolean updating = false;
+
         if (client == null) {
             client = persistenceProvider.createClientFor(clientUid, nickname, manufacturer, product, clientType,
                     versionName, versionCode, protocolVersion, protocolVersionMin);
@@ -94,6 +96,8 @@ public class ClientLoader
             Clients.fill(client, clientUid, client.getClientCertificate(), nickname, manufacturer, product, clientType,
                     versionName, versionCode, protocolVersion, protocolVersionMin, client.isClientTrusted(),
                     client.isClientBlocked());
+
+            updating = true;
         }
 
         if (asClient) {
@@ -105,8 +109,8 @@ public class ClientLoader
 
         client.setClientLastUsageTime(lastUsageTime);
         client.setClientLocal(local);
-        persistenceProvider.save(client);
-        persistenceProvider.saveClientPicture(client.getClientUid(), clientPicture);
+        persistenceProvider.persist(client, updating);
+        persistenceProvider.persistClientPicture(client.getClientUid(), clientPicture);
 
         return client;
     }

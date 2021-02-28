@@ -130,7 +130,7 @@ public class RequestTest extends DefaultTestBase
         } catch (SecurityException e) {
             if (e.getCause() instanceof SSLHandshakeException) {
                 e.client.setClientCertificate(null);
-                secondaryPersistence.save(e.client);
+                secondaryPersistence.persist(e.client, true);
             } else
                 throw e;
         }

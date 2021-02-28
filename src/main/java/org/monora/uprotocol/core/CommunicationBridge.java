@@ -178,7 +178,7 @@ public class CommunicationBridge implements Closeable
         String remoteClientUid = activeConnection.receive().getAsString();
 
         ClientAddress clientAddress = persistenceProvider.createClientAddressFor(inetAddress, remoteClientUid);
-        persistenceProvider.save(clientAddress);
+        persistenceProvider.persist(clientAddress);
 
         if (clientUid != null && !clientUid.equals(remoteClientUid)) {
             activeConnection.closeSafely();
@@ -228,13 +228,13 @@ public class CommunicationBridge implements Closeable
                 if (certificate instanceof X509Certificate) {
                     if (!certificate.equals(client.getClientCertificate())) {
                         client.setClientCertificate((X509Certificate) certificate);
-                        persistenceProvider.save(client);
+                        persistenceProvider.persist(client, true);
                     }
                 } else
                     throw new CertificateException("The certificate is not in X.509 format");
             } catch (Exception e) {
                 client.setClientCertificate(null);
-                persistenceProvider.save(client);
+                persistenceProvider.persist(client, true);
                 e.printStackTrace();
             }
         });
@@ -329,7 +329,7 @@ public class CommunicationBridge implements Closeable
      * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Client, long, TransferItem.Type)} method.
      * <p>
      * If the initial response is positive, the items will be saved to the persistence provider using
-     * {@link PersistenceProvider#save(String, List)}.
+     * {@link PersistenceProvider#persist(String, List)}.
      *
      * @param groupId          That ties a group of {@link TransferItem} as in {@link TransferItem#getItemGroupId()}.
      * @param transferItemList That you will send.
@@ -348,8 +348,9 @@ public class CommunicationBridge implements Closeable
 
         boolean result = receiveResult();
 
-        if (result)
-            getPersistenceProvider().save(getRemoteClient().getClientUid(), transferItemList);
+        if (result) {
+            getPersistenceProvider().persist(getRemoteClient().getClientUid(), transferItemList);
+        }
 
         return result;
     }
