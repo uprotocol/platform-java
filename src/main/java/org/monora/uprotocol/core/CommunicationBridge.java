@@ -51,11 +51,6 @@ import java.util.List;
 import static org.monora.uprotocol.core.spec.v1.Config.PORT_UPROTOCOL;
 import static org.monora.uprotocol.core.spec.v1.Config.TIMEOUT_SOCKET_DEFAULT;
 
-/**
- * created by: Veli
- * date: 11.02.2018 15:07
- */
-
 public class CommunicationBridge implements Closeable
 {
     private final PersistenceProvider persistenceProvider;
@@ -77,8 +72,8 @@ public class CommunicationBridge implements Closeable
      * @param clientAddress       Where the remote client resides on the network.
      */
     public CommunicationBridge(@NotNull PersistenceProvider persistenceProvider,
-                               @NotNull ActiveConnection activeConnection,
-                               @NotNull Client client, @NotNull ClientAddress clientAddress)
+                               @NotNull ActiveConnection activeConnection, @NotNull Client client,
+                               @NotNull ClientAddress clientAddress)
     {
         this.persistenceProvider = persistenceProvider;
         this.activeConnection = activeConnection;
@@ -131,9 +126,10 @@ public class CommunicationBridge implements Closeable
      * @throws CertificateException           If an error related to encryption or authentication occurs.
      */
     public static @NotNull CommunicationBridge connect(@NotNull ConnectionFactory connectionFactory,
-                                                       @NotNull PersistenceProvider persistenceProvider, @NotNull List<InetAddress> addressList,
-                                                       String clientUid, int pin) throws JSONException, IOException,
-            ProtocolException, CertificateException
+                                                       @NotNull PersistenceProvider persistenceProvider,
+                                                       @NotNull List<InetAddress> addressList, String clientUid,
+                                                       int pin) throws JSONException, IOException, ProtocolException,
+            CertificateException
     {
         if (addressList.size() < 1)
             throw new IllegalArgumentException("The address list should contain at least one item.");
@@ -170,15 +166,13 @@ public class CommunicationBridge implements Closeable
      * @throws CertificateException           If an error related to encryption or authentication occurs.
      */
     public static @NotNull CommunicationBridge connect(@NotNull ConnectionFactory connectionFactory,
-                                                       @NotNull PersistenceProvider persistenceProvider, @NotNull InetAddress inetAddress,
-                                                       @Nullable String clientUid, int pin)
+                                                       @NotNull PersistenceProvider persistenceProvider,
+                                                       @NotNull InetAddress inetAddress, @Nullable String clientUid,
+                                                       int pin)
             throws IOException, JSONException, ProtocolException, CertificateException
     {
         ActiveConnection activeConnection = connectionFactory.openConnection(inetAddress);
         String remoteClientUid = activeConnection.receive().getAsString();
-
-        ClientAddress clientAddress = persistenceProvider.createClientAddressFor(inetAddress, remoteClientUid);
-        persistenceProvider.persist(clientAddress);
 
         if (clientUid != null && !clientUid.equals(remoteClientUid)) {
             activeConnection.closeSafely();
@@ -188,9 +182,13 @@ public class CommunicationBridge implements Closeable
         activeConnection.reply(persistenceProvider.clientAsJson(pin));
         JSONObject jsonObject = activeConnection.receive().getAsJson();
         Client client = ClientLoader.loadAsClient(persistenceProvider, jsonObject, remoteClientUid);
+        ClientAddress clientAddress = persistenceProvider.createClientAddressFor(inetAddress, remoteClientUid);
+
+        persistenceProvider.persist(clientAddress);
 
         Responses.checkError(client, jsonObject);
         convertToSSL(connectionFactory, persistenceProvider, activeConnection, client, true);
+
 
         return new CommunicationBridge(persistenceProvider, activeConnection, client, clientAddress);
     }

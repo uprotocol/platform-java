@@ -459,7 +459,8 @@ public interface PersistenceProvider
      * Alter the client picture as the given bitmap data.
      * <p>
      * This will always be invoked whether or not the bitmap is empty.
-     *  @param clientUid The client that the picture belongs to.
+     *
+     * @param clientUid The client that the picture belongs to.
      * @param bitmap    The bitmap data for the picture.
      */
     void persistClientPicture(@NotNull String clientUid, byte @NotNull [] bitmap);

@@ -86,7 +86,7 @@ public interface Client
      * @return The unique identifier of the client.
      * @see #setClientUid(String)
      */
-     @NotNull String getClientUid();
+    @NotNull String getClientUid();
 
     /**
      * The client specific version code.
