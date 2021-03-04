@@ -1,5 +1,6 @@
 package org.monora.uprotocol.core.persistence;
 
+import org.apache.commons.codec.binary.Base64;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -27,7 +28,6 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 /**
@@ -123,7 +123,7 @@ public interface PersistenceProvider
 
         byte[] clientAvatar = getClientPicture();
         if (clientAvatar != null && clientAvatar.length > 0)
-            object.put(Keyword.CLIENT_PICTURE, Base64.getEncoder().encodeToString(clientAvatar));
+            object.put(Keyword.CLIENT_PICTURE, Base64.encodeBase64(clientAvatar));
 
         return object;
     }

@@ -1,5 +1,6 @@
 package org.monora.uprotocol.core;
 
+import org.apache.commons.codec.binary.Base64;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -15,7 +16,6 @@ import org.monora.uprotocol.core.spec.v1.Keyword;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.security.cert.CertificateException;
-import java.util.Base64;
 
 import static org.monora.uprotocol.core.spec.v1.Config.LENGTH_CLIENT_USERNAME;
 
@@ -85,7 +85,7 @@ public class ClientLoader
 
         byte[] clientPicture;
         try {
-            clientPicture = Base64.getDecoder().decode(response.getString(Keyword.CLIENT_PICTURE));
+            clientPicture = Base64.decodeBase64(response.getString(Keyword.CLIENT_PICTURE));
         } catch (Exception ignored) {
             clientPicture = new byte[0];
         }

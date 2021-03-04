@@ -127,9 +127,9 @@ public class CommunicationBridge implements Closeable
      */
     public static @NotNull CommunicationBridge connect(@NotNull ConnectionFactory connectionFactory,
                                                        @NotNull PersistenceProvider persistenceProvider,
-                                                       @NotNull List<InetAddress> addressList, String clientUid,
-                                                       int pin) throws JSONException, IOException, ProtocolException,
-            CertificateException
+                                                       @NotNull List<InetAddress> addressList,
+                                                       @Nullable String clientUid, int pin) throws JSONException,
+            IOException, ProtocolException, CertificateException
     {
         if (addressList.size() < 1)
             throw new IllegalArgumentException("The address list should contain at least one item.");

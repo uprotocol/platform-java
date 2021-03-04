@@ -113,6 +113,14 @@
             <url>https://maven.pkg.github.com/libcoolsocket/java</url>
         </repository>
     </repositories>
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/uprotocol/platform-java</url>
+        </repository>
+    </distributionManagement>
+
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
@@ -154,13 +162,11 @@
             <artifactId>annotations</artifactId>
             <version>16.0.2</version>
         </dependency>
+        <dependency>
+            <!--Some Android 4~ doesn't have Base64 built-in-->
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.9</version>
+        </dependency>
     </dependencies>
-
-    <distributionManagement>
-        <repository>
-            <id>github</id>
-            <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/uprotocol/platform-java</url>
-        </repository>
-    </distributionManagement>
 </project>
