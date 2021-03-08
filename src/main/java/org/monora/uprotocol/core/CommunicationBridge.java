@@ -30,6 +30,7 @@ import org.monora.uprotocol.core.protocol.ConnectionFactory;
 import org.monora.uprotocol.core.protocol.communication.CommunicationException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
+import org.monora.uprotocol.core.protocol.communication.client.BlockedRemoteClientException;
 import org.monora.uprotocol.core.protocol.communication.client.DifferentRemoteClientException;
 import org.monora.uprotocol.core.spec.v1.Keyword;
 import org.monora.uprotocol.core.transfer.TransferItem;
@@ -41,7 +42,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -96,67 +96,11 @@ public class CommunicationBridge implements Closeable
     }
 
     /**
-     * Open a connection using the given {@link ClientAddress} list.
-     * <p>
-     * This will try each address one by one until one of them works.
-     * <p>
-     * If connection opens but the remote rejects the communication request, this will throw that error and will not
-     * try rest of the addresses.
-     * <p>
-     * If all addresses fail, this will still throw an error to simulate what
-     * {@link #connect(ConnectionFactory, PersistenceProvider, InetAddress, String, int)} does.
-     * <p>
-     * The rest of the behavior is the same with
-     * {@link #connect(ConnectionFactory, PersistenceProvider, InetAddress, String, int)}.
+     * Open a connection with a remote using the default builder.
      *
      * @param connectionFactory   To start and set up connections with.
      * @param persistenceProvider To store and query objects with.
-     * @param addressList         To try.
-     * @param clientUid           That this should connect to. Passing null means it is not yet known who the remote
-     *                            client is. If the given address connects to a different client, it will cause an
-     *                            error.
-     * @param pin                 To bypass errors (i.e. this client is blocked on the remote client), and to be flagged
-     *                            as trusted. Pass '0' if no PIN is available.
-     * @return The communication bridge to communicate with the remote.
-     * @throws IOException                    If an IO error occurs.
-     * @throws JSONException                  If something goes wrong when creating JSON object.
-     * @throws ProtocolException              When there is a communication error due to misconfiguration.
-     * @throws SecurityException              If something goes wrong while establishing a secure connection.
-     * @throws DifferentRemoteClientException If the connected client is different from the one that was provided.
-     * @throws CertificateException           If an error related to encryption or authentication occurs.
-     */
-    public static @NotNull CommunicationBridge connect(@NotNull ConnectionFactory connectionFactory,
-                                                       @NotNull PersistenceProvider persistenceProvider,
-                                                       @NotNull List<InetAddress> addressList,
-                                                       @Nullable String clientUid, int pin) throws JSONException,
-            IOException, ProtocolException, CertificateException
-    {
-        if (addressList.size() < 1)
-            throw new IllegalArgumentException("The address list should contain at least one item.");
-
-        for (InetAddress address : addressList) {
-            try {
-                return connect(connectionFactory, persistenceProvider, address, clientUid, pin);
-            } catch (@NotNull IOException | DifferentRemoteClientException ignored) {
-            }
-        }
-
-        throw new SocketException("Failed to connect to the socket address.");
-    }
-
-    /**
-     * Open a connection using the given {@link ClientAddress}.
-     * <p>
-     * If connection opens but the remote rejects the communication request, this will throw that error.
-     *
-     * @param connectionFactory   To start and set up connections with.
-     * @param persistenceProvider To store and query objects.
-     * @param inetAddress         To try.
-     * @param clientUid           That this should connect to. Passing null means it is not yet known who the remote
-     *                            client is. If the given address connects to a different client, it will cause and
-     *                            error.
-     * @param pin                 To bypass errors (i.e. this client is blocked on the remote client), and to be flagged
-     *                            as trusted. Pass '0' if no PIN is available.
+     * @param inetAddress         To connect to.
      * @return The communication bridge to communicate with the remote.
      * @throws IOException                    If an IO error occurs.
      * @throws JSONException                  If something goes wrong when creating JSON object.
@@ -164,33 +108,14 @@ public class CommunicationBridge implements Closeable
      * @throws SecurityException              If something goes wrong while establishing a secure connection.
      * @throws DifferentRemoteClientException If the connected client is different from the one that was provided
      * @throws CertificateException           If an error related to encryption or authentication occurs.
+     * @see Builder#connect
      */
     public static @NotNull CommunicationBridge connect(@NotNull ConnectionFactory connectionFactory,
                                                        @NotNull PersistenceProvider persistenceProvider,
-                                                       @NotNull InetAddress inetAddress, @Nullable String clientUid,
-                                                       int pin)
+                                                       @NotNull InetAddress inetAddress)
             throws IOException, JSONException, ProtocolException, CertificateException
     {
-        ActiveConnection activeConnection = connectionFactory.openConnection(inetAddress);
-        String remoteClientUid = activeConnection.receive().getAsString();
-
-        if (clientUid != null && !clientUid.equals(remoteClientUid)) {
-            activeConnection.closeSafely();
-            throw new DifferentRemoteClientException(clientUid, remoteClientUid);
-        }
-
-        activeConnection.reply(persistenceProvider.clientAsJson(pin));
-        JSONObject jsonObject = activeConnection.receive().getAsJson();
-        Client client = ClientLoader.loadAsClient(persistenceProvider, jsonObject, remoteClientUid);
-        ClientAddress clientAddress = persistenceProvider.createClientAddressFor(inetAddress, remoteClientUid);
-
-        persistenceProvider.persist(clientAddress);
-
-        Responses.checkError(client, jsonObject);
-        convertToSSL(connectionFactory, persistenceProvider, activeConnection, client, true);
-
-
-        return new CommunicationBridge(persistenceProvider, activeConnection, client, clientAddress);
+        return new Builder(connectionFactory, persistenceProvider, inetAddress).connect();
     }
 
     static void convertToSSL(@NotNull ConnectionFactory connectionFactory, @NotNull PersistenceProvider persistenceProvider,
@@ -382,7 +307,7 @@ public class CommunicationBridge implements Closeable
      * @param accepted True if the transfer request was accepted.
      * @return True if the request was processed successfully.
      * @throws IOException       If an IO error occurs.
-     * @throws JSONException     If something goes wrong when creating JSON object.
+     * @throws JSONException     If something goes wro when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
     public boolean requestNotifyTransferState(long groupId, boolean accepted) throws JSONException, IOException,
@@ -540,5 +465,119 @@ public class CommunicationBridge implements Closeable
     public void send(@NotNull String errorCode) throws IOException, JSONException
     {
         send(errorCode, new JSONObject());
+    }
+
+    /**
+     * Build a bridge that connects to a remote.
+     * <p>
+     * This keeps optional arguments in separate methods.
+     *
+     * @see Connections#shouldTryAnotherConnection(Exception)
+     * @see CommunicationBridge#connect
+     */
+    public static class Builder
+    {
+        private final @NotNull ConnectionFactory connectionFactory;
+
+        private final @NotNull PersistenceProvider persistenceProvider;
+
+        private final @NotNull InetAddress inetAddress;
+
+        private @Nullable String clientUid;
+
+        private boolean clearBlockedStatus;
+
+        private int pin;
+
+        /**
+         * Creates a new builder instance.
+         *
+         * @param connectionFactory   To start and set up connections with.
+         * @param persistenceProvider To store and query objects with.
+         * @param inetAddress         To connect to.
+         */
+        public Builder(@NotNull ConnectionFactory connectionFactory,
+                       @NotNull PersistenceProvider persistenceProvider,
+                       @NotNull InetAddress inetAddress)
+        {
+            this.connectionFactory = connectionFactory;
+            this.persistenceProvider = persistenceProvider;
+            this.inetAddress = inetAddress;
+            this.clearBlockedStatus = true;
+        }
+
+        /**
+         * Open the connection with the remote.
+         *
+         * @return The communication bridge to communicate with the remote.
+         * @throws IOException                    If an IO error occurs.
+         * @throws ProtocolException              When there is a communication error due to misconfiguration.
+         * @throws SecurityException              If something goes wrong while establishing a secure connection.
+         * @throws DifferentRemoteClientException If the connected client is different from the one that was provided.
+         * @throws BlockedRemoteClientException   If the remote is blocked on the side and unblocking is disallowed.
+         * @throws CertificateException           If an error related to encryption or authentication occurs.
+         */
+        public CommunicationBridge connect() throws IOException, JSONException, ProtocolException, CertificateException
+        {
+            ActiveConnection activeConnection = connectionFactory.openConnection(inetAddress);
+            String remoteClientUid = activeConnection.receive().getAsString();
+
+            if (clientUid != null && !clientUid.equals(remoteClientUid)) {
+                activeConnection.closeSafely();
+                throw new DifferentRemoteClientException(clientUid, remoteClientUid);
+            }
+
+            activeConnection.reply(persistenceProvider.clientAsJson(pin));
+            JSONObject jsonObject = activeConnection.receive().getAsJson();
+            Client client = ClientLoader.loadAsClient(persistenceProvider, jsonObject, remoteClientUid,
+                    clearBlockedStatus);
+            ClientAddress clientAddress = persistenceProvider.createClientAddressFor(inetAddress, remoteClientUid);
+
+            persistenceProvider.persist(clientAddress);
+
+            Responses.checkError(client, jsonObject);
+            convertToSSL(connectionFactory, persistenceProvider, activeConnection, client, true);
+
+            return new CommunicationBridge(persistenceProvider, activeConnection, client, clientAddress);
+        }
+
+        /**
+         * Sets whether the initial communication process should fail when the remote is flagged as blocked on this
+         * side.
+         * <p>
+         * Setting this to true will clear the blocked status of the remote.
+         *
+         * @param clear True to clear the blocked status of the remote instead of failing.
+         * @see Client#isClientBlocked()
+         */
+        public void setClearBlockedStatus(boolean clear)
+        {
+            this.clearBlockedStatus = clear;
+        }
+
+        /**
+         * Sets the client UID that this should connect to.
+         * <p>
+         * Passing null means the remote is not yet known. While not null, if the remote UID differs, this will cause
+         * {@link DifferentRemoteClientException}.
+         *
+         * @param clientUid With which a connection will be established.
+         * @see Client#getClientUid()
+         */
+        public void setClientUid(@Nullable String clientUid)
+        {
+            this.clientUid = clientUid;
+        }
+
+        /**
+         * Sets the PIN to bypass errors (i.e. this client is blocked on the remote client), and to be flagged
+         * as trusted. Pass '0' if no PIN is available.
+         *
+         * @param pin The PIN remote gave you through 3rd party means.
+         */
+        public void setPin(int pin)
+        {
+            this.pin = pin;
+        }
     }
 }

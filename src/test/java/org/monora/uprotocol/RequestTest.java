@@ -7,6 +7,7 @@ import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
+import org.monora.uprotocol.core.protocol.communication.client.BlockedRemoteClientException;
 import org.monora.uprotocol.core.protocol.communication.client.UnauthorizedClientException;
 import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.variant.test.DefaultTestBase;
@@ -26,7 +27,7 @@ public class RequestTest extends DefaultTestBase
         primarySession.start();
 
         try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
-                clientAddress, null, 0)) {
+                clientAddress)) {
             Assert.assertTrue("Remote should send a positive message.", bridge.requestAcquaintance());
 
             Client persistentClient = secondaryPersistence.getClientFor(bridge.getRemoteClient().getClientUid());
@@ -150,7 +151,7 @@ public class RequestTest extends DefaultTestBase
         primarySession.start();
 
         try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
-                clientAddress, null, 0)) {
+                clientAddress)) {
             Assert.assertTrue("Remote should send a positive message.", bridge.requestAcquaintance());
         }
 
@@ -162,11 +163,82 @@ public class RequestTest extends DefaultTestBase
         primaryPersistence.persist(secondaryOnPrimary, true);
 
         try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
-                clientAddress, null, 0)) {
+                clientAddress)) {
             Assert.fail("This scope should not get executed as the above scope should fail.");
         } finally {
             primarySession.stop();
         }
+    }
+
+    @Test
+    public void clientFlaggedAsTrustedWithPin() throws IOException, InterruptedException, CertificateException,
+            ProtocolException
+    {
+        primarySession.start();
+
+        CommunicationBridge.Builder builder = new CommunicationBridge.Builder(connectionFactory, secondaryPersistence,
+                clientAddress);
+        builder.setPin(primaryPersistence.getNetworkPin());
+
+        try (CommunicationBridge bridge = builder.connect()) {
+            bridge.requestAcquaintance();
+        } finally {
+            primarySession.stop();
+        }
+
+        Client secondaryOnPrimary = primaryPersistence.getClientFor(secondaryPersistence.getClientUid());
+
+        Assert.assertNotNull("Secondary client should exist on primary persistence.", secondaryOnPrimary);
+        Assert.assertTrue("The device should be trusted", secondaryOnPrimary.isClientTrusted());
+    }
+
+    @Test(expected = BlockedRemoteClientException.class)
+    public void clientConnectionFailsWhenClearingUnblockIsDisabled() throws IOException, InterruptedException,
+            CertificateException, ProtocolException
+    {
+        primarySession.start();
+
+        Client primaryClient = primaryPersistence.getClient();
+        primaryClient.setClientBlocked(true);
+
+        secondaryPersistence.persist(primaryClient, false);
+
+        CommunicationBridge.Builder builder = new CommunicationBridge.Builder(connectionFactory, secondaryPersistence,
+                clientAddress);
+        builder.setClearBlockedStatus(false);
+
+        try (CommunicationBridge bridge = builder.connect()) {
+            bridge.requestAcquaintance();
+        } finally {
+            primarySession.stop();
+        }
+    }
+
+    @Test
+    public void clientUnblockedWithPin() throws IOException, InterruptedException, CertificateException,
+            ProtocolException
+    {
+        primarySession.start();
+
+        Client secondaryClient = secondaryPersistence.getClient();
+        secondaryClient.setClientBlocked(true);
+
+        primaryPersistence.persist(secondaryClient, false);
+
+        CommunicationBridge.Builder builder = new CommunicationBridge.Builder(connectionFactory, secondaryPersistence,
+                clientAddress);
+        builder.setPin(primaryPersistence.getNetworkPin());
+
+        try (CommunicationBridge bridge = builder.connect()) {
+            bridge.requestAcquaintance();
+        } finally {
+            primarySession.stop();
+        }
+
+        Client secondaryOnPrimary = primaryPersistence.getClientFor(secondaryPersistence.getClientUid());
+
+        Assert.assertNotNull("Secondary client should exist on primary persistence.", secondaryOnPrimary);
+        Assert.assertFalse("The device should be unblocked", secondaryOnPrimary.isClientBlocked());
     }
 
     @Test

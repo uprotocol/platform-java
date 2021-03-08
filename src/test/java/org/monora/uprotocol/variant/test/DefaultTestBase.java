@@ -46,6 +46,6 @@ public class DefaultTestBase
                                                           @NotNull InetAddress address) throws IOException,
             ProtocolException, CertificateException
     {
-        return CommunicationBridge.connect(connectionFactory, persistenceProvider, address, null, 0);
+        return CommunicationBridge.connect(connectionFactory, persistenceProvider, address);
     }
 }

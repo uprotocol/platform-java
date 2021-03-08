@@ -30,14 +30,23 @@ public class ClientLoader
      * @param persistenceProvider That stores persistent data.
      * @param object              To load the details from.
      * @param clientUid           For which this method invocation is being made.
+     * @param unblock             True if this should unblocked the remote if blocked.
      * @return The client produced from the JSON object and persistence database.
-     * @throws JSONException If something goes wrong when inflating the JSON data.
+     * @throws JSONException                If something goes wrong when inflating the JSON data.
+     * @throws BlockedRemoteClientException If the remote is blocked on the side and 'unblock' parameter is false.
      */
     public static @NotNull Client loadAsClient(@NotNull PersistenceProvider persistenceProvider,
-                                               @NotNull JSONObject object, @NotNull String clientUid)
-            throws JSONException
+                                               @NotNull JSONObject object, @NotNull String clientUid,
+                                               boolean unblock)
+            throws JSONException, BlockedRemoteClientException
     {
-        return loadFrom(persistenceProvider, object, clientUid, true, false);
+        Client client = loadFrom(persistenceProvider, object, clientUid, false, true, unblock);
+
+        if (client.isClientBlocked()) {
+            throw new BlockedRemoteClientException(client);
+        }
+
+        return client;
     }
 
     /**
@@ -57,17 +66,18 @@ public class ClientLoader
                                                @NotNull JSONObject object, @NotNull String clientUid, boolean hasPin)
             throws JSONException, BlockedRemoteClientException
     {
-        Client client = loadFrom(persistenceProvider, object, clientUid, false, hasPin);
+        Client client = loadFrom(persistenceProvider, object, clientUid, hasPin, false, false);
 
-        if (client.isClientBlocked())
+        if (client.isClientBlocked()) {
             throw new BlockedRemoteClientException(client);
+        }
 
         return client;
     }
 
     private static @NotNull Client loadFrom(@NotNull PersistenceProvider persistenceProvider,
-                                            @NotNull JSONObject response, @NotNull String clientUid, boolean asClient,
-                                            boolean hasPin) throws JSONException
+                                            @NotNull JSONObject response, @NotNull String clientUid, boolean hasPin,
+                                            boolean asClient, boolean unblockAsClient) throws JSONException
     {
         String nickname = response.getString(Keyword.CLIENT_NICKNAME);
         String manufacturer = response.getString(Keyword.CLIENT_MANUFACTURER);
@@ -80,8 +90,9 @@ public class ClientLoader
         long lastUsageTime = System.currentTimeMillis();
         boolean local = persistenceProvider.getClientUid().equals(clientUid);
 
-        if (nickname.length() > LENGTH_CLIENT_USERNAME)
+        if (nickname.length() > LENGTH_CLIENT_USERNAME) {
             nickname = nickname.substring(0, LENGTH_CLIENT_USERNAME);
+        }
 
         byte[] clientPicture;
         try {
@@ -104,17 +115,21 @@ public class ClientLoader
             updating = true;
         }
 
-        if (asClient) {
-            client.setClientBlocked(false);
-        } else if (hasPin) {
-            client.setClientBlocked(false);
-            client.setClientTrusted(true);
+        try {
+            if (asClient) {
+                if (unblockAsClient) {
+                    client.setClientBlocked(false);
+                }
+            } else if (hasPin) {
+                client.setClientBlocked(false);
+                client.setClientTrusted(true);
+            }
+        } finally {
+            client.setClientLastUsageTime(lastUsageTime);
+            client.setClientLocal(local);
+            persistenceProvider.persist(client, updating);
+            persistenceProvider.persistClientPicture(client.getClientUid(), clientPicture);
         }
-
-        client.setClientLastUsageTime(lastUsageTime);
-        client.setClientLocal(local);
-        persistenceProvider.persist(client, updating);
-        persistenceProvider.persistClientPicture(client.getClientUid(), clientPicture);
 
         return client;
     }
@@ -135,8 +150,11 @@ public class ClientLoader
                                        @NotNull InetAddress inetAddress)
             throws IOException, ProtocolException, CertificateException
     {
-        try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, persistenceProvider,
-                inetAddress, null, 0)) {
+        CommunicationBridge.Builder builder = new CommunicationBridge.Builder(connectionFactory, persistenceProvider,
+                inetAddress);
+        builder.setClearBlockedStatus(false);
+
+        try (CommunicationBridge bridge = builder.connect()) {
             bridge.send(false);
             return bridge.getRemoteClient();
         }
