@@ -9,6 +9,7 @@ import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.UndefinedErrorCodeException;
+import org.monora.uprotocol.core.protocol.communication.client.BlockedRemoteClientException;
 import org.monora.uprotocol.core.protocol.communication.client.UnauthorizedClientException;
 import org.monora.uprotocol.core.protocol.communication.client.UntrustedClientException;
 import org.monora.uprotocol.core.spec.v1.Keyword;
@@ -66,7 +67,7 @@ public class Responses
             throw exception;
         } catch (UntrustedClientException e) {
             return Keyword.ERROR_NOT_TRUSTED;
-        } catch (UnauthorizedClientException e) {
+        } catch (UnauthorizedClientException | BlockedRemoteClientException e) {
             return Keyword.ERROR_NOT_ALLOWED;
         } catch (PersistenceException e) {
             return Keyword.ERROR_NOT_FOUND;

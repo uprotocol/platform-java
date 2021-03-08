@@ -7,6 +7,7 @@ import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
+import org.monora.uprotocol.core.protocol.communication.client.UnauthorizedClientException;
 import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.variant.test.DefaultTestBase;
 
@@ -30,7 +31,7 @@ public class RequestTest extends DefaultTestBase
 
             Client persistentClient = secondaryPersistence.getClientFor(bridge.getRemoteClient().getClientUid());
 
-            Assert.assertNotNull("The client should not be null on the remote db",persistentClient);
+            Assert.assertNotNull("The client should not be null on the remote db", persistentClient);
             Assert.assertEquals("Clients should be same.", bridge.getRemoteClient(), persistentClient);
             Assert.assertEquals("Clients should have the same username.", bridge.getRemoteClient().getClientNickname(),
                     persistentClient.getClientNickname());
@@ -137,6 +138,32 @@ public class RequestTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestAcquaintance();
+        } finally {
+            primarySession.stop();
+        }
+    }
+
+    @Test(expected = UnauthorizedClientException.class)
+    public void throwsAppropriateErrorWhenBlocked() throws IOException, InterruptedException, CertificateException,
+            ProtocolException
+    {
+        primarySession.start();
+
+        try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
+                clientAddress, null, 0)) {
+            Assert.assertTrue("Remote should send a positive message.", bridge.requestAcquaintance());
+        }
+
+        Client secondaryOnPrimary = primaryPersistence.getClientFor(secondaryPersistence.getClientUid());
+
+        Assert.assertNotNull("Secondary client on primary persistence should exist", secondaryOnPrimary);
+
+        secondaryOnPrimary.setClientBlocked(true);
+        primaryPersistence.persist(secondaryOnPrimary, true);
+
+        try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
+                clientAddress, null, 0)) {
+            Assert.fail("This scope should not get executed as the above scope should fail.");
         } finally {
             primarySession.stop();
         }
