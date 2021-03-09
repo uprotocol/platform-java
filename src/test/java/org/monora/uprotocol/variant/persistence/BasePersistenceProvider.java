@@ -14,7 +14,7 @@ import org.monora.uprotocol.variant.DefaultClientAddress;
 import org.monora.uprotocol.variant.DefaultTransferItem;
 import org.monora.uprotocol.variant.holder.ClientPicture;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
-import org.monora.uprotocol.variant.holder.OwnedTransferHolder;
+import org.monora.uprotocol.variant.holder.TransferHolder;
 import org.spongycastle.asn1.x500.X500NameBuilder;
 import org.spongycastle.asn1.x500.style.BCStyle;
 import org.spongycastle.cert.X509v3CertificateBuilder;
@@ -52,7 +52,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
 {
     private final List<Client> clientList = new ArrayList<>();
     private final List<ClientAddress> clientAddressList = new ArrayList<>();
-    private final List<OwnedTransferHolder> transferHolderList = new ArrayList<>();
+    private final List<TransferHolder> transferHolderList = new ArrayList<>();
     private final List<ClientPicture> clientPictureList = new ArrayList<>();
     private final List<MemoryStreamDescriptor> streamDescriptorList = new ArrayList<>();
     private final List<String> invalidationRequestList = new ArrayList<>();
@@ -154,7 +154,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     public boolean containsTransfer(long groupId)
     {
         synchronized (transferHolderList) {
-            for (OwnedTransferHolder holder : transferHolderList) {
+            for (TransferHolder holder : transferHolderList) {
                 if (holder.item.getItemGroupId() == groupId) {
                     return true;
                 }
@@ -245,10 +245,11 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     public @Nullable TransferItem getFirstReceivableItem(long groupId)
     {
         synchronized (transferHolderList) {
-            for (OwnedTransferHolder holder : transferHolderList) {
+            for (TransferHolder holder : transferHolderList) {
                 if (TransferItem.Type.Incoming.equals(holder.item.getItemType())
-                        && holder.item.getItemGroupId() == groupId && holder.state == STATE_PENDING)
+                        && holder.item.getItemGroupId() == groupId && holder.state == STATE_PENDING) {
                     return holder.item;
+                }
             }
         }
         return null;
@@ -257,8 +258,9 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     @Override
     public int getNetworkPin()
     {
-        if (networkPin == 0)
+        if (networkPin == 0) {
             networkPin = (int) (Integer.MAX_VALUE * Math.random());
+        }
 
         return networkPin;
     }
@@ -288,7 +290,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         return Collections.unmodifiableList(streamDescriptorList);
     }
 
-    public @NotNull List<OwnedTransferHolder> getTransferHolderList()
+    public @NotNull List<TransferHolder> getTransferHolderList()
     {
         return Collections.unmodifiableList(transferHolderList);
     }
@@ -306,7 +308,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
             throws PersistenceException
     {
         synchronized (transferHolderList) {
-            for (OwnedTransferHolder holder : transferHolderList) {
+            for (TransferHolder holder : transferHolderList) {
                 if (holder.item.getItemGroupId() == groupId && holder.item.getItemId() == id
                         && holder.item.getItemType().equals(type) && holder.clientUid.equals(clientUid))
                     return holder.item;
@@ -319,8 +321,9 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     @Override
     public @NotNull InputStream openInputStream(@NotNull StreamDescriptor descriptor) throws IOException
     {
-        if (descriptor instanceof MemoryStreamDescriptor)
+        if (descriptor instanceof MemoryStreamDescriptor) {
             return new ByteArrayInputStream(((MemoryStreamDescriptor) descriptor).data.toByteArray());
+        }
 
         throw new IOException("Unknown descriptor type");
     }
@@ -357,7 +360,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     public void persist(@NotNull String clientUid, @NotNull TransferItem item)
     {
         synchronized (transferHolderList) {
-            for (OwnedTransferHolder holder : transferHolderList) {
+            for (TransferHolder holder : transferHolderList) {
                 if (holder.item.equals(item)) {
                     holder.item = item;
                     holder.clientUid = clientUid;
@@ -365,7 +368,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
                 }
             }
 
-            transferHolderList.add(new OwnedTransferHolder(item, clientUid));
+            transferHolderList.add(new TransferHolder(item, clientUid));
         }
     }
 
@@ -374,7 +377,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     {
         for (TransferItem item : itemList) {
             // This doesn't reflect the correct use case. In production, this should only insert
-            // while single item counterpart below is updating.
+            // while single item counterpart above is updating.
             persist(clientUid, item);
         }
     }
@@ -396,8 +399,9 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     @Override
     public void saveRequestForInvalidationOfCredentials(@NotNull String clientUid)
     {
-        if (hasRequestForInvalidationOfCredentials(clientUid))
+        if (hasRequestForInvalidationOfCredentials(clientUid)) {
             return;
+        }
 
         synchronized (invalidationRequestList) {
             invalidationRequestList.add(clientUid);
@@ -408,7 +412,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     public void setState(@NotNull String clientUid, @NotNull TransferItem item, int state, @Nullable Exception e)
     {
         synchronized (transferHolderList) {
-            for (OwnedTransferHolder holder : transferHolderList) {
+            for (TransferHolder holder : transferHolderList) {
                 if (clientUid.equals(holder.clientUid) && item.equals(holder.item))
                     holder.state = state;
             }

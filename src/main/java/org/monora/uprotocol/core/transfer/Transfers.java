@@ -65,12 +65,16 @@ public class Transfers
     }
 
     /**
-     * Handle the receive process. You can invoke this method in the {@link TransportSeat#beginFileTransfer} method when
-     * the type is {@link TransferItem.Type#Incoming}.
+     * Handle the receive process. You can invoke this method in the {@link TransportSeat#beginFileTransfer} method
+     * when the type is {@link TransferItem.Type#Incoming}.
+     * <p>
+     * This can also be invoked when using {@link CommunicationBridge#requestFileTransferStart}.
      *
      * @param bridge    The bridge that speaks on behalf of you when making requests. A connection wrapper.
      * @param operation The operation object that handles the GUI side of things.
      * @param groupId   As in {@link TransferItem#getItemGroupId()}.
+     * @see TransportSeat#beginFileTransfer
+     * @see CommunicationBridge#requestFileTransferStart
      */
     public static void receive(@NotNull CommunicationBridge bridge, @NotNull TransferOperation operation, long groupId)
     {
@@ -162,9 +166,13 @@ public class Transfers
      * Handle the sending process. You can invoke this method via {@link TransportSeat#beginFileTransfer} method when
      * the type is {@link TransferItem.Type#Outgoing}.
      *
+     * This can also be invoked when using {@link CommunicationBridge#requestFileTransferStart}.
+     *
      * @param bridge    The bridge that speaks on behalf of you when making requests. A connection wrapper.
      * @param operation The operation object that handles the GUI side of things.
      * @param groupId   As in {@link TransferItem#getItemId()}.
+     * @see TransportSeat#beginFileTransfer
+     * @see CommunicationBridge#requestFileTransferStart
      */
     public static void send(@NotNull CommunicationBridge bridge, @NotNull TransferOperation operation, long groupId)
     {

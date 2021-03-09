@@ -34,6 +34,7 @@ import org.monora.uprotocol.core.protocol.communication.client.BlockedRemoteClie
 import org.monora.uprotocol.core.protocol.communication.client.DifferentRemoteClientException;
 import org.monora.uprotocol.core.spec.v1.Keyword;
 import org.monora.uprotocol.core.transfer.TransferItem;
+import org.monora.uprotocol.core.transfer.Transfers;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -118,7 +119,8 @@ public class CommunicationBridge implements Closeable
         return new Builder(connectionFactory, persistenceProvider, inetAddress).connect();
     }
 
-    static void convertToSSL(@NotNull ConnectionFactory connectionFactory, @NotNull PersistenceProvider persistenceProvider,
+    static void convertToSSL(@NotNull ConnectionFactory connectionFactory,
+                             @NotNull PersistenceProvider persistenceProvider,
                              @NotNull ActiveConnection activeConnection, @NotNull Client client, boolean isClient)
             throws IOException, CommunicationException, CertificateException
     {
@@ -153,8 +155,9 @@ public class CommunicationBridge implements Closeable
                         client.setClientCertificate((X509Certificate) certificate);
                         persistenceProvider.persist(client, true);
                     }
-                } else
+                } else {
                     throw new CertificateException("The certificate is not in X.509 format");
+                }
             } catch (Exception e) {
                 client.setClientCertificate(null);
                 persistenceProvider.persist(client, true);
@@ -283,12 +286,17 @@ public class CommunicationBridge implements Closeable
      * <p>
      * The transfer request, in this case, has already been sent with {@link #requestFileTransfer(long, List)}.
      *
+     * After the method returns positive, the rest of the operation can be carried on with {@link Transfers#receive}
+     * or {@link Transfers#send} depending on the type of the transfer.
+     *
      * @param groupId That ties a group of {@link TransferItem} as in {@link TransferItem#getItemGroupId()}.
      * @param type    Of the transfer as in {@link TransferItem#getItemType()}.
      * @return True if successful.
      * @throws IOException       If an IO error occurs.
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
+     * @see Transfers#receive
+     * @see Transfers#send
      */
     public boolean requestFileTransferStart(long groupId, @NotNull TransferItem.Type type) throws JSONException,
             IOException, ProtocolException

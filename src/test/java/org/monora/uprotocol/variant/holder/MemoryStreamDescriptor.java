@@ -12,6 +12,8 @@ import java.io.ByteArrayOutputStream;
  */
 public class MemoryStreamDescriptor implements StreamDescriptor
 {
+    public static int MAX_SIZE = Short.MAX_VALUE - 1;
+
     public final @NotNull ByteArrayOutputStream data;
 
     public final @NotNull TransferItem transferItem;
@@ -24,8 +26,8 @@ public class MemoryStreamDescriptor implements StreamDescriptor
 
     public static @NotNull MemoryStreamDescriptor newInstance(@NotNull TransferItem transferItem)
     {
-        if (transferItem.getItemSize() < 0 || transferItem.getItemSize() >= Short.MAX_VALUE)
-            throw new ArrayIndexOutOfBoundsException("Transfer item size cannot be larger than " + Short.MAX_VALUE
+        if (transferItem.getItemSize() < 0 || transferItem.getItemSize() > MAX_SIZE)
+            throw new ArrayIndexOutOfBoundsException("Transfer item size cannot be larger than " + MAX_SIZE
                     + " or smaller than 0");
         return new MemoryStreamDescriptor(transferItem);
     }

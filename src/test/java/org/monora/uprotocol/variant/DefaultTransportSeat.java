@@ -34,10 +34,11 @@ public class DefaultTransportSeat implements TransportSeat
                                   @NotNull TransferItem.Type type)
             throws PersistenceException, ProtocolException
     {
-        if (type.equals(TransferItem.Type.Incoming))
+        if (type.equals(TransferItem.Type.Incoming)) {
             Transfers.receive(bridge, transferOperation, groupId);
-        else if (type.equals(TransferItem.Type.Outgoing))
+        } else if (type.equals(TransferItem.Type.Outgoing)) {
             Transfers.send(bridge, transferOperation, groupId);
+        }
     }
 
     @Override

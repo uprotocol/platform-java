@@ -2,14 +2,20 @@ package org.monora.uprotocol;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.monora.coolsocket.core.session.CancelledException;
+import org.monora.coolsocket.core.session.ClosedException;
 import org.monora.uprotocol.core.ClientLoader;
 import org.monora.uprotocol.core.CommunicationBridge;
+import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
 import org.monora.uprotocol.core.protocol.communication.client.BlockedRemoteClientException;
 import org.monora.uprotocol.core.protocol.communication.client.UnauthorizedClientException;
 import org.monora.uprotocol.core.transfer.TransferItem;
+import org.monora.uprotocol.core.transfer.Transfers;
+import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
+import org.monora.uprotocol.variant.holder.TransferHolder;
 import org.monora.uprotocol.variant.test.DefaultTestBase;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -55,18 +61,82 @@ public class RequestTest extends DefaultTestBase
         final List<TransferItem> transferItemList = new ArrayList<>();
         final long groupId = 1;
 
-        transferItemList.add(secondaryPersistence.createTransferItemFor(groupId, 1, "1.jpg",
-                "image/jpeg", 0, null, TransferItem.Type.Outgoing));
+        transferItemList.add(secondaryPersistence.createTransferItemFor(groupId, 1, "1.mp4",
+                "video/mp4", MemoryStreamDescriptor.MAX_SIZE, null, TransferItem.Type.Outgoing));
         transferItemList.add(secondaryPersistence.createTransferItemFor(groupId, 2, "2.jpg",
-                "image/jpeg", 0, null, TransferItem.Type.Outgoing));
+                "image/jpeg", 8196, null, TransferItem.Type.Outgoing));
         transferItemList.add(secondaryPersistence.createTransferItemFor(groupId, 3, "3.jpg",
-                "image/jpeg", 0, null, TransferItem.Type.Outgoing));
+                "image/jpeg", 0, "doggos", TransferItem.Type.Outgoing));
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             Assert.assertTrue("The request should be successful", bridge.requestFileTransfer(groupId,
                     transferItemList));
         } finally {
             primarySession.stop();
+        }
+
+        // CoolSocket does blocking close
+        for (TransferHolder remoteTransferHolder : primaryPersistence.getTransferHolderList()) {
+            TransferItem targetTransferItem = null;
+            for (TransferItem transferItem : transferItemList) {
+                if (remoteTransferHolder.item.getItemId() == transferItem.getItemId()) {
+                    targetTransferItem = transferItem;
+                    break;
+                }
+            }
+            Assert.assertNotNull("Target transfer item should not be empty", targetTransferItem);
+            Assert.assertEquals("Group IDs should be the same", targetTransferItem.getItemGroupId(),
+                    remoteTransferHolder.item.getItemGroupId());
+            Assert.assertEquals("MIME-Types should be the same", targetTransferItem.getItemMimeType(),
+                    remoteTransferHolder.item.getItemMimeType());
+            Assert.assertEquals("Lengths should be the same", targetTransferItem.getItemSize(),
+                    remoteTransferHolder.item.getItemSize());
+        }
+    }
+
+    @Test
+    public void transferStateRemovedAppliedIfSenderNotifiesNotFound() throws IOException, InterruptedException,
+            ProtocolException, CertificateException
+    {
+        primarySession.start();
+
+        final List<TransferItem> transferItemList = new ArrayList<>();
+        final long groupId = 1;
+
+        transferItemList.add(secondaryPersistence.createTransferItemFor(groupId, 1, "1.mp4",
+                "video/mp4", MemoryStreamDescriptor.MAX_SIZE, null, TransferItem.Type.Outgoing));
+
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
+            Assert.assertTrue("The request should be successful", bridge.requestFileTransfer(groupId,
+                    transferItemList));
+        } finally {
+            primarySession.stop();
+        }
+
+        TransferHolder secondaryTransferHolder = secondaryPersistence.getTransferHolderList().get(0);
+
+        Assert.assertNotNull("Secondary transfer holder should exist", secondaryTransferHolder);
+
+        secondaryTransferHolder.item.setItemId(secondaryTransferHolder.item.getItemId() + 1);
+
+        secondarySession.start();
+
+        TransferHolder transferHolder = primaryPersistence.getTransferHolderList().get(0);
+
+        Assert.assertNotNull("Transfer holder should not be null", transferHolder);
+
+        try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
+            if (bridge.requestFileTransferStart(transferHolder.item.getItemGroupId(),
+                     transferHolder.item.getItemType())) {
+                Transfers.receive(bridge, transferOperation, transferHolder.item.getItemGroupId());
+            } else {
+                Assert.fail("Request for start should not fail");
+            }
+
+            Assert.assertEquals("The removed state should match",
+                    PersistenceProvider.STATE_INVALIDATED_STICKY, transferHolder.state);
+        } finally {
+            secondarySession.stop();
         }
     }
 
@@ -83,6 +153,33 @@ public class RequestTest extends DefaultTestBase
         primaryPersistence.regenerateSecrets();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
+            bridge.requestAcquaintance();
+        } finally {
+            primarySession.stop();
+        }
+    }
+
+    @Test(expected = CancelledException.class)
+    public void cancelsSuccessfully() throws ProtocolException, CertificateException, IOException, InterruptedException
+    {
+        primarySession.start();
+
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
+            bridge.getActiveConnection().cancel();
+            bridge.requestAcquaintance();
+        } finally {
+            primarySession.stop();
+        }
+    }
+
+    @Test(expected = ClosedException.class)
+    public void earlyClosesSuccessfully() throws ProtocolException, CertificateException, IOException,
+            InterruptedException
+    {
+        primarySession.start();
+
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
+            bridge.close();
             bridge.requestAcquaintance();
         } finally {
             primarySession.stop();

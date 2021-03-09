@@ -13,7 +13,7 @@ import org.monora.uprotocol.core.protocol.communication.client.UntrustedClientEx
 import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.transfer.Transfers;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
-import org.monora.uprotocol.variant.holder.OwnedTransferHolder;
+import org.monora.uprotocol.variant.holder.TransferHolder;
 import org.monora.uprotocol.variant.test.DefaultTestBase;
 
 import java.io.IOException;
@@ -113,14 +113,14 @@ public class TransferTest extends DefaultTestBase
 
         secondarySession.stop();
 
-        final List<OwnedTransferHolder> itemList = new ArrayList<>();
+        final List<TransferHolder> itemList = new ArrayList<>();
         itemList.addAll(primaryPersistence.getTransferHolderList());
         itemList.addAll(secondaryPersistence.getTransferHolderList());
 
         Assert.assertEquals("Items should not overwrite their counterparts", itemList.size(),
                 primaryPersistence.getTransferHolderList().size() + secondaryPersistence.getTransferHolderList().size());
 
-        for (OwnedTransferHolder holder : itemList) {
+        for (TransferHolder holder : itemList) {
             Assert.assertEquals("The item should be marked as done", PersistenceProvider.STATE_DONE,
                     holder.state);
         }

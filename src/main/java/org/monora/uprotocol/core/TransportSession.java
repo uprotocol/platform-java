@@ -5,6 +5,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.CoolSocket;
 import org.monora.coolsocket.core.session.ActiveConnection;
+import org.monora.coolsocket.core.session.CancelledException;
+import org.monora.coolsocket.core.session.ClosedException;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
@@ -18,6 +20,7 @@ import org.monora.uprotocol.core.spec.v1.Keyword;
 import org.monora.uprotocol.core.transfer.TransferItem;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 /**
  * The server that accepts requests from clients.
@@ -86,8 +89,9 @@ public class TransportSession extends CoolSocket
             activeConnection.setInternalCacheLimit(1073741824); // 1MB
 
             JSONObject request = activeConnection.receive().getAsJson();
-            if (!Responses.getResult(request))
+            if (!Responses.getResult(request)) {
                 return;
+            }
 
             handleRequest(new CommunicationBridge(persistenceProvider, activeConnection, client, clientAddress),
                     client, clientAddress, hasPin, request);
@@ -96,6 +100,10 @@ public class TransportSession extends CoolSocket
                 persistenceProvider.saveRequestForInvalidationOfCredentials(e.client.getClientUid());
                 transportSeat.notifyClientCredentialsChanged(e.client);
             }
+        } catch (ClosedException e) {
+            getLogger().log(Level.INFO, "Closed successfully by " + (e.remoteRequested ? "remote" : "you"));
+        } catch (CancelledException e) {
+            getLogger().log(Level.INFO, "Cancelled successfully by " + (e.remoteRequested ? "remote" : "you"));
         } catch (Exception e) {
             try {
                 Responses.send(activeConnection, e, clientIndex);
@@ -116,9 +124,9 @@ public class TransportSession extends CoolSocket
                 long groupId = response.getLong(Keyword.TRANSFER_GROUP_ID);
                 String jsonIndex = response.getString(Keyword.INDEX);
 
-                if (transportSeat.hasOngoingIndexingFor(groupId) || persistenceProvider.containsTransfer(groupId))
+                if (transportSeat.hasOngoingIndexingFor(groupId) || persistenceProvider.containsTransfer(groupId)) {
                     throw new ContentException(ContentException.Error.AlreadyExists);
-                else {
+                } else {
                     transportSeat.handleFileTransferRequest(client, hasPin, groupId, jsonIndex);
                     bridge.send(true);
                 }
@@ -145,16 +153,17 @@ public class TransportSession extends CoolSocket
                 TransferItem.Type type = TransferItem.Type.from(response.getString(Keyword.TRANSFER_TYPE));
 
                 // The type is reversed to match our side
-                if (TransferItem.Type.Incoming.equals(type))
+                if (TransferItem.Type.Incoming.equals(type)) {
                     type = TransferItem.Type.Outgoing;
-                else if (TransferItem.Type.Outgoing.equals(type))
+                } else if (TransferItem.Type.Outgoing.equals(type)) {
                     type = TransferItem.Type.Incoming;
+                }
 
-                if (TransferItem.Type.Incoming.equals(type) && !client.isClientTrusted())
+                if (TransferItem.Type.Incoming.equals(type) && !client.isClientTrusted()) {
                     bridge.send(Keyword.ERROR_NOT_TRUSTED);
-                else if (transportSeat.hasOngoingTransferFor(groupId, client.getClientUid(), type))
+                } else if (transportSeat.hasOngoingTransferFor(groupId, client.getClientUid(), type)) {
                     throw new ContentException(ContentException.Error.NotAccessible);
-                else {
+                } else {
                     bridge.send(true);
                     transportSeat.beginFileTransfer(bridge, client, groupId, type);
                 }

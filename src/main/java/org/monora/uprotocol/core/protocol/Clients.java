@@ -13,20 +13,6 @@ import java.security.cert.X509Certificate;
 public class Clients
 {
     /**
-     * Copy one {@link Client} to another.
-     *
-     * @param from The instance to copy from.
-     * @param to   The instance to copy to.
-     */
-    public static void copy(@NotNull Client from, @NotNull Client to)
-    {
-        fill(to, from.getClientUid(), from.getClientCertificate(), from.getClientNickname(), from.getClientManufacturer(),
-                from.getClientProduct(), from.getClientType(), from.getClientVersionName(), from.getClientVersionCode(),
-                from.getClientProtocolVersion(), from.getClientProtocolVersionMin(), from.isClientTrusted(),
-                from.isClientBlocked());
-    }
-
-    /**
      * Fill in the details of a {@link Client} instance.
      *
      * @param client             To fill in.
@@ -60,25 +46,5 @@ public class Clients
         client.setClientProtocolVersionMin(protocolVersionMin);
         client.setClientTrusted(isTrusted);
         client.setClientBlocked(isBlocked);
-    }
-
-    /**
-     * Find and return a known client using its unique identifier or fail if the client is unknown.
-     *
-     * @param persistenceProvider On which this will search.
-     * @param uid                 Of the client.
-     * @return The known client instance.
-     * @throws PersistenceException If the client isn't known yet.
-     */
-    public static @NotNull Client getClientOrFail(@NotNull PersistenceProvider persistenceProvider, @NotNull String uid)
-            throws PersistenceException
-    {
-        Client client = persistenceProvider.getClientFor(uid);
-
-        if (client == null) {
-            throw new PersistenceException("There is no client for the requested unique identifier");
-        }
-
-        return client;
     }
 }

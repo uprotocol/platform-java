@@ -122,8 +122,9 @@ public interface PersistenceProvider
                 .put(Keyword.CLIENT_PIN, pin);
 
         byte[] clientAvatar = getClientPicture();
-        if (clientAvatar != null && clientAvatar.length > 0)
+        if (clientAvatar != null && clientAvatar.length > 0) {
             object.put(Keyword.CLIENT_PICTURE, Base64.encodeBase64(clientAvatar));
+        }
 
         return object;
     }

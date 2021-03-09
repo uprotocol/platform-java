@@ -16,6 +16,8 @@ public class DefaultTransferOperation implements TransferOperation
 
     private int count;
 
+    private boolean debugCancelled = false;
+
     @Override
     public void clearBytesOngoing()
     {
@@ -67,7 +69,7 @@ public class DefaultTransferOperation implements TransferOperation
     @Override
     public void onCancelOperation()
     {
-
+        debugCancelled = true;
     }
 
     @Override

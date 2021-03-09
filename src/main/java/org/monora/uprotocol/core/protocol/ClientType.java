@@ -45,8 +45,9 @@ public enum ClientType
     public static @NotNull ClientType from(String value)
     {
         for (ClientType type : values()) {
-            if (type.protocolValue.equals(value))
+            if (type.protocolValue.equals(value)) {
                 return type;
+            }
         }
 
         ClientType type = Any;
@@ -62,5 +63,17 @@ public enum ClientType
     public String getProtocolValue()
     {
         return equals(Any) && protocolValueCustom != null ? protocolValueCustom : protocolValue;
+    }
+
+    /**
+     * The value that built this {@link ClientType}.
+     * <p>
+     * This will not the protocol value if the requested value was undefined when invoked {@link #from(String)}.
+     *
+     * @return The original value that build this client type instance.
+     */
+    public String getOriginalValue()
+    {
+        return protocolValueCustom == null ? name() : protocolValueCustom;
     }
 }

@@ -35,5 +35,6 @@ public interface ConnectionFactory
      * @param supportedCipherSuites  You can enable.
      * @param enabledCipherSuiteList To which you can add more cipher suites which will be enabled during the SSL
      */
-    void enableCipherSuites(String @NotNull [] supportedCipherSuites, List<@NotNull String> enabledCipherSuiteList);
+    void enableCipherSuites(String @NotNull [] supportedCipherSuites,
+                            @NotNull List<@NotNull String> enabledCipherSuiteList);
 }
