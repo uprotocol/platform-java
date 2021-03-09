@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.session.ActiveConnection;
+import org.monora.uprotocol.core.io.DefectiveAddressListException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
@@ -47,6 +48,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.monora.uprotocol.core.spec.v1.Config.PORT_UPROTOCOL;
@@ -285,7 +287,7 @@ public class CommunicationBridge implements Closeable
      * Ask remote to start file transfer.
      * <p>
      * The transfer request, in this case, has already been sent with {@link #requestFileTransfer(long, List)}.
-     *
+     * <p>
      * After the method returns positive, the rest of the operation can be carried on with {@link Transfers#receive}
      * or {@link Transfers#send} depending on the type of the transfer.
      *
@@ -489,13 +491,29 @@ public class CommunicationBridge implements Closeable
 
         private final @NotNull PersistenceProvider persistenceProvider;
 
-        private final @NotNull InetAddress inetAddress;
+        private final @NotNull List<InetAddress> addressList;
 
         private @Nullable String clientUid;
 
-        private boolean clearBlockedStatus;
+        private boolean clearBlockedStatus = true;
 
         private int pin;
+
+        /**
+         * Creates a new builder instance.
+         *
+         * @param connectionFactory   To start and set up connections with.
+         * @param persistenceProvider To store and query objects with.
+         * @param addressList         To connect to.
+         */
+        public Builder(@NotNull ConnectionFactory connectionFactory,
+                       @NotNull PersistenceProvider persistenceProvider,
+                       @NotNull List<InetAddress> addressList)
+        {
+            this.connectionFactory = connectionFactory;
+            this.persistenceProvider = persistenceProvider;
+            this.addressList = addressList;
+        }
 
         /**
          * Creates a new builder instance.
@@ -508,10 +526,7 @@ public class CommunicationBridge implements Closeable
                        @NotNull PersistenceProvider persistenceProvider,
                        @NotNull InetAddress inetAddress)
         {
-            this.connectionFactory = connectionFactory;
-            this.persistenceProvider = persistenceProvider;
-            this.inetAddress = inetAddress;
-            this.clearBlockedStatus = true;
+            this(connectionFactory, persistenceProvider, Collections.singletonList(inetAddress));
         }
 
         /**
@@ -527,19 +542,20 @@ public class CommunicationBridge implements Closeable
          */
         public CommunicationBridge connect() throws IOException, JSONException, ProtocolException, CertificateException
         {
-            ActiveConnection activeConnection = connectionFactory.openConnection(inetAddress);
+            ActiveConnection activeConnection = openConnection();
+            InetAddress address = activeConnection.getAddress();
             String remoteClientUid = activeConnection.receive().getAsString();
 
             if (clientUid != null && !clientUid.equals(remoteClientUid)) {
                 activeConnection.closeSafely();
-                throw new DifferentRemoteClientException(clientUid, remoteClientUid);
+                throw new DifferentRemoteClientException(clientUid, remoteClientUid, address);
             }
 
             activeConnection.reply(persistenceProvider.clientAsJson(pin));
             JSONObject jsonObject = activeConnection.receive().getAsJson();
             Client client = ClientLoader.loadAsClient(persistenceProvider, jsonObject, remoteClientUid,
                     clearBlockedStatus);
-            ClientAddress clientAddress = persistenceProvider.createClientAddressFor(inetAddress, remoteClientUid);
+            ClientAddress clientAddress = persistenceProvider.createClientAddressFor(address, remoteClientUid);
 
             persistenceProvider.persist(clientAddress);
 
@@ -547,6 +563,22 @@ public class CommunicationBridge implements Closeable
             convertToSSL(connectionFactory, persistenceProvider, activeConnection, client, true);
 
             return new CommunicationBridge(persistenceProvider, activeConnection, client, clientAddress);
+        }
+
+        private ActiveConnection openConnection() throws IOException
+        {
+            List<IOException> underlyingExceptionList = new ArrayList<>();
+
+            for (InetAddress address : addressList) {
+                try {
+                    return connectionFactory.openConnection(address);
+                } catch (IOException e) {
+                    underlyingExceptionList.add(e);
+                }
+            }
+
+            throw new IOException("No one of the addresses worked",
+                    new DefectiveAddressListException(underlyingExceptionList, addressList));
         }
 
         /**

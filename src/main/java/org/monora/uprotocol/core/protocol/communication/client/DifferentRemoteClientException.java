@@ -23,6 +23,8 @@ import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 
+import java.net.InetAddress;
+
 /**
  * This error concerns a remote client and is thrown when {@link CommunicationBridge} communicates with a peer that has
  * a different {@link Client#getClientUid()} mismatching with the one that it intends to connect to.
@@ -31,11 +33,14 @@ public class DifferentRemoteClientException extends ProtocolException
 {
     public final @NotNull String expectedUid;
     public final @NotNull String gotUid;
+    public final @NotNull InetAddress errorCausingAddress;
 
-    public DifferentRemoteClientException(@NotNull String expectedUid, @NotNull String gotUid)
+    public DifferentRemoteClientException(@NotNull String expectedUid, @NotNull String gotUid,
+                                          @NotNull InetAddress errorCausingAddress)
     {
         super();
         this.expectedUid = expectedUid;
         this.gotUid = gotUid;
+        this.errorCausingAddress = errorCausingAddress;
     }
 }
