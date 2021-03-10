@@ -167,7 +167,7 @@ public interface PersistenceProvider
                                     int versionCode, int protocolVersion, int protocolVersionMin);
 
     /**
-     * todo: Should this really exist? This user can avoid using. The benefit may be to use it as a factory.
+     * todo: Should this really exist? This user can avoid using it. The benefit may be to use it as a factory.
      * Create a transfer item instance for the given parameters.
      *
      * @param groupId   Points to {@link TransferItem#getItemGroupId()}.

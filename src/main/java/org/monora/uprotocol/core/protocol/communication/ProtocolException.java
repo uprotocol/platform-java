@@ -21,7 +21,7 @@ package org.monora.uprotocol.core.protocol.communication;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Thrown when any error that
+ * Thrown when any error that is related to the protocol happens.
  */
 public class ProtocolException extends Exception
 {
