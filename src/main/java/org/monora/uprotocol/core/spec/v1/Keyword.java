@@ -27,6 +27,7 @@ public class Keyword
             CLIENT_MANUFACTURER = "manufacturer",
             CLIENT_NICKNAME = "nickname",
             CLIENT_PICTURE = "picture",
+            CLIENT_PICTURE_CHECKSUM = "pictureChecksum",
             CLIENT_PIN = "pin",
             CLIENT_PRODUCT = "product",
             CLIENT_PROTOCOL_VERSION = "protocolVersion",

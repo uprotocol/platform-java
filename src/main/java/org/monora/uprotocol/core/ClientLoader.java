@@ -4,6 +4,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.monora.uprotocol.core.io.ClientPicture;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientType;
@@ -94,13 +95,6 @@ public class ClientLoader
             nickname = nickname.substring(0, LENGTH_CLIENT_USERNAME);
         }
 
-        byte[] clientPicture;
-        try {
-            clientPicture = Base64.decodeBase64(response.getString(Keyword.CLIENT_PICTURE));
-        } catch (Exception ignored) {
-            clientPicture = new byte[0];
-        }
-
         Client client = persistenceProvider.getClientFor(clientUid);
         boolean updating = false;
 
@@ -128,7 +122,17 @@ public class ClientLoader
             client.setClientLastUsageTime(lastUsageTime);
             client.setClientLocal(local);
             persistenceProvider.persist(client, updating);
-            persistenceProvider.persistClientPicture(client.getClientUid(), clientPicture);
+
+            try {
+                int checksum = response.getInt(Keyword.CLIENT_PICTURE_CHECKSUM);
+                ClientPicture existing = persistenceProvider.getClientPictureFor(client);
+
+                if (existing.getPictureChecksum() != checksum) {
+                    persistenceProvider.persistClientPicture(ClientPicture.newInstance(clientUid,
+                            Base64.decodeBase64(response.getString(Keyword.CLIENT_PICTURE)), checksum));
+                }
+            } catch (Exception ignored) {
+            }
         }
 
         return client;

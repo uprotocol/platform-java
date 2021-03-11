@@ -8,6 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSession;
+import org.monora.uprotocol.core.io.ClientPicture;
 import org.monora.uprotocol.core.io.StreamDescriptor;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
@@ -121,9 +122,10 @@ public interface PersistenceProvider
                 .put(Keyword.CLIENT_PROTOCOL_VERSION_MIN, client.getClientProtocolVersionMin())
                 .put(Keyword.CLIENT_PIN, pin);
 
-        byte[] clientAvatar = getClientPicture();
-        if (clientAvatar != null && clientAvatar.length > 0) {
-            object.put(Keyword.CLIENT_PICTURE, Base64.encodeBase64(clientAvatar));
+        ClientPicture clientPicture = getClientPicture();
+        if (clientPicture.hasPicture()) {
+            object.put(Keyword.CLIENT_PICTURE, Base64.encodeBase64String(clientPicture.getPictureData()));
+            object.put(Keyword.CLIENT_PICTURE_CHECKSUM, clientPicture.getPictureChecksum());
         }
 
         return object;
@@ -214,22 +216,22 @@ public interface PersistenceProvider
     @NotNull String getClientNickname();
 
     /**
-     * Returns the avatar for this client.
+     * Returns the picture for this client.
      *
-     * @return The bitmap data for the avatar if exists, or zero-length byte array if it doesn't.
+     * @return The picture object that contains the necessary info about the picture.
      */
-    byte @Nullable [] getClientPicture();
+    @NotNull ClientPicture getClientPicture();
 
     /**
-     * Returns the given client's picture.
-     * <p>
-     * If the given client's {@link Client#getClientUid()} is equal to {@link #getClientUid()}, this should return this
-     * client's picture.
+     * Returns the non-null picture instance owned by the given client.
+     *
+     * If a picture doesn't exist, this should return an empty picture.
      *
      * @param client For which the avatar will be provided.
-     * @return The bitmap data for the avatar if exists, or zero-length byte array if it doesn't.
+     * @return The picture representing class.
+     * @see ClientPicture#newEmptyInstance(String)
      */
-    byte @Nullable [] getClientPictureFor(@NotNull Client client);
+    @NotNull ClientPicture getClientPictureFor(@NotNull Client client);
 
     /**
      * This should return the unique identifier for this client. It should be both unique and persistent.
@@ -457,14 +459,13 @@ public interface PersistenceProvider
     void persist(@NotNull String clientUid, @NotNull List<? extends @NotNull TransferItem> itemList);
 
     /**
-     * Alter the client picture as the given bitmap data.
+     * The latest picture that belongs to a client.
      * <p>
-     * This will always be invoked whether or not the bitmap is empty.
+     * The invocation of this method mean the picture is new and should be saved.
      *
-     * @param clientUid The client that the picture belongs to.
-     * @param bitmap    The bitmap data for the picture.
+     * @param clientPicture That contains the latest picture details.
      */
-    void persistClientPicture(@NotNull String clientUid, byte @NotNull [] bitmap);
+    void persistClientPicture(@NotNull ClientPicture clientPicture);
 
     /**
      * Revoke the current valid network PIN.

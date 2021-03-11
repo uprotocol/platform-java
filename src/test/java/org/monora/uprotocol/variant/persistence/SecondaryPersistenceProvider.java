@@ -6,6 +6,14 @@ import org.monora.uprotocol.variant.DefaultClient;
 
 public class SecondaryPersistenceProvider extends BasePersistenceProvider
 {
+    private static final byte @NotNull [] FAKE_PICTURE_BYTES = "Secondary's Fake Picture Bytes".getBytes();
+
+    @Override
+    byte @NotNull [] fakePictureBytes()
+    {
+        return FAKE_PICTURE_BYTES;
+    }
+
     @Override
     public @NotNull Client getClient()
     {

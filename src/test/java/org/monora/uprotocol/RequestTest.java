@@ -6,6 +6,7 @@ import org.monora.coolsocket.core.session.CancelledException;
 import org.monora.coolsocket.core.session.ClosedException;
 import org.monora.uprotocol.core.ClientLoader;
 import org.monora.uprotocol.core.CommunicationBridge;
+import org.monora.uprotocol.core.io.ClientPicture;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
@@ -22,6 +23,7 @@ import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class RequestTest extends DefaultTestBase
@@ -127,7 +129,7 @@ public class RequestTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
             if (bridge.requestFileTransferStart(transferHolder.item.getItemGroupId(),
-                     transferHolder.item.getItemType())) {
+                    transferHolder.item.getItemType())) {
                 Transfers.receive(bridge, transferOperation, transferHolder.item.getItemGroupId());
             } else {
                 Assert.fail("Request for start should not fail");
@@ -350,5 +352,57 @@ public class RequestTest extends DefaultTestBase
         } finally {
             primarySession.stop();
         }
+    }
+
+    @Test
+    public void primaryClientPictureDeliveredSuccessfully() throws IOException, InterruptedException,
+            CertificateException, ProtocolException
+    {
+        primarySession.start();
+
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
+            bridge.requestAcquaintance();
+        } finally {
+            primarySession.stop();
+        }
+
+        Client primaryOnSecondary = secondaryPersistence.getClientFor(primaryPersistence.getClientUid());
+        Assert.assertNotNull("Primary should not be null on primary", primaryOnSecondary);
+
+        ClientPicture primaryPictureOnSecondary = secondaryPersistence.getClientPictureFor(primaryOnSecondary);
+        Assert.assertTrue("The secondary client should have a picture.",
+                primaryPictureOnSecondary.hasPicture());
+        Assert.assertEquals("Primary picture data should match",
+                Arrays.hashCode(primaryPictureOnSecondary.getPictureData()),
+                Arrays.hashCode(primaryPersistence.getClientPicture().getPictureData()));
+        Assert.assertEquals("Primary picture checksum should persist",
+                primaryPictureOnSecondary.getPictureChecksum(),
+                primaryPersistence.getClientPicture().getPictureChecksum());
+    }
+
+    @Test
+    public void secondaryClientPictureDeliveredSuccessfully() throws IOException, InterruptedException,
+            CertificateException, ProtocolException
+    {
+        primarySession.start();
+
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
+            bridge.requestAcquaintance();
+        } finally {
+            primarySession.stop();
+        }
+
+        Client secondaryOnPrimary = primaryPersistence.getClientFor(secondaryPersistence.getClientUid());
+        Assert.assertNotNull("Secondary should not be null on primary", secondaryOnPrimary);
+
+        ClientPicture secondaryPictureOnPrimary = primaryPersistence.getClientPictureFor(secondaryOnPrimary);
+        Assert.assertTrue("The secondary client should have a picture.",
+                secondaryPictureOnPrimary.hasPicture());
+        Assert.assertEquals("Secondary picture data should match",
+                Arrays.hashCode(secondaryPictureOnPrimary.getPictureData()),
+                Arrays.hashCode(secondaryPersistence.getClientPicture().getPictureData()));
+        Assert.assertEquals("Secondary picture checksum should persist",
+                secondaryPictureOnPrimary.getPictureChecksum(),
+                secondaryPersistence.getClientPicture().getPictureChecksum());
     }
 }

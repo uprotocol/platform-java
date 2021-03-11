@@ -2,6 +2,7 @@ package org.monora.uprotocol.variant.persistence;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.monora.uprotocol.core.io.ClientPicture;
 import org.monora.uprotocol.core.io.StreamDescriptor;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
@@ -12,7 +13,6 @@ import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.variant.DefaultClient;
 import org.monora.uprotocol.variant.DefaultClientAddress;
 import org.monora.uprotocol.variant.DefaultTransferItem;
-import org.monora.uprotocol.variant.holder.ClientPicture;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
 import org.monora.uprotocol.variant.holder.TransferHolder;
 import org.spongycastle.asn1.x500.X500NameBuilder;
@@ -38,10 +38,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * This class provides some level of "persistence" on the level for testing purposes.
@@ -53,7 +50,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     private final List<Client> clientList = new ArrayList<>();
     private final List<ClientAddress> clientAddressList = new ArrayList<>();
     private final List<TransferHolder> transferHolderList = new ArrayList<>();
-    private final List<ClientPicture> clientPictureList = new ArrayList<>();
+    private final Set<ClientPicture> clientPictureList = new HashSet<>();
     private final List<MemoryStreamDescriptor> streamDescriptorList = new ArrayList<>();
     private final List<String> invalidationRequestList = new ArrayList<>();
     private final BouncyCastleProvider bouncyCastleProvider = new BouncyCastleProvider();
@@ -188,6 +185,8 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         return new DefaultTransferItem(groupId, id, name, mimeType, size, directory, type);
     }
 
+    abstract byte @NotNull [] fakePictureBytes();
+
     @Override
     public @Nullable Client getClientFor(@NotNull String clientUid)
     {
@@ -203,21 +202,21 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public byte @NotNull [] getClientPicture()
+    public @NotNull ClientPicture getClientPicture()
     {
-        return new byte[0];
+        return ClientPicture.newInstance(getClientUid(), fakePictureBytes(), Arrays.hashCode(fakePictureBytes()));
     }
 
     @Override
-    public byte @Nullable [] getClientPictureFor(@NotNull Client client)
+    public @NotNull ClientPicture getClientPictureFor(@NotNull Client client)
     {
         synchronized (clientPictureList) {
             for (ClientPicture clientPicture : clientPictureList) {
-                if (clientPicture.clientUid.equals(client.getClientUid()))
-                    return clientPicture.data;
+                if (clientPicture.getClientUid().equals(client.getClientUid()))
+                    return clientPicture;
             }
         }
-        return new byte[0];
+        return ClientPicture.newEmptyInstance(client.getClientUid());
     }
 
     @Override
@@ -383,10 +382,10 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void persistClientPicture(@NotNull String clientUid, byte @NotNull [] bitmap)
+    public void persistClientPicture(@NotNull ClientPicture clientPicture)
     {
         synchronized (clientPictureList) {
-            clientPictureList.add(new ClientPicture(clientUid, bitmap));
+            clientPictureList.add(clientPicture);
         }
     }
 
