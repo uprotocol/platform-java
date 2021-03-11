@@ -6,7 +6,6 @@ import org.monora.coolsocket.core.session.CancelledException;
 import org.monora.coolsocket.core.session.ClosedException;
 import org.monora.uprotocol.core.ClientLoader;
 import org.monora.uprotocol.core.CommunicationBridge;
-import org.monora.uprotocol.core.io.ClientPicture;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
@@ -366,16 +365,15 @@ public class RequestTest extends DefaultTestBase
             primarySession.stop();
         }
 
-        ClientPicture primaryPictureOnSecondary = secondaryPersistence.getClientPictureFor(
-                primaryPersistence.getClientUid());
-        Assert.assertTrue("The secondary client should have a picture.",
-                primaryPictureOnSecondary.hasPicture());
+        Client primaryOnSecondary = secondaryPersistence.getClientFor(primaryPersistence.getClientUid());
+        Assert.assertNotNull("The primary client should exist on secondary", primaryOnSecondary);
+        Assert.assertTrue("The primary client should have a picture", primaryOnSecondary.hasPicture());
         Assert.assertEquals("Primary picture data should match",
-                Arrays.hashCode(primaryPictureOnSecondary.getPictureData()),
-                Arrays.hashCode(primaryPersistence.getClientPicture().getPictureData()));
+                Arrays.hashCode(primaryOnSecondary.getClientPictureData()),
+                Arrays.hashCode(primaryPersistence.getClient().getClientPictureData()));
         Assert.assertEquals("Primary picture checksum should persist",
-                primaryPictureOnSecondary.getPictureChecksum(),
-                primaryPersistence.getClientPicture().getPictureChecksum());
+                primaryOnSecondary.getClientPictureChecksum(),
+                primaryPersistence.getClient().getClientPictureChecksum());
     }
 
     @Test
@@ -392,16 +390,12 @@ public class RequestTest extends DefaultTestBase
 
         Client secondaryOnPrimary = primaryPersistence.getClientFor(secondaryPersistence.getClientUid());
         Assert.assertNotNull("Secondary should not be null on primary", secondaryOnPrimary);
-
-        ClientPicture secondaryPictureOnPrimary = primaryPersistence.getClientPictureFor(
-                secondaryPersistence.getClientUid());
-        Assert.assertTrue("The secondary client should have a picture.",
-                secondaryPictureOnPrimary.hasPicture());
+        Assert.assertTrue("The secondary client should have a picture", secondaryOnPrimary.hasPicture());
         Assert.assertEquals("Secondary picture data should match",
-                Arrays.hashCode(secondaryPictureOnPrimary.getPictureData()),
-                Arrays.hashCode(secondaryPersistence.getClientPicture().getPictureData()));
+                Arrays.hashCode(secondaryOnPrimary.getClientPictureData()),
+                Arrays.hashCode(secondaryPersistence.getClient().getClientPictureData()));
         Assert.assertEquals("Secondary picture checksum should persist",
-                secondaryPictureOnPrimary.getPictureChecksum(),
-                secondaryPersistence.getClientPicture().getPictureChecksum());
+                secondaryOnPrimary.getClientPictureChecksum(),
+                secondaryPersistence.getClient().getClientPictureChecksum());
     }
 }

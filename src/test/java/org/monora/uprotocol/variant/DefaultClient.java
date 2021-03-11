@@ -6,6 +6,7 @@ import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientType;
 
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 
 import static org.monora.uprotocol.core.spec.v1.Config.VERSION_UPROTOCOL;
 import static org.monora.uprotocol.core.spec.v1.Config.VERSION_UPROTOCOL_MIN;
@@ -40,6 +41,10 @@ public class DefaultClient implements Client
 
     private boolean trusted;
 
+    public byte[] pictureData = null;
+
+    public int pictureChecksum = 0;
+
     public DefaultClient(@NotNull String uid, @NotNull String nickname, @NotNull String manufacturer,
                          @NotNull String product, @NotNull ClientType type, @NotNull String versionName,
                          int versionCode, int protocolVersion, int protocolVersionMin)
@@ -56,11 +61,13 @@ public class DefaultClient implements Client
     }
 
     public DefaultClient(@NotNull String uid, @NotNull String nickname, @NotNull String manufacturer,
-                         @NotNull String product, @Nullable X509Certificate certificate)
+                         @NotNull String product, @Nullable X509Certificate certificate, byte[] pictureData)
     {
         this(uid, nickname, manufacturer, product, ClientType.Desktop, "1.0", 1,
                 VERSION_UPROTOCOL, VERSION_UPROTOCOL_MIN);
         this.certificate = certificate;
+        this.pictureData = pictureData;
+        this.pictureChecksum = Arrays.hashCode(pictureData);
     }
 
     @Override
@@ -94,6 +101,18 @@ public class DefaultClient implements Client
     public @NotNull String getClientNickname()
     {
         return nickname;
+    }
+
+    @Override
+    public byte @NotNull [] getClientPictureData()
+    {
+        return pictureData;
+    }
+
+    @Override
+    public int getClientPictureChecksum()
+    {
+        return pictureChecksum;
     }
 
     @Override
@@ -136,6 +155,12 @@ public class DefaultClient implements Client
     public @NotNull String getClientVersionName()
     {
         return versionName;
+    }
+
+    @Override
+    public boolean hasPicture()
+    {
+        return pictureData.length > 0;
     }
 
     @Override

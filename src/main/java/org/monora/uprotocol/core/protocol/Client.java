@@ -46,6 +46,28 @@ public interface Client
     @NotNull String getClientNickname();
 
     /**
+     * Loads and returns the non-null byte array that contains the picture bitmap data.
+     * <p>
+     * The idea is to spare the loading part to the invocation of this method.
+     * <p>
+     * The invocation of this method will take place after {@link #hasPicture()} returns positive.
+     *
+     * @return The non-zero length byte array that contains picture bitmap data.
+     */
+    byte @NotNull [] getClientPictureData();
+
+    /**
+     * Calculated hash of the picture data.
+     * <p>
+     * This should be pre-calculated for performance benefits.
+     * <p>
+     * The invocation of this method will take place after {@link #hasPicture()} returns positive.
+     *
+     * @return The hash code of the picture bitmap data.
+     */
+    int getClientPictureChecksum();
+
+    /**
      * The product is an extra information under {@link #getClientManufacturer()}.
      *
      * @return The product name of the client (sub-brand).
@@ -109,6 +131,14 @@ public interface Client
      * @see #getClientProtocolVersion()
      */
     @NotNull String getClientVersionName();
+
+    /**
+     * Invoked when the picture is about to be sent to a remote client to check whether the client has a
+     * picture.
+     *
+     * @return True if the client has a picture.
+     */
+    boolean hasPicture();
 
     /**
      * Whether or not the (remote) client is blocked on this client.

@@ -8,7 +8,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSession;
-import org.monora.uprotocol.core.io.ClientPicture;
 import org.monora.uprotocol.core.io.StreamDescriptor;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
@@ -110,7 +109,9 @@ public interface PersistenceProvider
     default @NotNull JSONObject clientAsJson(int pin) throws JSONException
     {
         Client client = getClient();
-        JSONObject object = new JSONObject()
+        String pictureData = client.hasPicture() ? Base64.encodeBase64String(client.getClientPictureData()) : null;
+
+        return new JSONObject()
                 .put(Keyword.CLIENT_UID, client.getClientUid())
                 .put(Keyword.CLIENT_MANUFACTURER, client.getClientManufacturer())
                 .put(Keyword.CLIENT_PRODUCT, client.getClientProduct())
@@ -120,15 +121,9 @@ public interface PersistenceProvider
                 .put(Keyword.CLIENT_VERSION_NAME, client.getClientVersionName())
                 .put(Keyword.CLIENT_PROTOCOL_VERSION, client.getClientProtocolVersion())
                 .put(Keyword.CLIENT_PROTOCOL_VERSION_MIN, client.getClientProtocolVersionMin())
-                .put(Keyword.CLIENT_PIN, pin);
-
-        ClientPicture clientPicture = getClientPicture();
-        if (clientPicture.hasPicture()) {
-            object.put(Keyword.CLIENT_PICTURE, Base64.encodeBase64String(clientPicture.getPictureData()));
-            object.put(Keyword.CLIENT_PICTURE_CHECKSUM, clientPicture.getPictureChecksum());
-        }
-
-        return object;
+                .put(Keyword.CLIENT_PIN, pin)
+                .put(Keyword.CLIENT_PICTURE, pictureData)
+                .put(Keyword.CLIENT_PICTURE_CHECKSUM, client.getClientPictureChecksum());
     }
 
     /**
@@ -214,24 +209,6 @@ public interface PersistenceProvider
      * @return The nickname.
      */
     @NotNull String getClientNickname();
-
-    /**
-     * Returns the picture for this client.
-     *
-     * @return The picture object that contains the necessary info about the picture.
-     */
-    @NotNull ClientPicture getClientPicture();
-
-    /**
-     * Returns the non-null picture instance owned by the given client.
-     *
-     * If a picture doesn't exist, this should return an empty picture.
-     *
-     * @param clientUid For which the avatar will be provided.
-     * @return The picture representing class.
-     * @see ClientPicture#newEmptyInstance(String)
-     */
-    @NotNull ClientPicture getClientPictureFor(@NotNull String clientUid);
 
     /**
      * This should return the unique identifier for this client. It should be both unique and persistent.
@@ -463,9 +440,11 @@ public interface PersistenceProvider
      * <p>
      * The invocation of this method mean the picture is new and should be saved.
      *
-     * @param clientPicture That contains the latest picture details.
+     * @param client   The client that owns the picture.
+     * @param data     The bitmap data of the picture which is null if the owner client no longer has one.
+     * @param checksum The hash code of the given data which is invalidated if the data is null.
      */
-    void persistClientPicture(@NotNull ClientPicture clientPicture);
+    void persistClientPicture(@NotNull Client client, byte @Nullable [] data, int checksum);
 
     /**
      * Revoke the current valid network PIN.

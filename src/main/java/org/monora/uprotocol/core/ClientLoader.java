@@ -4,7 +4,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.monora.uprotocol.core.io.ClientPicture;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientType;
@@ -123,15 +122,12 @@ public class ClientLoader
             client.setClientLocal(local);
             persistenceProvider.persist(client, updating);
 
-            try {
-                int checksum = response.getInt(Keyword.CLIENT_PICTURE_CHECKSUM);
-                ClientPicture existing = persistenceProvider.getClientPictureFor(client.getClientUid());
+            int checksum = response.getInt(Keyword.CLIENT_PICTURE_CHECKSUM);
 
-                if (existing.getPictureChecksum() != checksum) {
-                    persistenceProvider.persistClientPicture(ClientPicture.newInstance(clientUid,
-                            Base64.decodeBase64(response.getString(Keyword.CLIENT_PICTURE)), checksum));
-                }
-            } catch (Exception ignored) {
+            if (client.getClientPictureChecksum() != checksum) {
+                String data = response.optString(Keyword.CLIENT_PICTURE);
+                persistenceProvider.persistClientPicture(client,
+                        data != null ? Base64.decodeBase64(data) : null, checksum);
             }
         }
 
