@@ -577,8 +577,7 @@ public class CommunicationBridge implements Closeable
                 }
             }
 
-            throw new IOException("No one of the addresses worked",
-                    new DefectiveAddressListException(underlyingExceptionList, addressList));
+            throw new DefectiveAddressListException(underlyingExceptionList, addressList);
         }
 
         /**

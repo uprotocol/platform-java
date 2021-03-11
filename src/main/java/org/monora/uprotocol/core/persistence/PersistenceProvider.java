@@ -270,7 +270,7 @@ public interface PersistenceProvider
      * <p>
      * The code should persist until {@link #revokeNetworkPin()} is invoked.
      *
-     * @return the PIN that will change after being revoked.
+     * @return The PIN that will change after being revoked.
      * @see #revokeNetworkPin()
      */
     int getNetworkPin();

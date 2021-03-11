@@ -77,9 +77,9 @@ public class TransportSession extends CoolSocket
             }
 
             final String clientUid = response.getString(Keyword.CLIENT_UID);
+            final Client client = ClientLoader.loadAsServer(persistenceProvider, response, clientUid, hasPin);
             final ClientAddress clientAddress = persistenceProvider.createClientAddressFor(
                     activeConnection.getAddress(), clientUid);
-            final Client client = ClientLoader.loadAsServer(persistenceProvider, response, clientUid, hasPin);
 
             Responses.send(activeConnection, true, clientIndex);
 
