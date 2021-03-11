@@ -125,7 +125,7 @@ public class ClientLoader
 
             try {
                 int checksum = response.getInt(Keyword.CLIENT_PICTURE_CHECKSUM);
-                ClientPicture existing = persistenceProvider.getClientPictureFor(client);
+                ClientPicture existing = persistenceProvider.getClientPictureFor(client.getClientUid());
 
                 if (existing.getPictureChecksum() != checksum) {
                     persistenceProvider.persistClientPicture(ClientPicture.newInstance(clientUid,

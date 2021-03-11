@@ -366,10 +366,8 @@ public class RequestTest extends DefaultTestBase
             primarySession.stop();
         }
 
-        Client primaryOnSecondary = secondaryPersistence.getClientFor(primaryPersistence.getClientUid());
-        Assert.assertNotNull("Primary should not be null on primary", primaryOnSecondary);
-
-        ClientPicture primaryPictureOnSecondary = secondaryPersistence.getClientPictureFor(primaryOnSecondary);
+        ClientPicture primaryPictureOnSecondary = secondaryPersistence.getClientPictureFor(
+                primaryPersistence.getClientUid());
         Assert.assertTrue("The secondary client should have a picture.",
                 primaryPictureOnSecondary.hasPicture());
         Assert.assertEquals("Primary picture data should match",
@@ -395,7 +393,8 @@ public class RequestTest extends DefaultTestBase
         Client secondaryOnPrimary = primaryPersistence.getClientFor(secondaryPersistence.getClientUid());
         Assert.assertNotNull("Secondary should not be null on primary", secondaryOnPrimary);
 
-        ClientPicture secondaryPictureOnPrimary = primaryPersistence.getClientPictureFor(secondaryOnPrimary);
+        ClientPicture secondaryPictureOnPrimary = primaryPersistence.getClientPictureFor(
+                secondaryPersistence.getClientUid());
         Assert.assertTrue("The secondary client should have a picture.",
                 secondaryPictureOnPrimary.hasPicture());
         Assert.assertEquals("Secondary picture data should match",

@@ -227,11 +227,11 @@ public interface PersistenceProvider
      *
      * If a picture doesn't exist, this should return an empty picture.
      *
-     * @param client For which the avatar will be provided.
+     * @param clientUid For which the avatar will be provided.
      * @return The picture representing class.
      * @see ClientPicture#newEmptyInstance(String)
      */
-    @NotNull ClientPicture getClientPictureFor(@NotNull Client client);
+    @NotNull ClientPicture getClientPictureFor(@NotNull String clientUid);
 
     /**
      * This should return the unique identifier for this client. It should be both unique and persistent.

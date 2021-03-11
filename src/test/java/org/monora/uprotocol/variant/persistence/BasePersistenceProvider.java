@@ -208,15 +208,15 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public @NotNull ClientPicture getClientPictureFor(@NotNull Client client)
+    public @NotNull ClientPicture getClientPictureFor(@NotNull String clientUid)
     {
         synchronized (clientPictureList) {
             for (ClientPicture clientPicture : clientPictureList) {
-                if (clientPicture.getClientUid().equals(client.getClientUid()))
+                if (clientPicture.getClientUid().equals(clientUid))
                     return clientPicture;
             }
         }
-        return ClientPicture.newEmptyInstance(client.getClientUid());
+        return ClientPicture.newEmptyInstance(clientUid);
     }
 
     @Override
