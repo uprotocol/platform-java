@@ -22,7 +22,7 @@
 
     <groupId>org.monora.uprotocol</groupId>
     <artifactId>core</artifactId>
-    <version>0.1.0-ALPHA29</version>
+    <version>0.1.0-ALPHA30</version>
     <name>UProtocol</name>
     <description>Java implementation of uprotocol, an open specification for p2p content exchange</description>
     <licenses>
@@ -142,7 +142,7 @@
         <dependency>
             <groupId>org.monora.coolsocket</groupId>
             <artifactId>core</artifactId>
-            <version>2.0-rc13</version>
+            <version>2.0-rc15</version>
         </dependency>
         <dependency>
             <groupId>org.junit.vintage</groupId>
@@ -161,6 +161,7 @@
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
             <version>16.0.2</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <!--Some Android 4~ doesn't have Base64 built-in-->

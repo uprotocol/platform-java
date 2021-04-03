@@ -3,7 +3,6 @@ package org.monora.uprotocol.core.transfer;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.monora.coolsocket.core.response.SizeOverflowException;
 import org.monora.coolsocket.core.session.ActiveConnection;
 import org.monora.coolsocket.core.session.CancelledException;
 import org.monora.uprotocol.core.CommunicationBridge;
@@ -165,7 +164,7 @@ public class Transfers
     /**
      * Handle the sending process. You can invoke this method via {@link TransportSeat#beginFileTransfer} method when
      * the type is {@link TransferItem.Type#Outgoing}.
-     *
+     * <p>
      * This can also be invoked when using {@link CommunicationBridge#requestFileTransferStart}.
      *
      * @param bridge    The bridge that speaks on behalf of you when making requests. A connection wrapper.
@@ -218,19 +217,31 @@ public class Transfers
                             byte[] bytes = new byte[8096];
                             int len;
 
-                            try {
-                                while ((len = inputStream.read(bytes)) != -1) {
-                                    operation.publishProgress();
+                            // For avoiding Android MediaStore bug where the reported size is different than actual
+                            // data size.
+                            boolean exceedingClose = false;
+                            long available;
 
-                                    if (len > 0) {
-                                        operation.setBytesOngoing(operation.getBytesOngoing() + len, len);
-                                        activeConnection.write(description, bytes, 0, len);
+                            while ((len = inputStream.read(bytes)) != -1) {
+                                operation.publishProgress();
+
+                                if (len > 0) {
+                                    available = description.available();
+                                    if (len > available) {
+                                        len = (int) available;
+                                        exceedingClose = true;
+                                    }
+
+                                    operation.setBytesOngoing(operation.getBytesOngoing() + len, len);
+                                    activeConnection.write(description, bytes, 0, len);
+
+                                    if (exceedingClose) {
+                                        break;
                                     }
                                 }
-
-                                activeConnection.writeEnd(description);
-                            } catch (SizeOverflowException ignored) {
                             }
+
+                            activeConnection.writeEnd(description);
 
                             operation.setBytesTotal(operation.getBytesTotal() + operation.getBytesOngoing());
                             operation.setCount(operation.getCount() + 1);
