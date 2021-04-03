@@ -86,7 +86,7 @@ public class TransportSession extends CoolSocket
             CommunicationBridge.convertToSSL(connectionFactory, persistenceProvider, activeConnection, client,
                     false);
 
-            activeConnection.setInternalCacheSize(1073741824); // 1MB
+            activeConnection.setInternalCacheSize(0x500000); // 5MiB
 
             JSONObject request = activeConnection.receive().getAsJson();
             if (!Responses.getResult(request)) {
