@@ -25,6 +25,7 @@
     <version>0.1.0-ALPHA31</version>
     <name>UProtocol</name>
     <description>Java implementation of uprotocol, an open specification for p2p content exchange</description>
+    <url>https://github.com/uprotocol</url>
     <licenses>
         <license>
             <name>MIT License</name>
