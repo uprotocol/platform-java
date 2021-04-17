@@ -36,7 +36,7 @@ public class DefaultTestBase
     public DefaultTestBase()
     {
         try {
-            clientAddress = InetAddress.getLocalHost();
+            clientAddress = InetAddress.getByName("127.0.0.1");
         } catch (UnknownHostException e) {
             throw new RuntimeException("Could not gather the loopback address");
         }
