@@ -1,6 +1,6 @@
 package org.monora.uprotocol.core;
 
-import org.apache.commons.codec.binary.Base64;
+import net.iharder.Base64;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -126,8 +126,11 @@ public class ClientLoader
 
             if (client.getClientPictureChecksum() != checksum) {
                 String data = response.optString(Keyword.CLIENT_PICTURE);
-                persistenceProvider.persistClientPicture(client,
-                        data != null ? Base64.decodeBase64(data) : null, checksum);
+                try {
+                    persistenceProvider.persistClientPicture(client,
+                            data != null ? Base64.decode(data) : null, checksum);
+                } catch (IOException ignored) {
+                }
             }
         }
 

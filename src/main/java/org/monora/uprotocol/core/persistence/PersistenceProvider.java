@@ -1,6 +1,6 @@
 package org.monora.uprotocol.core.persistence;
 
-import org.apache.commons.codec.binary.Base64;
+import net.iharder.Base64;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -109,7 +109,7 @@ public interface PersistenceProvider
     default @NotNull JSONObject clientAsJson(int pin) throws JSONException
     {
         Client client = getClient();
-        String pictureData = client.hasPicture() ? Base64.encodeBase64String(client.getClientPictureData()) : null;
+        String pictureData = client.hasPicture() ? Base64.encodeBytes(client.getClientPictureData()) : null;
 
         return new JSONObject()
                 .put(Keyword.CLIENT_UID, client.getClientUid())
@@ -343,7 +343,7 @@ public interface PersistenceProvider
             }
 
             // Newer TLS versions are only supported on API 16+
-            SSLContext tlsContext = SSLContext.getInstance("TLSv1");
+            SSLContext tlsContext = SSLContext.getInstance("TLSv1.2");
             tlsContext.init(keyManagerFactory.getKeyManagers(), trustManagers, getSecureRandom());
 
             return tlsContext;
