@@ -163,6 +163,8 @@ public class TransportSession extends CoolSocket
                     bridge.send(Keyword.ERROR_NOT_TRUSTED);
                 } else if (transportSeat.hasOngoingTransferFor(groupId, client.getClientUid(), type)) {
                     throw new ContentException(ContentException.Error.NotAccessible);
+                } else if (!persistenceProvider.containsTransfer(groupId)) {
+                    throw new ContentException(ContentException.Error.NotFound);
                 } else {
                     bridge.send(true);
                     transportSeat.beginFileTransfer(bridge, client, groupId, type);

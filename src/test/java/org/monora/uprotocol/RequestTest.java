@@ -141,6 +141,27 @@ public class RequestTest extends DefaultTestBase
         }
     }
 
+    @Test(expected = ContentException.class)
+    public void remoteNotifiesAsNotFoundWhenGroupNotExists() throws ProtocolException, CertificateException,
+            IOException, InterruptedException
+    {
+        secondarySession.start();
+
+        final long randomGroupId = 42;
+
+        try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
+            if (bridge.requestFileTransferStart(randomGroupId, TransferItem.Type.Incoming)) {
+                Assert.fail("The above scope should have failed with an exception");
+            }
+        } catch (ContentException e) {
+            Assert.assertEquals("The error code should be 'NOT FOUND'.", e.error,
+                    ContentException.Error.NotFound);
+            throw e;
+        } finally {
+            secondarySession.stop();
+        }
+    }
+
     @Test(expected = SecurityException.class)
     public void failsWithKeyMismatchTest() throws IOException, InterruptedException, ProtocolException,
             CertificateException
