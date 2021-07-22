@@ -2,6 +2,7 @@ package org.monora.uprotocol.core.transfer;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.spec.v1.Keyword;
 
 /**
@@ -172,6 +173,64 @@ public interface TransferItem
                     return type;
 
             throw new IllegalArgumentException("Unknown type: " + value);
+        }
+    }
+
+    /**
+     * The persistent state of an item.
+     */
+    enum State
+    {
+        /**
+         * The item is in pending state. It can have a temporary location.
+         * <p>
+         * In the case of incoming files, if you force set this state, keep the temporary file location as we can later
+         * restart this item, resuming from where it was left.
+         * <p>
+         * This is the only state that will feed the {@link PersistenceProvider#getFirstReceivableItem(long)}
+         * invocations.
+         */
+        Pending(Constants.PENDING),
+
+        /**
+         * The item is invalidated temporarily. The reason for that may be an unexpected connection drop not recovered.
+         * <p>
+         * The user can reset this state to {@link #Pending}.
+         */
+        InvalidatedTemporarily(Constants.INVALIDATED_TEMPORARILY),
+
+        /**
+         * The item is invalidated indefinitely because its length has changed or the sender file no longer exits.
+         * <p>
+         * The user should <b>NOT</b> be able to remove this flag, e.g., setting a valid state such as {@link #Pending}.
+         */
+        Invalidated(Constants.INVALIDATED),
+
+        /**
+         * The transaction for the item has finished.
+         * <p>
+         * The user should <b>NOT</b> able to remove this flag.
+         */
+        Done(Constants.DONE);
+
+        State(String constantString)
+        {
+            if (!this.name().equals(constantString)) {
+                throw new IllegalArgumentException(this.name() + " enum doesn't match the constant value "
+                        + constantString);
+            }
+        }
+
+        /**
+         * Convenience class that keeps different state types as compile-time values.
+         */
+        public static class Constants
+        {
+            public static final String
+                    PENDING = "Pending",
+                    INVALIDATED_TEMPORARILY = "InvalidatedTemporarily",
+                    INVALIDATED = "Invalidated",
+                    DONE = "Done";
         }
     }
 }

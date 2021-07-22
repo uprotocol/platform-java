@@ -1,7 +1,6 @@
 package org.monora.uprotocol.variant.holder;
 
 import org.jetbrains.annotations.NotNull;
-import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.transfer.TransferItem;
 
 public class TransferHolder
@@ -10,7 +9,7 @@ public class TransferHolder
 
     public @NotNull String clientUid;
 
-    public int state = PersistenceProvider.STATE_PENDING;
+    public TransferItem.State state = TransferItem.State.Pending;
 
     public TransferHolder(@NotNull TransferItem item, @NotNull String clientUid)
     {

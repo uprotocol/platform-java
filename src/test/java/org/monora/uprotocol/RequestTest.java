@@ -6,7 +6,6 @@ import org.monora.coolsocket.core.session.CancelledException;
 import org.monora.coolsocket.core.session.ClosedException;
 import org.monora.uprotocol.core.ClientLoader;
 import org.monora.uprotocol.core.CommunicationBridge;
-import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
@@ -134,8 +133,8 @@ public class RequestTest extends DefaultTestBase
                 Assert.fail("Request for start should not fail");
             }
 
-            Assert.assertEquals("The removed state should match",
-                    PersistenceProvider.STATE_INVALIDATED_STICKY, transferHolder.state);
+            Assert.assertEquals("The removed state should match", TransferItem.State.Invalidated,
+                    transferHolder.state);
         } finally {
             secondarySession.stop();
         }

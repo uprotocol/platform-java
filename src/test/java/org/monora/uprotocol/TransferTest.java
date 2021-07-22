@@ -6,7 +6,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.io.StreamDescriptor;
-import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.client.UntrustedClientException;
@@ -121,8 +120,7 @@ public class TransferTest extends DefaultTestBase
                 primaryPersistence.getTransferHolderList().size() + secondaryPersistence.getTransferHolderList().size());
 
         for (TransferHolder holder : itemList) {
-            Assert.assertEquals("The item should be marked as done", PersistenceProvider.STATE_DONE,
-                    holder.state);
+            Assert.assertEquals("The item should be marked as done", TransferItem.State.Done, holder.state);
         }
     }
 

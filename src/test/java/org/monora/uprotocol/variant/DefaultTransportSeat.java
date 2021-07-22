@@ -8,10 +8,12 @@ import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
+import org.monora.uprotocol.core.transfer.MetaTransferItem;
 import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.transfer.TransferOperation;
 import org.monora.uprotocol.core.transfer.Transfers;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class DefaultTransportSeat implements TransportSeat
@@ -51,7 +53,15 @@ public class DefaultTransportSeat implements TransportSeat
     public void handleFileTransferRequest(@NotNull Client client, boolean hasPin, long groupId, @NotNull String jsonArray)
             throws PersistenceException, ProtocolException
     {
-        List<TransferItem> transferItemList = persistenceProvider.toTransferItemList(groupId, jsonArray);
+        List<MetaTransferItem> metaList = Transfers.toTransferItemList(jsonArray);
+        List<TransferItem> transferItemList = new ArrayList<>(metaList.size());
+
+        for (MetaTransferItem metaItem : metaList) {
+            TransferItem item = persistenceProvider.createTransferItemFor(groupId, metaItem.id, metaItem.name,
+                    metaItem.mimeType, metaItem.size, metaItem.directory, TransferItem.Type.Incoming);
+            transferItemList.add(item);
+        }
+
         persistenceProvider.persist(client.getClientUid(), transferItemList);
     }
 

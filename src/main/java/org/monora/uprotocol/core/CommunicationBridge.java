@@ -272,7 +272,7 @@ public class CommunicationBridge implements Closeable
         send(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER)
                 .put(Keyword.TRANSFER_GROUP_ID, groupId)
-                .put(Keyword.INDEX, getPersistenceProvider().toJson(transferItemList).toString()));
+                .put(Keyword.INDEX, Transfers.toJson(transferItemList).toString()));
 
         boolean result = receiveResult();
 

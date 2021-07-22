@@ -36,44 +36,6 @@ import java.util.List;
 public interface PersistenceProvider
 {
     /**
-     * The item is in pending state. It can also have a temporary location.
-     * <p>
-     * In the case of incoming files, if you force set this state, keep the temporary file location as we can later
-     * restart this item, resuming from where it was left.
-     * <p>
-     * This is the only state that will feed the {@link #getFirstReceivableItem(long)} invocations.
-     */
-    int STATE_PENDING = 0;
-
-    /**
-     * The item is invalidated temporarily. The reason for that may be an unexpected connection that could not be
-     * recovered.
-     * <p>
-     * The user can reset this state to {@link #STATE_PENDING}.
-     */
-    int STATE_INVALIDATED_TEMPORARILY = 1;
-
-    /**
-     * The item is invalidated indefinitely because its length has changed or the file no longer exits.
-     * <p>
-     * The user should <b>NOT</b> be able to remove this flag, setting a valid state such as {@link #STATE_PENDING}.
-     */
-    int STATE_INVALIDATED_STICKY = 2;
-
-    /**
-     * The item is in progress, that is, it is either being received or sent.
-     * <p>
-     * The user can reset this state to {@link #STATE_PENDING} as we may not have a chance to do it ourselves in the
-     * case of a crash.
-     */
-    int STATE_IN_PROGRESS = 3;
-
-    /**
-     * The item is done.
-     */
-    int STATE_DONE = 4;
-
-    /**
      * Accept the request for invalidation of a client's credentials.
      * <p>
      * When implementing, removal of the given client's certificate should be enough.
@@ -476,71 +438,8 @@ public interface PersistenceProvider
      * @param item      Of which the given state will be applied.
      * @param state     The level of invalidation.
      * @param e         The nullable additional exception cause this state.
-     * @see #STATE_PENDING
-     * @see #STATE_INVALIDATED_TEMPORARILY
-     * @see #STATE_INVALIDATED_STICKY
-     * @see #STATE_IN_PROGRESS
-     * @see #STATE_DONE
+     * @see TransferItem.State
      */
-    void setState(@NotNull String clientUid, @NotNull TransferItem item, int state, @Nullable Exception e);
-
-    /**
-     * Transform a given {@link TransferItem} list into its {@link JSONArray} equivalent.
-     * <p>
-     * The resulting {@link JSONArray} can be fed to {@link CommunicationBridge#requestFileTransfer(long, List)},
-     * to start a file transfer operation.
-     * <p>
-     * You can have the same JSON data back using {@link #toTransferItemList(long, String)}.
-     *
-     * @param transferItemList To convert.
-     * @return The JSON equivalent of the same list.
-     */
-    default @NotNull JSONArray toJson(@NotNull List<@NotNull TransferItem> transferItemList)
-    {
-        JSONArray jsonArray = new JSONArray();
-
-        for (TransferItem transferItem : transferItemList) {
-            JSONObject json = new JSONObject()
-                    .put(Keyword.TRANSFER_ID, transferItem.getItemId())
-                    .put(Keyword.INDEX_FILE_NAME, transferItem.getItemName())
-                    .put(Keyword.INDEX_FILE_SIZE, transferItem.getItemSize())
-                    .put(Keyword.INDEX_FILE_MIME, transferItem.getItemMimeType());
-
-            if (transferItem.getItemDirectory() != null)
-                json.put(Keyword.INDEX_DIRECTORY, transferItem.getItemDirectory());
-
-            jsonArray.put(json);
-        }
-
-        return jsonArray;
-    }
-
-    /**
-     * This will inflate the given JSON data that was received from the remote to make it consumable as a collection.
-     *
-     * @param groupId   That the JSON data contains items of.
-     * @param jsonArray The transfer list that is going to inflated.
-     * @return The list of items inflated from the JSON data.
-     * @throws JSONException If the JSON data is corrupted or has missing/mismatch values.
-     */
-    default @NotNull List<@NotNull TransferItem> toTransferItemList(long groupId, @NotNull String jsonArray)
-            throws JSONException
-    {
-        // TODO: 2/26/21 Should json array to transfer item list function exist?
-        JSONArray json = new JSONArray(jsonArray);
-        List<TransferItem> transferItemList = new ArrayList<>();
-
-        if (json.length() > 0) {
-            for (int i = 0; i < json.length(); i++) {
-                JSONObject jsonObject = json.getJSONObject(i);
-                String directory = jsonObject.has(Keyword.INDEX_DIRECTORY)
-                        ? jsonObject.getString(Keyword.INDEX_DIRECTORY) : null;
-                transferItemList.add(createTransferItemFor(groupId, jsonObject.getLong(Keyword.TRANSFER_ID),
-                        jsonObject.getString(Keyword.INDEX_FILE_NAME), jsonObject.getString(Keyword.INDEX_FILE_MIME),
-                        jsonObject.getLong(Keyword.INDEX_FILE_SIZE), directory, TransferItem.Type.Incoming));
-            }
-        }
-
-        return transferItemList;
-    }
+    void setState(@NotNull String clientUid, @NotNull TransferItem item, @NotNull TransferItem.State state,
+                  @Nullable Exception e);
 }

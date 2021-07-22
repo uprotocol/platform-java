@@ -227,7 +227,8 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         synchronized (transferHolderList) {
             for (TransferHolder holder : transferHolderList) {
                 if (TransferItem.Type.Incoming.equals(holder.item.getItemType())
-                        && holder.item.getItemGroupId() == groupId && holder.state == STATE_PENDING) {
+                        && holder.item.getItemGroupId() == groupId
+                        && TransferItem.State.Pending.equals(holder.state)) {
                     return holder.item;
                 }
             }
@@ -393,7 +394,8 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void setState(@NotNull String clientUid, @NotNull TransferItem item, int state, @Nullable Exception e)
+    public void setState(@NotNull String clientUid, @NotNull TransferItem item, @NotNull TransferItem.State state,
+                         @Nullable Exception e)
     {
         synchronized (transferHolderList) {
             for (TransferHolder holder : transferHolderList) {

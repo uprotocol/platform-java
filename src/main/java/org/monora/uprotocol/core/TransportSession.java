@@ -149,7 +149,7 @@ public class TransportSession extends CoolSocket
                 bridge.send(true);
                 return;
             case (Keyword.REQUEST_TRANSFER_JOB):
-                int groupId = response.getInt(Keyword.TRANSFER_GROUP_ID);
+                long groupId = response.getLong(Keyword.TRANSFER_GROUP_ID);
                 TransferItem.Type type = TransferItem.Type.from(response.getString(Keyword.TRANSFER_TYPE));
 
                 // The type is reversed to match our side
