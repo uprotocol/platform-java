@@ -61,7 +61,7 @@ public class TransferTest extends DefaultTestBase
         itemList.add(demoTransferItem2);
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestFileTransfer(groupId, itemList);
+            bridge.requestFileTransfer(groupId, itemList, null);
         }
 
         primarySession.stop();

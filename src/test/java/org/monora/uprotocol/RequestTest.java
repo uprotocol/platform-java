@@ -7,6 +7,7 @@ import org.monora.coolsocket.core.session.ClosedException;
 import org.monora.uprotocol.core.ClientLoader;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.protocol.Client;
+import org.monora.uprotocol.core.protocol.communication.ContentException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
 import org.monora.uprotocol.core.protocol.communication.client.BlockedRemoteClientException;
@@ -70,7 +71,7 @@ public class RequestTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             Assert.assertTrue("The request should be successful", bridge.requestFileTransfer(groupId,
-                    transferItemList));
+                    transferItemList, null));
         } finally {
             primarySession.stop();
         }
@@ -108,7 +109,7 @@ public class RequestTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             Assert.assertTrue("The request should be successful", bridge.requestFileTransfer(groupId,
-                    transferItemList));
+                    transferItemList, null));
         } finally {
             primarySession.stop();
         }

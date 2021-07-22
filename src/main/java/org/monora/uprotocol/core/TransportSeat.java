@@ -1,6 +1,7 @@
 package org.monora.uprotocol.core;
 
 import org.jetbrains.annotations.NotNull;
+import org.monora.uprotocol.core.persistence.OnPrepareListener;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
@@ -74,7 +75,7 @@ public interface TransportSeat
 
     /**
      * The remote has returned the answer to the file transfer request we made with
-     * {@link CommunicationBridge#requestFileTransfer(long, List)}.
+     * {@link CommunicationBridge#requestFileTransfer(long, List, OnPrepareListener)}.
      * <p>
      * This may or not be called depending on the uprotocol client. You should not wait for this.
      *

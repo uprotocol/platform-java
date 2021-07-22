@@ -24,6 +24,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.session.ActiveConnection;
 import org.monora.uprotocol.core.io.DefectiveAddressListException;
+import org.monora.uprotocol.core.persistence.OnPrepareListener;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
@@ -261,12 +262,14 @@ public class CommunicationBridge implements Closeable
      *
      * @param groupId          That ties a group of {@link TransferItem} as in {@link TransferItem#getItemGroupId()}.
      * @param transferItemList That you will send.
+     * @param prepareListener  To call on success to prepare dependencies.
      * @return True if successful.
      * @throws IOException       If an IO error occurs.
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public boolean requestFileTransfer(long groupId, @NotNull List<@NotNull TransferItem> transferItemList)
+    public boolean requestFileTransfer(long groupId, @NotNull List<@NotNull TransferItem> transferItemList,
+                                       @Nullable OnPrepareListener prepareListener)
             throws JSONException, IOException, ProtocolException
     {
         send(true, new JSONObject()
@@ -277,6 +280,10 @@ public class CommunicationBridge implements Closeable
         boolean result = receiveResult();
 
         if (result) {
+            if (prepareListener != null) {
+                prepareListener.onPrepare();
+            }
+
             getPersistenceProvider().persist(getRemoteClient().getClientUid(), transferItemList);
         }
 
@@ -286,7 +293,8 @@ public class CommunicationBridge implements Closeable
     /**
      * Ask remote to start file transfer.
      * <p>
-     * The transfer request, in this case, has already been sent with {@link #requestFileTransfer(long, List)}.
+     * The transfer request, in this case, has already been sent with
+     * {@link #requestFileTransfer(long, List, OnPrepareListener)}.
      * <p>
      * After the method returns positive, the rest of the operation can be carried on with {@link Transfers#receive}
      * or {@link Transfers#send} depending on the type of the transfer.

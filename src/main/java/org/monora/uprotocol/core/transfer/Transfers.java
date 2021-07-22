@@ -10,6 +10,7 @@ import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.Responses;
 import org.monora.uprotocol.core.TransportSeat;
 import org.monora.uprotocol.core.io.StreamDescriptor;
+import org.monora.uprotocol.core.persistence.OnPrepareListener;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
@@ -283,8 +284,8 @@ public class Transfers
     /**
      * Transform a given {@link TransferItem} list into its {@link JSONArray} equivalent.
      * <p>
-     * The resulting {@link JSONArray} can be fed to {@link CommunicationBridge#requestFileTransfer(long, List)},
-     * to start a file transfer operation.
+     * The resulting {@link JSONArray} can be fed to
+     * {@link CommunicationBridge#requestFileTransfer(long, List, OnPrepareListener)} to start a file transfer operation.
      * <p>
      * You can have the same JSON data back using {@link #toTransferItemList(String)}.
      *
@@ -302,8 +303,9 @@ public class Transfers
                     .put(Keyword.INDEX_FILE_SIZE, transferItem.getItemSize())
                     .put(Keyword.INDEX_FILE_MIME, transferItem.getItemMimeType());
 
-            if (transferItem.getItemDirectory() != null)
+            if (transferItem.getItemDirectory() != null) {
                 json.put(Keyword.INDEX_DIRECTORY, transferItem.getItemDirectory());
+            }
 
             jsonArray.put(json);
         }
