@@ -6,7 +6,6 @@ import org.monora.coolsocket.core.session.CancelledException;
 import org.monora.coolsocket.core.session.ClosedException;
 import org.monora.uprotocol.core.ClientLoader;
 import org.monora.uprotocol.core.CommunicationBridge;
-import org.monora.uprotocol.core.content.Direction;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
@@ -64,11 +63,11 @@ public class RequestTest extends DefaultTestBase
         final long groupId = 1;
 
         transferItemList.add(secondaryPersistence.createTransferItemFor(groupId, 1, "1.mp4",
-                "video/mp4", MemoryStreamDescriptor.MAX_SIZE, null, Direction.Outgoing));
+                "video/mp4", MemoryStreamDescriptor.MAX_SIZE, null, TransferItem.Type.Outgoing));
         transferItemList.add(secondaryPersistence.createTransferItemFor(groupId, 2, "2.jpg",
-                "image/jpeg", 8196, null, Direction.Outgoing));
+                "image/jpeg", 8196, null, TransferItem.Type.Outgoing));
         transferItemList.add(secondaryPersistence.createTransferItemFor(groupId, 3, "3.jpg",
-                "image/jpeg", 0, "doggos", Direction.Outgoing));
+                "image/jpeg", 0, "doggos", TransferItem.Type.Outgoing));
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             Assert.assertTrue("The request should be successful", bridge.requestFileTransfer(groupId,
@@ -106,7 +105,7 @@ public class RequestTest extends DefaultTestBase
         final long groupId = 1;
 
         transferItemList.add(secondaryPersistence.createTransferItemFor(groupId, 1, "1.mp4",
-                "video/mp4", MemoryStreamDescriptor.MAX_SIZE, null, Direction.Outgoing));
+                "video/mp4", MemoryStreamDescriptor.MAX_SIZE, null, TransferItem.Type.Outgoing));
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             Assert.assertTrue("The request should be successful", bridge.requestFileTransfer(groupId,
@@ -129,7 +128,7 @@ public class RequestTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
             if (bridge.requestFileTransferStart(transferHolder.item.getItemGroupId(),
-                    transferHolder.item.getItemDirection())) {
+                    transferHolder.item.getItemType())) {
                 Transfers.receive(bridge, transferOperation, transferHolder.item.getItemGroupId());
             } else {
                 Assert.fail("Request for start should not fail");
@@ -151,7 +150,7 @@ public class RequestTest extends DefaultTestBase
         final long randomGroupId = 42;
 
         try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
-            if (bridge.requestFileTransferStart(randomGroupId, Direction.Incoming)) {
+            if (bridge.requestFileTransferStart(randomGroupId, TransferItem.Type.Incoming)) {
                 Assert.fail("The above scope should have failed with an exception");
             }
         } catch (ContentException e) {

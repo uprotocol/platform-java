@@ -1,7 +1,6 @@
 package org.monora.uprotocol.core;
 
 import org.jetbrains.annotations.NotNull;
-import org.monora.uprotocol.core.content.Direction;
 import org.monora.uprotocol.core.persistence.OnPrepareListener;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
@@ -28,19 +27,19 @@ public interface TransportSeat
      * The file transfer should be made on the same thread since the bridge belongs to {@link TransportSession}.
      * <p>
      * Invoke {@link Transfers#receive(CommunicationBridge, TransferOperation, long)} for
-     * {@link Direction#Incoming} or {@link Transfers#send(CommunicationBridge, TransferOperation, long)}
-     * for {@link Direction#Outgoing} types.
+     * {@link TransferItem.Type#Incoming} or {@link Transfers#send(CommunicationBridge, TransferOperation, long)}
+     * for {@link TransferItem.Type#Outgoing} types.
      *
-     * @param bridge    The bridge that speaks on behalf of you when making requests. A connection wrapper.
-     * @param client    That is making the request.
-     * @param groupId   {@link TransferItem#getItemGroupId()}.
-     * @param direction Of the transfer.
+     * @param bridge  The bridge that speaks on behalf of you when making requests. A connection wrapper.
+     * @param client  That is making the request.
+     * @param groupId {@link TransferItem#getItemGroupId()}.
+     * @param type    Of the transfer.
      * @throws PersistenceException If some of the data is missing for this transfer (i.e., the remote doesn't have
      *                              some permissions enabled in the database).
      * @throws ProtocolException    If the remote doesn't have satisfactory permissions or sent invalid values.
      */
     void beginFileTransfer(@NotNull CommunicationBridge bridge, @NotNull Client client, long groupId,
-                           @NotNull Direction direction)
+                           @NotNull TransferItem.Type type)
             throws PersistenceException, ProtocolException;
 
     /**
@@ -100,10 +99,10 @@ public interface TransportSeat
      * @param groupId   The transfer id as in {@link TransferItem#getItemGroupId()}
      * @param clientUid The {@link Client#getClientUid()} if this needs to concern only the given client, or null you
      *                  need check all transfer processes.
-     * @param direction To limit the type of the transfer as in {@link TransferItem#getItemDirection()}.
+     * @param type      To limit the type of the transfer as in {@link TransferItem#getItemType()}.
      * @return True if there is an ongoing transfer for the given parameters.
      */
-    boolean hasOngoingTransferFor(long groupId, @NotNull String clientUid, @NotNull Direction direction);
+    boolean hasOngoingTransferFor(long groupId, @NotNull String clientUid, @NotNull TransferItem.Type type);
 
     /**
      * Check whether there is an indexing process for the given transfer id.

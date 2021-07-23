@@ -7,7 +7,6 @@ import org.monora.coolsocket.core.CoolSocket;
 import org.monora.coolsocket.core.session.ActiveConnection;
 import org.monora.coolsocket.core.session.CancelledException;
 import org.monora.coolsocket.core.session.ClosedException;
-import org.monora.uprotocol.core.content.Direction;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
@@ -151,24 +150,24 @@ public class TransportSession extends CoolSocket
                 return;
             case (Keyword.REQUEST_TRANSFER_JOB):
                 long groupId = response.getLong(Keyword.TRANSFER_GROUP_ID);
-                Direction direction = Direction.from(response.getString(Keyword.DIRECTION));
+                TransferItem.Type type = TransferItem.Type.from(response.getString(Keyword.TRANSFER_TYPE));
 
                 // The type is reversed to match our side
-                if (Direction.Incoming.equals(direction)) {
-                    direction = Direction.Outgoing;
-                } else if (Direction.Outgoing.equals(direction)) {
-                    direction = Direction.Incoming;
+                if (TransferItem.Type.Incoming.equals(type)) {
+                    type = TransferItem.Type.Outgoing;
+                } else if (TransferItem.Type.Outgoing.equals(type)) {
+                    type = TransferItem.Type.Incoming;
                 }
 
-                if (Direction.Incoming.equals(direction) && !client.isClientTrusted()) {
+                if (TransferItem.Type.Incoming.equals(type) && !client.isClientTrusted()) {
                     bridge.send(Keyword.ERROR_NOT_TRUSTED);
-                } else if (transportSeat.hasOngoingTransferFor(groupId, client.getClientUid(), direction)) {
+                } else if (transportSeat.hasOngoingTransferFor(groupId, client.getClientUid(), type)) {
                     throw new ContentException(ContentException.Error.NotAccessible);
                 } else if (!persistenceProvider.containsTransfer(groupId)) {
                     throw new ContentException(ContentException.Error.NotFound);
                 } else {
                     bridge.send(true);
-                    transportSeat.beginFileTransfer(bridge, client, groupId, direction);
+                    transportSeat.beginFileTransfer(bridge, client, groupId, type);
                 }
                 return;
             default:

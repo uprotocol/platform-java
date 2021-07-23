@@ -5,7 +5,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.monora.uprotocol.core.CommunicationBridge;
-import org.monora.uprotocol.core.content.Direction;
 import org.monora.uprotocol.core.io.StreamDescriptor;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
@@ -40,9 +39,9 @@ public class TransferTest extends DefaultTestBase
     public void setUp() throws IOException
     {
         demoTransferItem1 = secondaryPersistence.createTransferItemFor(groupId, 1, "File1",
-                "text/plain", data1.length, null, Direction.Outgoing);
+                "text/plain", data1.length, null, TransferItem.Type.Outgoing);
         demoTransferItem2 = secondaryPersistence.createTransferItemFor(groupId, 2, "File2",
-                "text/plain", data2.length, null, Direction.Outgoing);
+                "text/plain", data2.length, null, TransferItem.Type.Outgoing);
 
         StreamDescriptor descriptor1 = secondaryPersistence.getDescriptorFor(demoTransferItem1);
         StreamDescriptor descriptor2 = secondaryPersistence.getDescriptorFor(demoTransferItem2);
@@ -75,7 +74,7 @@ public class TransferTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
             Assert.assertTrue("The result should be positive", bridge.requestFileTransferStart(groupId,
-                    Direction.Incoming));
+                    TransferItem.Type.Incoming));
 
             Transfers.receive(bridge, transferOperation, groupId);
         }
@@ -107,7 +106,7 @@ public class TransferTest extends DefaultTestBase
         secondarySession.start();
 
         try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
-            bridge.requestFileTransferStart(groupId, Direction.Incoming);
+            bridge.requestFileTransferStart(groupId, TransferItem.Type.Incoming);
             Transfers.receive(bridge, transferOperation, groupId);
         }
 
@@ -132,7 +131,7 @@ public class TransferTest extends DefaultTestBase
         primarySession.start();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestFileTransferStart(groupId, Direction.Outgoing);
+            bridge.requestFileTransferStart(groupId, TransferItem.Type.Outgoing);
             Transfers.receive(bridge, transferOperation, groupId);
         } finally {
             primarySession.stop();
@@ -153,7 +152,7 @@ public class TransferTest extends DefaultTestBase
         primarySession.start();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestFileTransferStart(groupId, Direction.Outgoing);
+            bridge.requestFileTransferStart(groupId, TransferItem.Type.Outgoing);
             Transfers.receive(bridge, transferOperation, groupId);
         } finally {
             primarySession.stop();

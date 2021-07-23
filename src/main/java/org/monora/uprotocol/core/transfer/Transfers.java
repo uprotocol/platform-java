@@ -9,7 +9,6 @@ import org.monora.coolsocket.core.session.CancelledException;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.Responses;
 import org.monora.uprotocol.core.TransportSeat;
-import org.monora.uprotocol.core.content.Direction;
 import org.monora.uprotocol.core.io.StreamDescriptor;
 import org.monora.uprotocol.core.persistence.OnPrepareListener;
 import org.monora.uprotocol.core.persistence.PersistenceException;
@@ -70,7 +69,7 @@ public class Transfers
 
     /**
      * Handle the receive process. You can invoke this method in the {@link TransportSeat#beginFileTransfer} method
-     * when the type is {@link Direction#Incoming}.
+     * when the type is {@link TransferItem.Type#Incoming}.
      * <p>
      * This can also be invoked when using {@link CommunicationBridge#requestFileTransferStart}.
      *
@@ -166,7 +165,7 @@ public class Transfers
 
     /**
      * Handle the sending process. You can invoke this method via {@link TransportSeat#beginFileTransfer} method when
-     * the type is {@link Direction#Outgoing}.
+     * the type is {@link TransferItem.Type#Outgoing}.
      * <p>
      * This can also be invoked when using {@link CommunicationBridge#requestFileTransferStart}.
      *
@@ -195,7 +194,7 @@ public class Transfers
                 try {
                     final TransferRequest transferRequest = Transfers.getTransferRequest(request);
                     item = persistenceProvider.loadTransferItem(client.getClientUid(), groupId, transferRequest.id,
-                            Direction.Outgoing);
+                            TransferItem.Type.Outgoing);
 
                     operation.setOngoing(item);
                     operation.setBytesOngoing(transferRequest.position, transferRequest.position);
