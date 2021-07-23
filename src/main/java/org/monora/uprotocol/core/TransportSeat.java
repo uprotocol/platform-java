@@ -76,16 +76,20 @@ public interface TransportSeat
             throws PersistenceException, ProtocolException;
 
     /**
-     * The remote has returned the answer to the file transfer request we made with
+     * The remote has rejected the file transfer request we made with
      * {@link CommunicationBridge#requestFileTransfer(long, List, OnPrepareListener)}.
      * <p>
-     * This may or not be called depending on the uprotocol client. You should not wait for this.
+     * You should return the result as soon as possible, so that it can be delivered to the remote.
+     * <p>
+     * This will be a synchronous operation, in which case you should not expect an immediate reply. The remote
+     * may choose send a reply at an arbitrary time.
      *
-     * @param client     That is informing us. You may need to check if it owns the transfer request.
-     * @param groupId    That points to the transfer request.
-     * @param isAccepted True if the remote has accepted the request.
+     * @param client  That is informing us and should own the transfer.
+     * @param groupId That points to the transfer request.
+     * @return True if the transfer existed and belonged to the remote and marked as rejected (or removed).
+     * @see CommunicationBridge#requestNotifyTransferRejection(long)
      */
-    void handleFileTransferState(@NotNull Client client, long groupId, boolean isAccepted);
+    boolean handleFileTransferRejection(@NotNull Client client, long groupId);
 
     /**
      * Handle the text transfer request.

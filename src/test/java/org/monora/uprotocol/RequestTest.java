@@ -419,4 +419,38 @@ public class RequestTest extends DefaultTestBase
                 secondaryOnPrimary.getClientPictureChecksum(),
                 secondaryPersistence.getClient().getClientPictureChecksum());
     }
+
+    @Test
+    public void rejectionRemovesTransfers() throws IOException, InterruptedException,
+            ProtocolException, CertificateException
+    {
+        primarySession.start();
+
+        final List<TransferItem> transferItemList = new ArrayList<>();
+        final long groupId = 1;
+
+        transferItemList.add(secondaryPersistence.createTransferItemFor(groupId, 1, "Cats.mp4",
+                "video/mp4", MemoryStreamDescriptor.MAX_SIZE, null, TransferItem.Type.Outgoing));
+
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
+            Assert.assertTrue("The request should be successful", bridge.requestFileTransfer(groupId,
+                    transferItemList, null));
+        } finally {
+            primarySession.stop();
+        }
+
+        Assert.assertTrue("Request should exist", primaryPersistence.containsTransfer(groupId));
+
+        primarySession.start();
+
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
+            Assert.assertTrue("The rejection request should return positive",
+                    bridge.requestNotifyTransferRejection(groupId));
+        } finally {
+            primarySession.stop();
+        }
+
+        Assert.assertFalse("Transfer should not exist after rejection",
+                primaryPersistence.containsTransfer(groupId));
+    }
 }

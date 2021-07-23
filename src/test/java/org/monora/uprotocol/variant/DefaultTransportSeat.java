@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSeat;
 import org.monora.uprotocol.core.persistence.PersistenceException;
-import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
@@ -12,19 +11,20 @@ import org.monora.uprotocol.core.transfer.MetaTransferItem;
 import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.transfer.TransferOperation;
 import org.monora.uprotocol.core.transfer.Transfers;
+import org.monora.uprotocol.variant.persistence.BasePersistenceProvider;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class DefaultTransportSeat implements TransportSeat
 {
-    public final PersistenceProvider persistenceProvider;
+    public final BasePersistenceProvider persistenceProvider;
 
     public final TransferOperation transferOperation;
 
     private boolean autoAcceptNewKeys;
 
-    public DefaultTransportSeat(@NotNull PersistenceProvider persistenceProvider,
+    public DefaultTransportSeat(@NotNull BasePersistenceProvider persistenceProvider,
                                 @NotNull TransferOperation transferOperation)
     {
         this.persistenceProvider = persistenceProvider;
@@ -66,9 +66,9 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public void handleFileTransferState(@NotNull Client client, long groupId, boolean isAccepted)
+    public boolean handleFileTransferRejection(@NotNull Client client, long groupId)
     {
-
+        return persistenceProvider.removeTransfer(client, groupId);
     }
 
     @Override

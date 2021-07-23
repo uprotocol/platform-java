@@ -132,12 +132,9 @@ public class TransportSession extends CoolSocket
                 }
                 return;
             }
-            case (Keyword.REQUEST_NOTIFY_TRANSFER_STATE): {
+            case (Keyword.REQUEST_NOTIFY_TRANSFER_REJECTION): {
                 long groupId = response.getLong(Keyword.TRANSFER_GROUP_ID);
-                boolean isAccepted = response.getBoolean(Keyword.TRANSFER_IS_ACCEPTED);
-
-                transportSeat.handleFileTransferState(client, groupId, isAccepted);
-                bridge.send(true);
+                bridge.send(transportSeat.handleFileTransferRejection(client, groupId));
                 return;
             }
             case (Keyword.REQUEST_TRANSFER_TEXT): {

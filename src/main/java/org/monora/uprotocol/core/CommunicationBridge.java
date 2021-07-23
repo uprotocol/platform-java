@@ -319,22 +319,23 @@ public class CommunicationBridge implements Closeable
     }
 
     /**
-     * Inform remote about the state of a transfer request it sent previously.
+     * Inform the remote that its transfer request was rejected.
+     * <p>
+     * The persistence database can be cleared of the records that belongs to the transfer operation after a
+     * successful return.
      *
-     * @param groupId  The transfer id that you are informing about.
-     * @param accepted True if the transfer request was accepted.
+     * @param groupId Of the transfer that you are informing about.
      * @return True if the request was processed successfully.
      * @throws IOException       If an IO error occurs.
      * @throws JSONException     If something goes wro when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
+     * @see TransportSeat#handleFileTransferRejection(Client, long)
      */
-    public boolean requestNotifyTransferState(long groupId, boolean accepted) throws JSONException, IOException,
-            ProtocolException
+    public boolean requestNotifyTransferRejection(long groupId) throws JSONException, IOException, ProtocolException
     {
         send(true, new JSONObject()
-                .put(Keyword.REQUEST, Keyword.REQUEST_NOTIFY_TRANSFER_STATE)
-                .put(Keyword.TRANSFER_GROUP_ID, groupId)
-                .put(Keyword.TRANSFER_IS_ACCEPTED, accepted));
+                .put(Keyword.REQUEST, Keyword.REQUEST_NOTIFY_TRANSFER_REJECTION)
+                .put(Keyword.TRANSFER_GROUP_ID, groupId));
         return receiveResult();
     }
 

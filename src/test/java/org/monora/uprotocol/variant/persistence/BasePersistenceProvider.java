@@ -37,10 +37,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * This class provides some level of "persistence" on the level for testing purposes.
@@ -49,8 +46,8 @@ import java.util.List;
  */
 public abstract class BasePersistenceProvider implements PersistenceProvider
 {
-    private final List<Client> clientList = new ArrayList<>();
-    private final List<ClientAddress> clientAddressList = new ArrayList<>();
+    private final Set<Client> clientList = new HashSet<>();
+    private final Set<ClientAddress> clientAddressList = new HashSet<>();
     private final List<TransferHolder> transferHolderList = new ArrayList<>();
     private final List<MemoryStreamDescriptor> streamDescriptorList = new ArrayList<>();
     private final List<String> invalidationRequestList = new ArrayList<>();
@@ -285,8 +282,8 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public @NotNull TransferItem loadTransferItem(@NotNull String clientUid, long groupId, long id, TransferItem.@NotNull Type type)
-            throws PersistenceException
+    public @NotNull TransferItem loadTransferItem(@NotNull String clientUid, long groupId, long id,
+                                                  @NotNull TransferItem.Type type) throws PersistenceException
     {
         synchronized (transferHolderList) {
             for (TransferHolder holder : transferHolderList) {
@@ -323,7 +320,6 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     public void persist(@NotNull Client client, boolean updating)
     {
         synchronized (clientList) {
-            clientList.remove(client);
             clientList.add(client);
         }
     }
@@ -332,7 +328,6 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     public void persist(@NotNull ClientAddress clientAddress)
     {
         synchronized (clientAddressList) {
-            clientAddressList.remove(clientAddress);
             clientAddressList.add(clientAddress);
         }
     }
@@ -372,6 +367,24 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
             defaultClient.pictureChecksum = checksum;
         } else {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    public boolean removeTransfer(@NotNull Client client, long groupId)
+    {
+        synchronized (transferHolderList) {
+            final List<TransferHolder> copyItems = new ArrayList<>(transferHolderList);
+            boolean removedAny = false;
+
+            for (TransferHolder transferHolder : copyItems) {
+                if (transferHolder.clientUid.equals(client.getClientUid())
+                        && transferHolder.item.getItemGroupId() == groupId
+                        && transferHolderList.remove(transferHolder)) {
+                    removedAny = true;
+                }
+            }
+
+            return removedAny;
         }
     }
 

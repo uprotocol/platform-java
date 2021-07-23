@@ -23,7 +23,7 @@ public class DefaultTransferItem implements TransferItem
     private @NotNull Type type;
 
     public DefaultTransferItem(long groupId, long id, @NotNull String name, @NotNull String mimeType, long size,
-                               @Nullable String directory, TransferItem.@NotNull Type type)
+                               @Nullable String directory, @NotNull TransferItem.Type type)
     {
         this.groupId = groupId;
         this.id = id;
