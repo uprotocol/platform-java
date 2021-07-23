@@ -46,6 +46,8 @@ public interface TransportSeat
      * The remote wants us to notice it.
      * <p>
      * If the user is about to pick a client, this should be the one that is picked.
+     * <p>
+     * This invocation should not block for too long as the result will be returned to the remote.
      *
      * @param client        That wants to be noticed.
      * @param clientAddress Where that client resides.

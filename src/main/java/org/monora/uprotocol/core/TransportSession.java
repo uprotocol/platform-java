@@ -140,15 +140,16 @@ public class TransportSession extends CoolSocket
                 bridge.send(true);
                 return;
             }
-            case (Keyword.REQUEST_TRANSFER_TEXT):
+            case (Keyword.REQUEST_TRANSFER_TEXT): {
                 transportSeat.handleTextTransfer(client, response.getString(Keyword.TRANSFER_TEXT));
                 bridge.send(true);
                 return;
-            case (Keyword.REQUEST_ACQUAINTANCE):
-                transportSeat.handleAcquaintanceRequest(client, clientAddress);
-                bridge.send(true);
+            }
+            case (Keyword.REQUEST_ACQUAINTANCE): {
+                bridge.send(transportSeat.handleAcquaintanceRequest(client, clientAddress));
                 return;
-            case (Keyword.REQUEST_TRANSFER_JOB):
+            }
+            case (Keyword.REQUEST_TRANSFER_JOB): {
                 long groupId = response.getLong(Keyword.TRANSFER_GROUP_ID);
                 TransferItem.Type type = TransferItem.Type.from(response.getString(Keyword.TRANSFER_TYPE));
 
@@ -170,6 +171,7 @@ public class TransportSession extends CoolSocket
                     transportSeat.beginFileTransfer(bridge, client, groupId, type);
                 }
                 return;
+            }
             default:
                 bridge.send(false);
         }
