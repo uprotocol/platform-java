@@ -133,7 +133,7 @@ public class TransportSession extends CoolSocket
                 return;
             }
             case (Keyword.REQUEST_NOTIFY_TRANSFER_STATE): {
-                int groupId = response.getInt(Keyword.TRANSFER_GROUP_ID);
+                long groupId = response.getLong(Keyword.TRANSFER_GROUP_ID);
                 boolean isAccepted = response.getBoolean(Keyword.TRANSFER_IS_ACCEPTED);
 
                 transportSeat.handleFileTransferState(client, groupId, isAccepted);

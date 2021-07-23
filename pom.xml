@@ -22,7 +22,7 @@
 
     <groupId>org.monora.uprotocol</groupId>
     <artifactId>core</artifactId>
-    <version>0.1.0-ALPHA31-local07</version>
+    <version>0.1.0-ALPHA31-local08</version>
     <name>UProtocol</name>
     <description>Java implementation of uprotocol, an open specification for p2p content exchange</description>
     <url>https://github.com/uprotocol</url>
