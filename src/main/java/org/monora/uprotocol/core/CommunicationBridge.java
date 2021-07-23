@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.session.ActiveConnection;
+import org.monora.uprotocol.core.content.Direction;
 import org.monora.uprotocol.core.io.DefectiveAddressListException;
 import org.monora.uprotocol.core.persistence.OnPrepareListener;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
@@ -299,8 +300,8 @@ public class CommunicationBridge implements Closeable
      * After the method returns positive, the rest of the operation can be carried on with {@link Transfers#receive}
      * or {@link Transfers#send} depending on the type of the transfer.
      *
-     * @param groupId That ties a group of {@link TransferItem} as in {@link TransferItem#getItemGroupId()}.
-     * @param type    Of the transfer as in {@link TransferItem#getItemType()}.
+     * @param groupId   That ties a group of {@link TransferItem} as in {@link TransferItem#getItemGroupId()}.
+     * @param direction Of the transfer as in {@link TransferItem#getItemDirection()}.
      * @return True if successful.
      * @throws IOException       If an IO error occurs.
      * @throws JSONException     If something goes wrong when creating JSON object.
@@ -308,13 +309,13 @@ public class CommunicationBridge implements Closeable
      * @see Transfers#receive
      * @see Transfers#send
      */
-    public boolean requestFileTransferStart(long groupId, @NotNull TransferItem.Type type) throws JSONException,
+    public boolean requestFileTransferStart(long groupId, @NotNull Direction direction) throws JSONException,
             IOException, ProtocolException
     {
         send(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER_JOB)
                 .put(Keyword.TRANSFER_GROUP_ID, groupId)
-                .put(Keyword.TRANSFER_TYPE, type.protocolValue));
+                .put(Keyword.DIRECTION, direction.protocolValue));
         return receiveResult();
     }
 

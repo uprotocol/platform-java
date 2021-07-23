@@ -41,6 +41,9 @@ public class Keyword
             CLIENT_UID = "clientUid",
             CLIENT_VERSION_NAME = "versionName",
             CLIENT_VERSION_CODE = "versionCode",
+            DIRECTION = "direction",
+            DIRECTION_INCOMING = "incoming",
+            DIRECTION_OUTGOING = "outgoing",
             ERROR = "error",
             ERROR_NOT_ALLOWED = "notAllowed",
             ERROR_NOT_FOUND = "notFound",
@@ -64,8 +67,5 @@ public class Keyword
             TRANSFER_GROUP_ID = "groupId",
             TRANSFER_ID = "id",
             TRANSFER_IS_ACCEPTED = "isAccepted",
-            TRANSFER_TEXT = "text",
-            TRANSFER_TYPE = "type",
-            TRANSFER_TYPE_INCOMING = "incoming",
-            TRANSFER_TYPE_OUTGOING = "outgoing";
+            TRANSFER_TEXT = "text";
 }

@@ -2,6 +2,7 @@ package org.monora.uprotocol.variant;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.monora.uprotocol.core.content.Direction;
 import org.monora.uprotocol.core.transfer.TransferItem;
 
 public class DefaultTransferItem implements TransferItem
@@ -20,10 +21,10 @@ public class DefaultTransferItem implements TransferItem
 
     private long lastChangeTime;
 
-    private @NotNull Type type;
+    private @NotNull Direction direction;
 
     public DefaultTransferItem(long groupId, long id, @NotNull String name, @NotNull String mimeType, long size,
-                               @Nullable String directory, TransferItem.@NotNull Type type)
+                               @Nullable String directory, @NotNull Direction direction)
     {
         this.groupId = groupId;
         this.id = id;
@@ -31,7 +32,7 @@ public class DefaultTransferItem implements TransferItem
         this.mimeType = mimeType;
         this.size = size;
         this.directory = directory;
-        this.type = type;
+        this.direction = direction;
     }
 
     @Override
@@ -39,11 +40,17 @@ public class DefaultTransferItem implements TransferItem
     {
         if (obj instanceof TransferItem) {
             TransferItem other = (TransferItem) obj;
-            return getItemType().equals(other.getItemType()) && getItemGroupId() == other.getItemGroupId()
+            return getItemDirection().equals(other.getItemDirection()) && getItemGroupId() == other.getItemGroupId()
                     && getItemId() == other.getItemId();
         }
 
         return super.equals(obj);
+    }
+
+    @Override
+    public @NotNull Direction getItemDirection()
+    {
+        return direction;
     }
 
     @Override
@@ -83,12 +90,6 @@ public class DefaultTransferItem implements TransferItem
     }
 
     @Override
-    public @NotNull Type getItemType()
-    {
-        return type;
-    }
-
-    @Override
     public long getItemGroupId()
     {
         return groupId;
@@ -113,6 +114,12 @@ public class DefaultTransferItem implements TransferItem
     }
 
     @Override
+    public void setItemDirection(@NotNull Direction direction)
+    {
+        this.direction = direction;
+    }
+
+    @Override
     public void setItemDirectory(@Nullable String directory)
     {
         this.directory = directory;
@@ -134,11 +141,5 @@ public class DefaultTransferItem implements TransferItem
     public void setItemLastChangeTime(long lastChangeTime)
     {
         this.lastChangeTime = lastChangeTime;
-    }
-
-    @Override
-    public void setItemType(@NotNull Type type)
-    {
-        this.type = type;
     }
 }

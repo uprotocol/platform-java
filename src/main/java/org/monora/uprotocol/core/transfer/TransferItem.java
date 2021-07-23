@@ -2,6 +2,7 @@ package org.monora.uprotocol.core.transfer;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.monora.uprotocol.core.content.Direction;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.spec.v1.Keyword;
 
@@ -10,6 +11,14 @@ import org.monora.uprotocol.core.spec.v1.Keyword;
  */
 public interface TransferItem
 {
+    /**
+     * The direction of this item showing whether it is an incoming or outgoing transfer.
+     *
+     * @return The item type.
+     * @see #setItemDirection(Direction)
+     */
+    @NotNull Direction getItemDirection();
+
     /**
      * The path in which this item should be stored.
      *
@@ -68,12 +77,12 @@ public interface TransferItem
     long getItemSize();
 
     /**
-     * The type of this item showing whether it is an incoming or outgoing transfer.
+     * Sets the direction of the item specifying whether it is an incoming or outgoing item.
      *
-     * @return The item type.
-     * @see #setItemType(Type)
+     * @param direction Of the item.
+     * @see #getItemDirection()
      */
-    @NotNull Type getItemType();
+    void setItemDirection(@NotNull Direction direction);
 
     /**
      * Sets the relative path that this item should be in.
@@ -132,49 +141,6 @@ public interface TransferItem
      * @see #getItemSize()
      */
     void setItemSize(long size);
-
-    /**
-     * Sets the type of the item specifying whether it is an incoming or outgoing item.
-     *
-     * @param type Of the item.
-     * @see #getItemType()
-     */
-    void setItemType(@NotNull Type type);
-
-    /**
-     * The enum for the type of the transfer item.
-     */
-    enum Type
-    {
-        /**
-         * The item is incoming
-         */
-        Incoming(Keyword.TRANSFER_TYPE_INCOMING),
-
-        /**
-         * The item is outgoing.
-         */
-        Outgoing(Keyword.TRANSFER_TYPE_OUTGOING);
-
-        /**
-         * The value that the protocol specifies which is different from the platform-based enum value.
-         */
-        public final String protocolValue;
-
-        Type(String protocolValue)
-        {
-            this.protocolValue = protocolValue;
-        }
-
-        public static @NotNull Type from(String value)
-        {
-            for (Type type : values())
-                if (type.protocolValue.equals(value))
-                    return type;
-
-            throw new IllegalArgumentException("Unknown type: " + value);
-        }
-    }
 
     /**
      * The persistent state of an item.
