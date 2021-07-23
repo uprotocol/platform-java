@@ -81,7 +81,7 @@ public interface TransportSeat
      * <p>
      * You should return the result as soon as possible, so that it can be delivered to the remote.
      * <p>
-     * This will be a synchronous operation, in which case you should not expect an immediate reply. The remote
+     * This will be an asynchronous operation, in which case you should not expect an immediate reply. The remote
      * may choose send a reply at an arbitrary time.
      *
      * @param client  That is informing us and should own the transfer.

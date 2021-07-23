@@ -201,7 +201,7 @@ public class RequestTest extends DefaultTestBase
         primarySession.start();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.close();
+            bridge.closeSafely();
             bridge.requestAcquaintance();
         } finally {
             primarySession.stop();

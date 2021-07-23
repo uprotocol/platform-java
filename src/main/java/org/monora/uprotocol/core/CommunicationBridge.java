@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.session.ActiveConnection;
+import org.monora.coolsocket.core.session.ClosedException;
 import org.monora.uprotocol.core.io.DefectiveAddressListException;
 import org.monora.uprotocol.core.persistence.OnPrepareListener;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
@@ -91,12 +92,25 @@ public class CommunicationBridge implements Closeable
      * Note that {@link ActiveConnection#closeSafely()} needs another write/read operation to work as intended.
      */
     @Override
-    public void close()
+    public void close() throws IOException
     {
-        try {
-            getActiveConnection().closeSafely();
-        } catch (Exception ignored) {
-        }
+        getActiveConnection().close();
+    }
+
+    /**
+     * Close a connection with mutual agreement.
+     * <p>
+     * Difference between this and {@link #close()} is that this will also inform the remote that connection
+     * will be closed and both sides will throw a {@link ClosedException} as soon as that happens.
+     * <p>
+     * This can be useful when you want to close the connection outside side agreement of points (where you exchange
+     * results), i.e., you want to close the connection out of blue.
+     * <p>
+     * Note that this needs another write/read operation to work as intended.
+     */
+    public void closeSafely() throws IOException
+    {
+        getActiveConnection().closeSafely();
     }
 
     /**
