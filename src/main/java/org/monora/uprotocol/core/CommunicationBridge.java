@@ -107,6 +107,8 @@ public class CommunicationBridge implements Closeable
      * results), i.e., you want to close the connection out of blue.
      * <p>
      * Note that this needs another write/read operation to work as intended.
+     *
+     * @throws IOException If an IO error occurs.
      */
     public void closeSafely() throws IOException
     {
