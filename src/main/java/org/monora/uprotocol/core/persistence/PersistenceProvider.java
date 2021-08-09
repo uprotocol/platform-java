@@ -3,7 +3,6 @@ package org.monora.uprotocol.core.persistence;
 import net.iharder.Base64;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.uprotocol.core.CommunicationBridge;
@@ -27,7 +26,6 @@ import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -71,7 +69,8 @@ public interface PersistenceProvider
     default @NotNull JSONObject clientAsJson(int pin) throws JSONException
     {
         Client client = getClient();
-        String pictureData = client.hasPicture() ? Base64.encodeBytes(client.getClientPictureData()) : null;
+        byte[] picture = getClientPicture(client);
+        String pictureData = picture == null ? null : Base64.encodeBytes(picture);
 
         return new JSONObject()
                 .put(Keyword.CLIENT_UID, client.getClientUid())
@@ -81,11 +80,11 @@ public interface PersistenceProvider
                 .put(Keyword.CLIENT_TYPE, client.getClientType().getProtocolValue())
                 .put(Keyword.CLIENT_VERSION_CODE, client.getClientVersionCode())
                 .put(Keyword.CLIENT_VERSION_NAME, client.getClientVersionName())
+                .put(Keyword.CLIENT_PICTURE, pictureData)
                 .put(Keyword.CLIENT_PROTOCOL_VERSION, client.getClientProtocolVersion())
                 .put(Keyword.CLIENT_PROTOCOL_VERSION_MIN, client.getClientProtocolVersionMin())
-                .put(Keyword.CLIENT_PIN, pin)
-                .put(Keyword.CLIENT_PICTURE, pictureData)
-                .put(Keyword.CLIENT_PICTURE_CHECKSUM, client.getClientPictureChecksum());
+                .put(Keyword.CLIENT_REVISION_PICTURE, client.getClientRevisionOfPicture())
+                .put(Keyword.CLIENT_PIN, pin);
     }
 
     /**
@@ -116,14 +115,16 @@ public interface PersistenceProvider
      * @param versionName        Points to {@link Client#getClientVersionName()}
      * @param versionCode        Points to {@link Client#getClientVersionCode()}.
      * @param protocolVersion    Points to {@link Client#getClientProtocolVersion()}.
-     * @param protocolVersionMin Points {@link Client#getClientProtocolVersionMin()}.
+     * @param protocolVersionMin Points to {@link Client#getClientProtocolVersionMin()}.
+     * @param revisionOfPicture  Points to {@link Client#getClientRevisionOfPicture()}
      * @return The client instance.
      * @see #persist(Client, boolean)
      * @see #getClientFor(String)
      */
     @NotNull Client createClientFor(@NotNull String uid, @NotNull String nickname, @NotNull String manufacturer,
                                     @NotNull String product, @NotNull ClientType type, @NotNull String versionName,
-                                    int versionCode, int protocolVersion, int protocolVersionMin);
+                                    int versionCode, int protocolVersion, int protocolVersionMin,
+                                    long revisionOfPicture);
 
     /**
      * todo: Should this really exist? This user can avoid using it. The benefit may be to use it as a factory.
@@ -171,6 +172,17 @@ public interface PersistenceProvider
      * @return The nickname.
      */
     @NotNull String getClientNickname();
+
+    /**
+     * Returns the profile picture data for the given client.
+     * <p>
+     * If the given client's UID matches {@link #getClientUid()}, you should return your own picture data to be sent to
+     * remote clients.
+     *
+     * @param client For which the picture will be provided.
+     * @return The client picture data or null if no such data exists for the given client.
+     */
+    byte @Nullable [] getClientPicture(@NotNull Client client);
 
     /**
      * This should return the unique identifier for this client. It should be both unique and persistent.
@@ -402,11 +414,10 @@ public interface PersistenceProvider
      * <p>
      * The invocation of this method mean the picture is new and should be saved.
      *
-     * @param client   The client that owns the picture.
-     * @param data     The bitmap data of the picture which is null if the owner client no longer has one.
-     * @param checksum The hash code of the given data which is invalidated if the data is null.
+     * @param client The client that owns the picture.
+     * @param data   The bitmap data of the picture which is null if the owner client no longer has one.
      */
-    void persistClientPicture(@NotNull Client client, byte @Nullable [] data, int checksum);
+    void persistClientPicture(@NotNull Client client, byte @Nullable [] data);
 
     /**
      * Revoke the current valid network PIN.

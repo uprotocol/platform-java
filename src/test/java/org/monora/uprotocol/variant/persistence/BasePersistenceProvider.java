@@ -46,11 +46,12 @@ import java.util.*;
  */
 public abstract class BasePersistenceProvider implements PersistenceProvider
 {
-    private final Set<Client> clientList = new HashSet<>();
-    private final Set<ClientAddress> clientAddressList = new HashSet<>();
-    private final List<TransferHolder> transferHolderList = new ArrayList<>();
-    private final List<MemoryStreamDescriptor> streamDescriptorList = new ArrayList<>();
-    private final List<String> invalidationRequestList = new ArrayList<>();
+    private final Set<@NotNull Client> clientList = new HashSet<>();
+    private final Set<@NotNull ClientAddress> clientAddressList = new HashSet<>();
+    private final List<@NotNull TransferHolder> transferHolderList = new ArrayList<>();
+    private final List<@NotNull MemoryStreamDescriptor> streamDescriptorList = new ArrayList<>();
+    private final List<@NotNull String> invalidationRequestList = new ArrayList<>();
+    private final Map<@NotNull String, byte @NotNull []> pictureList = new HashMap<>();
     private final BouncyCastleProvider bouncyCastleProvider = new BouncyCastleProvider();
     private final @NotNull KeyFactory keyFactory;
 
@@ -105,6 +106,10 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Could not generate PKI key pair.");
         }
+    }
+
+    public boolean hasPicture(@NotNull Client client) {
+        return pictureList.containsKey(client.getClientUid());
     }
 
     public void regenerateSecrets()
@@ -169,10 +174,10 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     public @NotNull Client createClientFor(@NotNull String uid, @NotNull String nickname, @NotNull String manufacturer,
                                            @NotNull String product, @NotNull ClientType type,
                                            @NotNull String versionName, int versionCode, int protocolVersion,
-                                           int protocolVersionMin)
+                                           int protocolVersionMin, long revisionOfPicture)
     {
         return new DefaultClient(uid, nickname, manufacturer, product, type, versionName, versionCode,
-                protocolVersion, protocolVersionMin);
+                protocolVersion, protocolVersionMin, revisionOfPicture);
     }
 
     @Override
@@ -201,6 +206,12 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     public @NotNull X509Certificate getCertificate()
     {
         return certificate;
+    }
+
+    @Override
+    public byte @Nullable [] getClientPicture(@NotNull Client client)
+    {
+        return pictureList.get(client.getClientUid());
     }
 
     @Override
@@ -359,14 +370,12 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public void persistClientPicture(@NotNull Client client, byte @Nullable [] data, int checksum)
+    public void persistClientPicture(@NotNull Client client, byte @Nullable [] data)
     {
-        if (client instanceof DefaultClient) {
-            DefaultClient defaultClient = (DefaultClient) client;
-            defaultClient.pictureData = data == null ? new byte[0] : data;
-            defaultClient.pictureChecksum = checksum;
+        if (data == null) {
+            pictureList.remove(client.getClientUid());
         } else {
-            throw new UnsupportedOperationException();
+            pictureList.put(client.getClientUid(), data);
         }
     }
 

@@ -11,6 +11,7 @@ import org.monora.uprotocol.core.protocol.communication.ContentException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
 import org.monora.uprotocol.core.protocol.communication.client.BlockedRemoteClientException;
+import org.monora.uprotocol.core.protocol.communication.client.DifferentRemoteClientException;
 import org.monora.uprotocol.core.protocol.communication.client.UnauthorizedClientException;
 import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.transfer.Transfers;
@@ -386,15 +387,17 @@ public class RequestTest extends DefaultTestBase
             primarySession.stop();
         }
 
+        // TODO: 8/7/21 Check if the picture exists first.
         Client primaryOnSecondary = secondaryPersistence.getClientFor(primaryPersistence.getClientUid());
         Assert.assertNotNull("The primary client should exist on secondary", primaryOnSecondary);
-        Assert.assertTrue("The primary client should have a picture", primaryOnSecondary.hasPicture());
+        Assert.assertTrue("The primary client should have a picture",
+                secondaryPersistence.hasPicture(primaryOnSecondary));
         Assert.assertEquals("Primary picture data should match",
-                Arrays.hashCode(primaryOnSecondary.getClientPictureData()),
-                Arrays.hashCode(primaryPersistence.getClient().getClientPictureData()));
-        Assert.assertEquals("Primary picture checksum should persist",
-                primaryOnSecondary.getClientPictureChecksum(),
-                primaryPersistence.getClient().getClientPictureChecksum());
+                Arrays.hashCode(secondaryPersistence.getClientPicture(primaryOnSecondary)),
+                Arrays.hashCode(primaryPersistence.getClientPicture(primaryPersistence.getClient())));
+        Assert.assertEquals("Primary picture revision should persist",
+                primaryOnSecondary.getClientRevisionOfPicture(),
+                primaryPersistence.getClient().getClientRevisionOfPicture());
     }
 
     @Test
@@ -411,13 +414,14 @@ public class RequestTest extends DefaultTestBase
 
         Client secondaryOnPrimary = primaryPersistence.getClientFor(secondaryPersistence.getClientUid());
         Assert.assertNotNull("Secondary should not be null on primary", secondaryOnPrimary);
-        Assert.assertTrue("The secondary client should have a picture", secondaryOnPrimary.hasPicture());
+        Assert.assertTrue("The secondary client should have a picture",
+                primaryPersistence.hasPicture(secondaryOnPrimary));
         Assert.assertEquals("Secondary picture data should match",
-                Arrays.hashCode(secondaryOnPrimary.getClientPictureData()),
-                Arrays.hashCode(secondaryPersistence.getClient().getClientPictureData()));
-        Assert.assertEquals("Secondary picture checksum should persist",
-                secondaryOnPrimary.getClientPictureChecksum(),
-                secondaryPersistence.getClient().getClientPictureChecksum());
+                Arrays.hashCode(primaryPersistence.getClientPicture(secondaryOnPrimary)),
+                Arrays.hashCode(secondaryPersistence.getClientPicture(secondaryOnPrimary)));
+        Assert.assertEquals("Secondary picture revision should persist",
+                secondaryOnPrimary.getClientRevisionOfPicture(),
+                secondaryPersistence.getClient().getClientRevisionOfPicture());
     }
 
     @Test
@@ -452,5 +456,22 @@ public class RequestTest extends DefaultTestBase
 
         Assert.assertFalse("Transfer should not exist after rejection",
                 primaryPersistence.containsTransfer(groupId));
+    }
+
+    @Test(expected = DifferentRemoteClientException.class)
+    public void throwsDifferentClientExceptionOnUidMismatch() throws IOException, InterruptedException,
+            ProtocolException, CertificateException
+    {
+        CommunicationBridge.Builder builder = new CommunicationBridge.Builder(connectionFactory, secondaryPersistence,
+                clientAddress);
+        builder.setClientUid("AWrongUid");
+
+        primarySession.start();
+
+        try(CommunicationBridge bridge = builder.connect()) {
+            Assert.fail("The above statement should have failed");
+        } finally {
+            primarySession.stop();
+        }
     }
 }

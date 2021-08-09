@@ -41,13 +41,11 @@ public class DefaultClient implements Client
 
     private boolean trusted;
 
-    public byte[] pictureData = null;
-
-    public int pictureChecksum = 0;
+    public long revisionOfPicture;
 
     public DefaultClient(@NotNull String uid, @NotNull String nickname, @NotNull String manufacturer,
                          @NotNull String product, @NotNull ClientType type, @NotNull String versionName,
-                         int versionCode, int protocolVersion, int protocolVersionMin)
+                         int versionCode, int protocolVersion, int protocolVersionMin, long revisionOfPicture)
     {
         this.uid = uid;
         this.nickname = nickname;
@@ -58,16 +56,15 @@ public class DefaultClient implements Client
         this.versionCode = versionCode;
         this.protocolVersion = protocolVersion;
         this.protocolVersionMin = protocolVersionMin;
+        this.revisionOfPicture = revisionOfPicture;
     }
 
     public DefaultClient(@NotNull String uid, @NotNull String nickname, @NotNull String manufacturer,
-                         @NotNull String product, @Nullable X509Certificate certificate, byte[] pictureData)
+                         @NotNull String product, @Nullable X509Certificate certificate, long revisionOfPicture)
     {
         this(uid, nickname, manufacturer, product, ClientType.Desktop, "1.0", 1,
-                VERSION_UPROTOCOL, VERSION_UPROTOCOL_MIN);
+                VERSION_UPROTOCOL, VERSION_UPROTOCOL_MIN, revisionOfPicture);
         this.certificate = certificate;
-        this.pictureData = pictureData;
-        this.pictureChecksum = Arrays.hashCode(pictureData);
     }
 
     @Override
@@ -104,18 +101,6 @@ public class DefaultClient implements Client
     }
 
     @Override
-    public byte @NotNull [] getClientPictureData()
-    {
-        return pictureData;
-    }
-
-    @Override
-    public int getClientPictureChecksum()
-    {
-        return pictureChecksum;
-    }
-
-    @Override
     public @NotNull String getClientProduct()
     {
         return product;
@@ -131,6 +116,12 @@ public class DefaultClient implements Client
     public int getClientProtocolVersionMin()
     {
         return protocolVersionMin;
+    }
+
+    @Override
+    public long getClientRevisionOfPicture()
+    {
+        return revisionOfPicture;
     }
 
     @Override
@@ -155,12 +146,6 @@ public class DefaultClient implements Client
     public @NotNull String getClientVersionName()
     {
         return versionName;
-    }
-
-    @Override
-    public boolean hasPicture()
-    {
-        return pictureData.length > 0;
     }
 
     @Override
@@ -233,6 +218,12 @@ public class DefaultClient implements Client
     public void setClientProtocolVersionMin(int protocolVersionMin)
     {
         this.protocolVersionMin = protocolVersionMin;
+    }
+
+    @Override
+    public void setClientRevisionOfPicture(long revision)
+    {
+        this.revisionOfPicture = revision;
     }
 
     @Override

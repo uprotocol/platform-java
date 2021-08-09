@@ -8,10 +8,14 @@ public class PrimaryPersistenceProvider extends BasePersistenceProvider
 {
     private static final byte @NotNull [] FAKE_PICTURE_BYTES = "Primary's Fake Picture Bytes".getBytes();
 
+    private static final long revisionOfPicture = 10;
+
     public @NotNull Client getClient()
     {
-        return new DefaultClient(getClientUid(), getClientNickname(), "Abc", "Def",
-                getCertificate(), FAKE_PICTURE_BYTES);
+        Client client = new DefaultClient(getClientUid(), getClientNickname(), "Abc", "Def",
+                getCertificate(), revisionOfPicture);
+        persistClientPicture(client, FAKE_PICTURE_BYTES);
+        return client;
     }
 
     @Override

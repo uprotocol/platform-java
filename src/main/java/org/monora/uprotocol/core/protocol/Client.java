@@ -46,29 +46,7 @@ public interface Client
     @NotNull String getClientNickname();
 
     /**
-     * Loads and returns the non-null byte array that contains the picture bitmap data.
-     * <p>
-     * The idea is to spare the loading part to the invocation of this method.
-     * <p>
-     * The invocation of this method will take place after {@link #hasPicture()} returns positive.
-     *
-     * @return The non-zero length byte array that contains picture bitmap data.
-     */
-    byte @NotNull [] getClientPictureData();
-
-    /**
-     * Calculated hash of the picture data.
-     * <p>
-     * This should be pre-calculated for performance benefits.
-     * <p>
-     * The invocation of this method will take place after {@link #hasPicture()} returns positive.
-     *
-     * @return The hash code of the picture bitmap data.
-     */
-    int getClientPictureChecksum();
-
-    /**
-     * The product is an extra information under {@link #getClientManufacturer()}.
+     * The product name given by the manufacturer {@link #getClientManufacturer()}.
      *
      * @return The product name of the client (sub-brand).
      * @see #setClientProduct(String)
@@ -93,6 +71,12 @@ public interface Client
      * @see #getClientProtocolVersion()
      */
     int getClientProtocolVersionMin();
+
+    /**
+     * The persistent revision number the remote sent that changes when the remote changes it is picture, so we can
+     * fetch it only when it changes.
+     */
+    long getClientRevisionOfPicture();
 
     /**
      * This tells on which type of device that the client runs on.
@@ -133,15 +117,7 @@ public interface Client
     @NotNull String getClientVersionName();
 
     /**
-     * Invoked when the picture is about to be sent to a remote client to check whether the client has a
-     * picture.
-     *
-     * @return True if the client has a picture.
-     */
-    boolean hasPicture();
-
-    /**
-     * Whether or not the (remote) client is blocked on this client.
+     * Whether the (remote) client is blocked on this client.
      *
      * @return True if the client is blocked or false if not.
      * @see #setClientBlocked(boolean)
@@ -149,7 +125,7 @@ public interface Client
     boolean isClientBlocked();
 
     /**
-     * Whether or not this client instance points to the client itself.
+     * Whether this client instance points to the client itself.
      *
      * @return True if this is a loopback client.
      * @see #setClientLocal(boolean)
@@ -157,7 +133,7 @@ public interface Client
     boolean isClientLocal();
 
     /**
-     * Whether or not the (remote) client is trusted on this client.
+     * Whether the (remote) client is trusted on this client.
      * <p>
      * Trusted devices has more access rights than those who don't.
      *
@@ -167,7 +143,7 @@ public interface Client
     boolean isClientTrusted();
 
     /**
-     * Set whether or not this client is blocked.
+     * Sets whether this client is blocked.
      *
      * @param blocked True if blocked or false if otherwise.
      * @see #isClientBlocked()
@@ -175,7 +151,7 @@ public interface Client
     void setClientBlocked(boolean blocked);
 
     /**
-     * Set the client trust certificate.
+     * Sets the client trust certificate.
      *
      * @param certificate The certificate.
      * @see #getClientCertificate()
@@ -183,7 +159,7 @@ public interface Client
     void setClientCertificate(@Nullable X509Certificate certificate);
 
     /**
-     * Set the last usage time of this client.
+     * Sets the last usage time of this client.
      *
      * @param lastUsageTime The last usage time in UNIX epoch time format.
      * @see #getClientLastUsageTime()
@@ -191,7 +167,7 @@ public interface Client
     void setClientLastUsageTime(long lastUsageTime);
 
     /**
-     * Set whether or not this client is a loopback instance.
+     * Sets whether this client is a loopback instance.
      *
      * @param local True if this is a loopback client representing itself or false if otherwise.
      * @see #isClientLocal()
@@ -199,7 +175,7 @@ public interface Client
     void setClientLocal(boolean local);
 
     /**
-     * Set the client's manufacturer.
+     * Sets the client's manufacturer.
      *
      * @param manufacturer The manufacturer.
      * @see #getClientManufacturer()
@@ -208,7 +184,7 @@ public interface Client
     void setClientManufacturer(@NotNull String manufacturer);
 
     /**
-     * Set the nickname of this client.
+     * Sets the nickname of this client.
      *
      * @param nickname To be set.
      * @see #getClientNickname()
@@ -216,7 +192,7 @@ public interface Client
     void setClientNickname(@NotNull String nickname);
 
     /**
-     * Set the product name of this client (sub-brand)
+     * Sets the product name of this client (sub-brand)
      *
      * @param product The name.
      * @see #getClientProduct()
@@ -225,7 +201,7 @@ public interface Client
     void setClientProduct(@NotNull String product);
 
     /**
-     * Set the target protocol version of the client.
+     * Sets the target protocol version of the client.
      *
      * @param protocolVersion That the client is targeting.
      * @see #getClientProtocolVersion()
@@ -234,7 +210,7 @@ public interface Client
     void setClientProtocolVersion(int protocolVersion);
 
     /**
-     * Set the minimum protocol version supported by the client.
+     * Sets the minimum protocol version supported by the client.
      *
      * @param protocolVersionMin That the client supports.
      * @see #getClientProtocolVersionMin()
@@ -243,7 +219,17 @@ public interface Client
     void setClientProtocolVersionMin(int protocolVersionMin);
 
     /**
-     * Set whether or not this client is trusted.
+     * Sets the revision number of the picture even if it doesn't exist.
+     * <p>
+     * With that, we can ensure we receive the picture of a client after it changes, instead of receiving it all
+     * the time
+     *
+     * @param revision The revision number the client sent.
+     */
+    void setClientRevisionOfPicture(long revision);
+
+    /**
+     * Sets whether this client is trusted.
      *
      * @param trusted True if trusted or false if otherwise.
      * @see #isClientTrusted()
@@ -251,7 +237,7 @@ public interface Client
     void setClientTrusted(boolean trusted);
 
     /**
-     * Set the type of the client (the type of device that the client runs on).
+     * Sets the type of the client (the type of device that the client runs on).
      *
      * @param type That the client runs on.
      * @see #getClientType()
@@ -259,7 +245,7 @@ public interface Client
     void setClientType(@NotNull ClientType type);
 
     /**
-     * Set the client's unique identifier.
+     * Sets the client's unique identifier.
      *
      * @param uid To be set.
      * @see #getClientUid()
@@ -267,7 +253,7 @@ public interface Client
     void setClientUid(@NotNull String uid);
 
     /**
-     * Set the client's version code.
+     * Sets the client's version code.
      *
      * @param versionCode To be set.
      * @see #getClientVersionCode()
@@ -276,7 +262,7 @@ public interface Client
     void setClientVersionCode(int versionCode);
 
     /**
-     * Set the client's version name.
+     * Sets the client's version name.
      *
      * @param versionName To be set.
      * @see #getClientVersionName()

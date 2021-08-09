@@ -252,7 +252,7 @@ public class CommunicationBridge implements Closeable
      * <p>
      * For instance, the remote is setting up a file transfer request and is about to pick a client. If you make this
      * request in that timespan, this will invoke {@link TransportSeat#handleAcquaintanceRequest(Client, ClientAddress)}
-     * method on the remote and it will choose you.
+     * method on the remote, and it will choose you.
      *
      * @return True if successful.
      * @throws IOException       If an IO error occurs.
@@ -572,11 +572,12 @@ public class CommunicationBridge implements Closeable
             String remoteClientUid = activeConnection.receive().getAsString();
 
             if (clientUid != null && !clientUid.equals(remoteClientUid)) {
-                activeConnection.closeSafely();
+                Responses.send(activeConnection, false, new JSONObject());
                 throw new DifferentRemoteClientException(clientUid, remoteClientUid, address);
             }
 
-            activeConnection.reply(persistenceProvider.clientAsJson(pin));
+            Responses.send(activeConnection, true, persistenceProvider.clientAsJson(pin));
+
             JSONObject jsonObject = activeConnection.receive().getAsJson();
             Client client = ClientLoader.loadAsClient(persistenceProvider, jsonObject, remoteClientUid,
                     clearBlockedStatus);

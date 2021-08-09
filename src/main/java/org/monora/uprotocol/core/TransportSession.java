@@ -69,6 +69,11 @@ public class TransportSession extends CoolSocket
             activeConnection.reply(persistenceProvider.getClientUid());
 
             final JSONObject response = activeConnection.receive().getAsJson();
+            if (!Responses.getResult(response)) {
+                getLogger().log(Level.INFO, "Remote returned false");
+                return;
+            }
+
             final int activePin = persistenceProvider.getNetworkPin();
             final boolean hasPin = activePin != 0 && activePin == response.getInt(Keyword.CLIENT_PIN);
 

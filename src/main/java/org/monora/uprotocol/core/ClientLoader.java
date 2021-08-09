@@ -30,7 +30,7 @@ public class ClientLoader
      * @param persistenceProvider That stores persistent data.
      * @param object              To load the details from.
      * @param clientUid           For which this method invocation is being made.
-     * @param unblock             True if this should unblocked the remote if blocked.
+     * @param unblock             True if this should unblock the remote if blocked.
      * @return The client produced from the JSON object and persistence database.
      * @throws JSONException                If something goes wrong when inflating the JSON data.
      * @throws BlockedRemoteClientException If the remote is blocked on the side and 'unblock' parameter is false.
@@ -57,7 +57,7 @@ public class ClientLoader
      * @param clientUid           For which this method invocation is being made.
      * @param hasPin              Whether the request has a valid PIN. When it does, the remote client will be unblocked
      *                            if blocked.
-     * @return The client produced from the JSON object and persistence database.
+     * @return The client data produced from the JSON object and persistence database.
      * @throws JSONException                If something goes wrong when inflating the JSON data.
      * @throws BlockedRemoteClientException If remote is blocked and has no valid PIN. The underlying data is loaded
      *                                      after this is thrown.
@@ -79,33 +79,30 @@ public class ClientLoader
                                             @NotNull JSONObject response, @NotNull String clientUid, boolean hasPin,
                                             boolean asClient, boolean unblockAsClient) throws JSONException
     {
-        String nickname = response.getString(Keyword.CLIENT_NICKNAME);
-        String manufacturer = response.getString(Keyword.CLIENT_MANUFACTURER);
-        String product = response.getString(Keyword.CLIENT_PRODUCT);
-        ClientType clientType = ClientType.from(response.getString(Keyword.CLIENT_TYPE));
-        String versionName = response.getString(Keyword.CLIENT_VERSION_NAME);
-        int versionCode = response.getInt(Keyword.CLIENT_VERSION_CODE);
-        int protocolVersion = response.getInt(Keyword.CLIENT_PROTOCOL_VERSION);
-        int protocolVersionMin = response.getInt(Keyword.CLIENT_PROTOCOL_VERSION_MIN);
-        long lastUsageTime = System.currentTimeMillis();
-        boolean local = persistenceProvider.getClientUid().equals(clientUid);
-
-        if (nickname.length() > LENGTH_CLIENT_USERNAME) {
-            nickname = nickname.substring(0, LENGTH_CLIENT_USERNAME);
-        }
+        final String nickname = Clients.cleanNickname(response.getString(Keyword.CLIENT_NICKNAME));
+        final String manufacturer = response.getString(Keyword.CLIENT_MANUFACTURER);
+        final String product = response.getString(Keyword.CLIENT_PRODUCT);
+        final ClientType clientType = ClientType.from(response.getString(Keyword.CLIENT_TYPE));
+        final String versionName = response.getString(Keyword.CLIENT_VERSION_NAME);
+        final int versionCode = response.getInt(Keyword.CLIENT_VERSION_CODE);
+        final int protocolVersion = response.getInt(Keyword.CLIENT_PROTOCOL_VERSION);
+        final int protocolVersionMin = response.getInt(Keyword.CLIENT_PROTOCOL_VERSION_MIN);
+        final long revisionOfPicture = response.getLong(Keyword.CLIENT_REVISION_PICTURE);
+        final long lastUsageTime = System.currentTimeMillis();
+        final boolean local = persistenceProvider.getClientUid().equals(clientUid);
 
         Client client = persistenceProvider.getClientFor(clientUid);
-        boolean updating = false;
+
+        final boolean updating = client != null;
+        final boolean needsPictureRevision = client == null || client.getClientRevisionOfPicture() != revisionOfPicture;
 
         if (client == null) {
             client = persistenceProvider.createClientFor(clientUid, nickname, manufacturer, product, clientType,
-                    versionName, versionCode, protocolVersion, protocolVersionMin);
+                    versionName, versionCode, protocolVersion, protocolVersionMin, revisionOfPicture);
         } else {
             Clients.fill(client, clientUid, client.getClientCertificate(), nickname, manufacturer, product, clientType,
-                    versionName, versionCode, protocolVersion, protocolVersionMin, client.isClientTrusted(),
-                    client.isClientBlocked());
-
-            updating = true;
+                    versionName, versionCode, protocolVersion, protocolVersionMin, revisionOfPicture,
+                    client.isClientTrusted(), client.isClientBlocked());
         }
 
         try {
@@ -122,13 +119,10 @@ public class ClientLoader
             client.setClientLocal(local);
             persistenceProvider.persist(client, updating);
 
-            int checksum = response.getInt(Keyword.CLIENT_PICTURE_CHECKSUM);
-
-            if (client.getClientPictureChecksum() != checksum) {
+            if (needsPictureRevision) {
                 String data = response.optString(Keyword.CLIENT_PICTURE);
                 try {
-                    persistenceProvider.persistClientPicture(client,
-                            data != null ? Base64.decode(data) : null, checksum);
+                    persistenceProvider.persistClientPicture(client, data != null ? Base64.decode(data) : null);
                 } catch (IOException ignored) {
                 }
             }
