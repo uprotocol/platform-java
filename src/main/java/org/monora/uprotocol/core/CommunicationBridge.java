@@ -30,7 +30,7 @@ import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
-import org.monora.uprotocol.core.protocol.communication.CommunicationException;
+import org.monora.uprotocol.core.protocol.communication.CredentialsException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
 import org.monora.uprotocol.core.protocol.communication.client.BlockedRemoteClientException;
@@ -39,6 +39,7 @@ import org.monora.uprotocol.core.spec.v1.Keyword;
 import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.transfer.Transfers;
 
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.Closeable;
@@ -141,7 +142,7 @@ public class CommunicationBridge implements Closeable
     static void convertToSSL(@NotNull ConnectionFactory connectionFactory,
                              @NotNull PersistenceProvider persistenceProvider,
                              @NotNull ActiveConnection activeConnection, @NotNull Client client, boolean isClient)
-            throws IOException, CommunicationException, CertificateException
+            throws IOException, ProtocolException, CertificateException
     {
         Socket socket = activeConnection.getSocket();
         SSLSocketFactory sslSocketFactory = persistenceProvider.getSSLContextFor(client).getSocketFactory();
@@ -188,8 +189,15 @@ public class CommunicationBridge implements Closeable
 
         try {
             sslSocket.startHandshake();
+        } catch (SSLException e) {
+            boolean firstTime = !persistenceProvider.hasRequestForInvalidationOfCredentials(client.getClientUid());
+            if (firstTime) {
+                persistenceProvider.saveRequestForInvalidationOfCredentials(client.getClientUid());
+            }
+
+            throw new CredentialsException(client, e, firstTime);
         } catch (Exception e) {
-            throw new SecurityException(client, e);
+            throw new ProtocolException(e);
         }
     }
 
@@ -586,8 +594,16 @@ public class CommunicationBridge implements Closeable
             persistenceProvider.persist(clientAddress);
 
             Responses.checkError(client, jsonObject);
-            convertToSSL(connectionFactory, persistenceProvider, activeConnection, client, true);
 
+            try {
+                convertToSSL(connectionFactory, persistenceProvider, activeConnection, client, true);
+            } catch (SecurityException e) {
+                if (!persistenceProvider.hasRequestForInvalidationOfCredentials(client.getClientUid())) {
+                    persistenceProvider.saveRequestForInvalidationOfCredentials(client.getClientUid());
+                }
+
+                throw e;
+            }
             return new CommunicationBridge(persistenceProvider, activeConnection, client, clientAddress);
         }
 

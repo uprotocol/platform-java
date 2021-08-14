@@ -61,6 +61,8 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     private @Nullable KeyPair keyPairBackup;
     private @Nullable X509Certificate certificateBackup;
 
+    private boolean gotInvalidationRequest = false;
+
     private int networkPin;
 
     public BasePersistenceProvider()
@@ -108,7 +110,13 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         }
     }
 
-    public boolean hasPicture(@NotNull Client client) {
+    public boolean gotInvalidationRequest()
+    {
+        return gotInvalidationRequest;
+    }
+
+    public boolean hasPicture(@NotNull Client client)
+    {
         return pictureList.containsKey(client.getClientUid());
     }
 
@@ -406,10 +414,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     @Override
     public void saveRequestForInvalidationOfCredentials(@NotNull String clientUid)
     {
-        if (hasRequestForInvalidationOfCredentials(clientUid)) {
-            return;
-        }
-
+        gotInvalidationRequest = true;
         synchronized (invalidationRequestList) {
             invalidationRequestList.add(clientUid);
         }

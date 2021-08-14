@@ -8,8 +8,8 @@ import org.monora.uprotocol.core.ClientLoader;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
+import org.monora.uprotocol.core.protocol.communication.CredentialsException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
-import org.monora.uprotocol.core.protocol.communication.SecurityException;
 import org.monora.uprotocol.core.protocol.communication.client.BlockedRemoteClientException;
 import org.monora.uprotocol.core.protocol.communication.client.DifferentRemoteClientException;
 import org.monora.uprotocol.core.protocol.communication.client.UnauthorizedClientException;
@@ -19,7 +19,6 @@ import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
 import org.monora.uprotocol.variant.holder.TransferHolder;
 import org.monora.uprotocol.variant.test.DefaultTestBase;
 
-import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
@@ -163,8 +162,8 @@ public class RequestTest extends DefaultTestBase
         }
     }
 
-    @Test(expected = SecurityException.class)
-    public void failsWithKeyMismatchTest() throws IOException, InterruptedException, ProtocolException,
+    @Test(expected = CredentialsException.class)
+    public void failsWithCredentialsMismatchTest() throws IOException, InterruptedException, ProtocolException,
             CertificateException
     {
         primarySession.start();
@@ -223,7 +222,7 @@ public class RequestTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestAcquaintance();
-        } catch (SecurityException ignored) {
+        } catch (CredentialsException ignored) {
         }
 
         primaryPersistence.restoreSecrets();
@@ -249,12 +248,9 @@ public class RequestTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestAcquaintance();
-        } catch (SecurityException e) {
-            if (e.getCause() instanceof SSLHandshakeException) {
-                e.client.setClientCertificate(null);
-                secondaryPersistence.persist(e.client, true);
-            } else
-                throw e;
+        } catch (CredentialsException e) {
+            e.client.setClientCertificate(null);
+            secondaryPersistence.persist(e.client, true);
         }
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
@@ -468,10 +464,56 @@ public class RequestTest extends DefaultTestBase
 
         primarySession.start();
 
-        try(CommunicationBridge bridge = builder.connect()) {
+        try (CommunicationBridge bridge = builder.connect()) {
             Assert.fail("The above statement should have failed");
         } finally {
             primarySession.stop();
         }
+    }
+
+    @Test
+    public void warnsBothPartiesOnInvalidServerCredentials() throws IOException, InterruptedException,
+            ProtocolException, CertificateException
+    {
+        primarySession.start();
+
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
+            bridge.requestAcquaintance();
+        }
+
+        primaryPersistence.regenerateSecrets();
+
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
+            Assert.fail("Should have not reached here.");
+        } catch (Exception e) {
+            Assert.assertTrue("Should result in the right error", e instanceof CredentialsException);
+        } finally {
+            primarySession.stop();
+        }
+
+        Assert.assertTrue("Both parties should be warned", primaryPersistence.gotInvalidationRequest());
+    }
+
+    @Test
+    public void warnsBothPartiesOnInvalidClientCredentials() throws IOException, InterruptedException,
+            ProtocolException, CertificateException
+    {
+        primarySession.start();
+
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
+            bridge.requestAcquaintance();
+        }
+
+        secondaryPersistence.regenerateSecrets();
+
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
+            Assert.fail("Should have not reached here");
+        } catch (Exception e) {
+            Assert.assertTrue("Should result in the right error", e instanceof CredentialsException);
+        } finally {
+            primarySession.stop();
+        }
+
+        Assert.assertTrue("Both parties should be warned", primaryPersistence.gotInvalidationRequest());
     }
 }

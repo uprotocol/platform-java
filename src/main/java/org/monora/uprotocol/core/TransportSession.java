@@ -13,6 +13,7 @@ import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
+import org.monora.uprotocol.core.protocol.communication.CredentialsException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
 import org.monora.uprotocol.core.spec.v1.Config;
@@ -100,11 +101,12 @@ public class TransportSession extends CoolSocket
 
             handleRequest(new CommunicationBridge(persistenceProvider, activeConnection, client, clientAddress),
                     client, clientAddress, hasPin, request);
-        } catch (SecurityException e) {
-            if (!persistenceProvider.hasRequestForInvalidationOfCredentials(e.client.getClientUid())) {
-                persistenceProvider.saveRequestForInvalidationOfCredentials(e.client.getClientUid());
+        } catch (CredentialsException e) {
+            if (e.firstTime) {
                 transportSeat.notifyClientCredentialsChanged(e.client);
             }
+        } catch (SecurityException e) {
+            getLogger().log(Level.INFO, "Security error occurred: " + e.toString());
         } catch (ClosedException e) {
             getLogger().log(Level.INFO, "Closed successfully by " + (e.remoteRequested ? "remote" : "you"));
         } catch (CancelledException e) {
