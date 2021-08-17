@@ -16,7 +16,7 @@ public interface TransferItem
      * @return The item type.
      * @see #setItemDirection(Direction)
      */
-    @NotNull Direction setItemDirection();
+    @NotNull Direction getItemDirection();
 
     /**
      * The path in which this item should be stored.
@@ -79,7 +79,7 @@ public interface TransferItem
      * Sets the direction of the item specifying whether it is an incoming or outgoing item.
      *
      * @param direction Of the item.
-     * @see #setItemDirection()
+     * @see #getItemDirection()
      */
     void setItemDirection(@NotNull Direction direction);
 

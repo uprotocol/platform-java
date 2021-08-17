@@ -40,11 +40,17 @@ public class DefaultTransferItem implements TransferItem
     {
         if (obj instanceof TransferItem) {
             TransferItem other = (TransferItem) obj;
-            return setItemDirection().equals(other.setItemDirection()) && getItemGroupId() == other.getItemGroupId()
+            return getItemDirection().equals(other.getItemDirection()) && getItemGroupId() == other.getItemGroupId()
                     && getItemId() == other.getItemId();
         }
 
         return super.equals(obj);
+    }
+
+    @Override
+    public @NotNull Direction getItemDirection()
+    {
+        return direction;
     }
 
     @Override
@@ -81,12 +87,6 @@ public class DefaultTransferItem implements TransferItem
     public long getItemSize()
     {
         return size;
-    }
-
-    @Override
-    public @NotNull Direction setItemDirection()
-    {
-        return direction;
     }
 
     @Override

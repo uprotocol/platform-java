@@ -113,7 +113,7 @@ public interface TransportSeat
      * @param groupId   The transfer id as in {@link TransferItem#getItemGroupId()}
      * @param clientUid The {@link Client#getClientUid()} if this needs to concern only the given client, or null you
      *                  need check all transfer processes.
-     * @param direction To limit the direction of the transfer as in {@link TransferItem#setItemDirection()}.
+     * @param direction To limit the direction of the transfer as in {@link TransferItem#getItemDirection()}.
      * @return True if there is an ongoing transfer for the given parameters.
      */
     boolean hasOngoingTransferFor(long groupId, @NotNull String clientUid, @NotNull Direction direction);

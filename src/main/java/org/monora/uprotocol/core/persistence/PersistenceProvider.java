@@ -137,7 +137,7 @@ public interface PersistenceProvider
      * @param mimeType  Points to {@link TransferItem#getItemMimeType()}.
      * @param size      Points to {@link TransferItem#getItemSize()}.
      * @param directory Points to {@link TransferItem#getItemDirectory()}.
-     * @param direction Points to {@link TransferItem#setItemDirection()}
+     * @param direction Points to {@link TransferItem#getItemDirection()}
      * @return The transfer item instance.
      */
     @NotNull TransferItem createTransferItemFor(long groupId, long id, @NotNull String name, @NotNull String mimeType,

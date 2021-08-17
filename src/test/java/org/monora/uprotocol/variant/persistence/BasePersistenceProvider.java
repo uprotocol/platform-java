@@ -243,7 +243,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     {
         synchronized (transferHolderList) {
             for (TransferHolder holder : transferHolderList) {
-                if (Direction.Incoming.equals(holder.item.setItemDirection())
+                if (Direction.Incoming.equals(holder.item.getItemDirection())
                         && holder.item.getItemGroupId() == groupId
                         && TransferItem.State.Pending.equals(holder.state)) {
                     return holder.item;
@@ -308,7 +308,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         synchronized (transferHolderList) {
             for (TransferHolder holder : transferHolderList) {
                 if (holder.item.getItemGroupId() == groupId && holder.item.getItemId() == id
-                        && holder.item.setItemDirection().equals(direction) && holder.clientUid.equals(clientUid))
+                        && holder.item.getItemDirection().equals(direction) && holder.clientUid.equals(clientUid))
                     return holder.item;
             }
         }

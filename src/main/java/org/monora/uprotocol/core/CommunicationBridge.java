@@ -350,7 +350,7 @@ public class CommunicationBridge implements Closeable
      * or {@link Transfers#send} depending on the direction of the transfer.
      *
      * @param groupId   That ties a group of {@link TransferItem} as in {@link TransferItem#getItemGroupId()}.
-     * @param direction Of the transfer as in {@link TransferItem#setItemDirection()}.
+     * @param direction Of the transfer as in {@link TransferItem#getItemDirection()}.
      * @return True if successful.
      * @throws IOException       If an IO error occurs.
      * @throws JSONException     If something goes wrong when creating JSON object.
