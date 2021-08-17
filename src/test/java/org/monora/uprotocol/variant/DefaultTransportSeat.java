@@ -45,7 +45,8 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public boolean handleAcquaintanceRequest(@NotNull Client client, @NotNull ClientAddress clientAddress)
+    public boolean handleAcquaintanceRequest(@NotNull Client client, @NotNull ClientAddress clientAddress,
+                                             @NotNull Direction direction)
     {
         return true;
     }

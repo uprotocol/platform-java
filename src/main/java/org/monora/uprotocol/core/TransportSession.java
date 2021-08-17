@@ -150,7 +150,8 @@ public class TransportSession extends CoolSocket
                 return;
             }
             case (Keyword.REQUEST_ACQUAINTANCE): {
-                bridge.send(transportSeat.handleAcquaintanceRequest(client, clientAddress));
+                Direction direction = Direction.from(response.getString(Keyword.DIRECTION));
+                bridge.send(transportSeat.handleAcquaintanceRequest(client, clientAddress, direction));
                 return;
             }
             case (Keyword.REQUEST_TRANSFER_JOB): {

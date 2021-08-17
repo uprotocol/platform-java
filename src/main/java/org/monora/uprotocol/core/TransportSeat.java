@@ -52,10 +52,13 @@ public interface TransportSeat
      *
      * @param client        That wants to be noticed.
      * @param clientAddress Where that client resides.
-     * @return True if the request will be fulfilled.
-     * @see CommunicationBridge#requestAcquaintance()
+     * @param direction     Of the remote that you should fulfill.
+     * @return True if the request will be fulfilled, or false if it is an unexpected request or the direction
+     * doesn't match to what you expect.
+     * @see CommunicationBridge#requestAcquaintance(Direction)
      */
-    boolean handleAcquaintanceRequest(@NotNull Client client, @NotNull ClientAddress clientAddress);
+    boolean handleAcquaintanceRequest(@NotNull Client client, @NotNull ClientAddress clientAddress,
+                                      @NotNull Direction direction);
 
     /**
      * Handle the file transfer request.

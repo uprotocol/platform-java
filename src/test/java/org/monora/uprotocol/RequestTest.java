@@ -36,7 +36,8 @@ public class RequestTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
                 clientAddress)) {
-            Assert.assertTrue("Remote should send a positive message.", bridge.requestAcquaintance());
+            Assert.assertTrue("Remote should send a positive message.",
+                    bridge.requestAcquaintance(Direction.Incoming));
 
             Client persistentClient = secondaryPersistence.getClientFor(bridge.getRemoteClient().getClientUid());
 
@@ -170,13 +171,13 @@ public class RequestTest extends DefaultTestBase
         primarySession.start();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestAcquaintance();
+            bridge.send(false);
         }
 
         primaryPersistence.regenerateSecrets();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestAcquaintance();
+            bridge.send(false);
         } finally {
             primarySession.stop();
         }
@@ -189,7 +190,7 @@ public class RequestTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.getActiveConnection().cancel();
-            bridge.requestAcquaintance();
+            bridge.send(false);
         } finally {
             primarySession.stop();
         }
@@ -203,7 +204,7 @@ public class RequestTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.closeSafely();
-            bridge.requestAcquaintance();
+            bridge.send(false);
         } finally {
             primarySession.stop();
         }
@@ -216,20 +217,20 @@ public class RequestTest extends DefaultTestBase
         primarySession.start();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestAcquaintance();
+            bridge.send(false);
         }
 
         primaryPersistence.regenerateSecrets();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestAcquaintance();
+            bridge.send(false);
         } catch (CredentialsException ignored) {
         }
 
         primaryPersistence.restoreSecrets();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestAcquaintance();
+            bridge.send(false);
         } finally {
             primarySession.stop();
         }
@@ -241,21 +242,21 @@ public class RequestTest extends DefaultTestBase
         primarySession.start();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestAcquaintance();
+            bridge.send(false);
         }
 
         primarySeat.setAutoInvalidationOfCredentials(true);
         primaryPersistence.regenerateSecrets();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestAcquaintance();
+            bridge.send(false);
         } catch (CredentialsException e) {
             e.client.setClientCertificate(null);
             secondaryPersistence.persist(e.client, true);
         }
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestAcquaintance();
+            bridge.send(false);
         } finally {
             primarySession.stop();
         }
@@ -269,7 +270,8 @@ public class RequestTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
                 clientAddress)) {
-            Assert.assertTrue("Remote should send a positive message.", bridge.requestAcquaintance());
+            Assert.assertTrue("Remote should send a positive message.",
+                    bridge.requestAcquaintance(Direction.Incoming));
         }
 
         Client secondaryOnPrimary = primaryPersistence.getClientFor(secondaryPersistence.getClientUid());
@@ -298,7 +300,7 @@ public class RequestTest extends DefaultTestBase
         builder.setPin(primaryPersistence.getNetworkPin());
 
         try (CommunicationBridge bridge = builder.connect()) {
-            bridge.requestAcquaintance();
+            bridge.send(false);
         } finally {
             primarySession.stop();
         }
@@ -325,7 +327,7 @@ public class RequestTest extends DefaultTestBase
         builder.setClearBlockedStatus(false);
 
         try (CommunicationBridge bridge = builder.connect()) {
-            bridge.requestAcquaintance();
+            bridge.send(false);
         } finally {
             primarySession.stop();
         }
@@ -347,7 +349,7 @@ public class RequestTest extends DefaultTestBase
         builder.setPin(primaryPersistence.getNetworkPin());
 
         try (CommunicationBridge bridge = builder.connect()) {
-            bridge.requestAcquaintance();
+            bridge.send(false);
         } finally {
             primarySession.stop();
         }
@@ -379,7 +381,7 @@ public class RequestTest extends DefaultTestBase
         primarySession.start();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestAcquaintance();
+            bridge.send(false);
         } finally {
             primarySession.stop();
         }
@@ -404,7 +406,7 @@ public class RequestTest extends DefaultTestBase
         primarySession.start();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestAcquaintance();
+            bridge.send(false);
         } finally {
             primarySession.stop();
         }
@@ -479,7 +481,7 @@ public class RequestTest extends DefaultTestBase
         primarySession.start();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestAcquaintance();
+            bridge.send(false);
         }
 
         primaryPersistence.regenerateSecrets();
@@ -502,7 +504,7 @@ public class RequestTest extends DefaultTestBase
         primarySession.start();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestAcquaintance();
+            bridge.send(false);
         }
 
         secondaryPersistence.regenerateSecrets();

@@ -260,17 +260,22 @@ public class CommunicationBridge implements Closeable
      * Inform the remote that it should choose you (this client) if it's about to choose one.
      * <p>
      * For instance, the remote is setting up a file transfer request and is about to pick a client. If you make this
-     * request in that timespan, this will invoke {@link TransportSeat#handleAcquaintanceRequest(Client, ClientAddress)}
-     * method on the remote, and it will choose you.
+     * request in that timespan, this will invoke
+     * {@link TransportSeat#handleAcquaintanceRequest(Client, ClientAddress, Direction)} method on the remote, and it
+     * will choose you.
      *
-     * @return True if successful.
+     * @param direction Of 'yours' (not reversed) that the remote should respond to.
+     * @return True if successful, or false the remote will not satisfy the request. The reason maybe that the remote
+     * is expecting the same
      * @throws IOException       If an IO error occurs.
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public boolean requestAcquaintance() throws JSONException, IOException, ProtocolException
+    public boolean requestAcquaintance(Direction direction) throws JSONException, IOException, ProtocolException
     {
-        send(true, new JSONObject().put(Keyword.REQUEST, Keyword.REQUEST_ACQUAINTANCE));
+        send(true, new JSONObject()
+                .put(Keyword.REQUEST, Keyword.REQUEST_ACQUAINTANCE)
+                .put(Keyword.DIRECTION, direction.protocolValue));
         return receiveResult();
     }
 
@@ -324,8 +329,8 @@ public class CommunicationBridge implements Closeable
      * After the method returns positive, the rest of the operation can be carried on with {@link Transfers#receive}
      * or {@link Transfers#send} depending on the direction of the transfer.
      *
-     * @param groupId That ties a group of {@link TransferItem} as in {@link TransferItem#getItemGroupId()}.
-     * @param direction    Of the transfer as in {@link TransferItem#setItemDirection()}.
+     * @param groupId   That ties a group of {@link TransferItem} as in {@link TransferItem#getItemGroupId()}.
+     * @param direction Of the transfer as in {@link TransferItem#setItemDirection()}.
      * @return True if successful.
      * @throws IOException       If an IO error occurs.
      * @throws JSONException     If something goes wrong when creating JSON object.
