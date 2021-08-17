@@ -41,6 +41,10 @@ public class Keyword
             CLIENT_UID = "clientUid",
             CLIENT_VERSION_NAME = "versionName",
             CLIENT_VERSION_CODE = "versionCode",
+            CLIPBOARD_CONTENT = "content",
+            CLIPBOARD_TYPE = "type",
+            CLIPBOARD_TYPE_LINK = "link",
+            CLIPBOARD_TYPE_TEXT = "text",
             DIRECTION = "direction",
             DIRECTION_INCOMING = "incoming",
             DIRECTION_OUTGOING = "outgoing",
@@ -58,14 +62,13 @@ public class Keyword
             INDEX_DIRECTORY = "directory",
             REQUEST = "request",
             REQUEST_ACQUAINTANCE = "acquaintance",
+            REQUEST_CLIPBOARD = "transferText",
             REQUEST_NOTIFY_TRANSFER_REJECTION = "notifyTransferRejection",
             REQUEST_TEST = "test",
             REQUEST_TRANSFER = "transfer",
             REQUEST_TRANSFER_JOB = "transferJob",
-            REQUEST_TRANSFER_TEXT = "transferText",
             RESULT = "result",
             TRANSFER_CURRENT_POSITION = "currentPosition",
             TRANSFER_GROUP_ID = "groupId",
-            TRANSFER_ID = "id",
-            TRANSFER_TEXT = "text";
+            TRANSFER_ID = "id";
 }

@@ -5,7 +5,7 @@ import org.monora.uprotocol.core.spec.v1.Keyword;
 
 /**
  * Denotes the direction at which the operation is going to occur.
- *
+ * <p>
  * It will be relative most of the time, meaning, a receiver will see it as incoming whereas the identical data
  * on the opposite side will be outgoing.
  */
@@ -24,9 +24,9 @@ public enum Direction
     /**
      * The value that the protocol specifies which is different from the platform-based enum value.
      */
-    public final String protocolValue;
+    public final @NotNull String protocolValue;
 
-    Direction(String protocolValue)
+    Direction(@NotNull String protocolValue)
     {
         this.protocolValue = protocolValue;
     }

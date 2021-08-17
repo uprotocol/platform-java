@@ -6,6 +6,7 @@ import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
+import org.monora.uprotocol.core.protocol.ClipboardType;
 import org.monora.uprotocol.core.protocol.Direction;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.transfer.TransferItem;
@@ -61,6 +62,17 @@ public interface TransportSeat
                                       @NotNull Direction direction);
 
     /**
+     * Handle the text transfer request.
+     *
+     * @param client  That sent the request.
+     * @param content To handle.
+     * @param type    Of the content.
+     * @return True if the handling of the request was successful.
+     * @see CommunicationBridge#requestClipboard(String, ClipboardType)
+     */
+    boolean handleClipboardRequest(@NotNull Client client, @NotNull String content, @NotNull ClipboardType type);
+
+    /**
      * Handle the file transfer request.
      * <p>
      * Error-checking should be done prior to inflating the JSON data and any error should be thrown.
@@ -94,14 +106,6 @@ public interface TransportSeat
      * @see CommunicationBridge#requestNotifyTransferRejection(long)
      */
     boolean handleFileTransferRejection(@NotNull Client client, long groupId);
-
-    /**
-     * Handle the text transfer request.
-     *
-     * @param client That sent the request.
-     * @param text   That has been received.
-     */
-    void handleTextTransfer(@NotNull Client client, @NotNull String text);
 
     /**
      * Check whether there is an ongoing transfer for the given parameters.

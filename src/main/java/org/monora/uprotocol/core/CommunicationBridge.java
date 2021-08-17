@@ -27,10 +27,7 @@ import org.monora.coolsocket.core.session.ClosedException;
 import org.monora.uprotocol.core.io.DefectiveAddressListException;
 import org.monora.uprotocol.core.persistence.OnPrepareListener;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
-import org.monora.uprotocol.core.protocol.Client;
-import org.monora.uprotocol.core.protocol.ClientAddress;
-import org.monora.uprotocol.core.protocol.ConnectionFactory;
-import org.monora.uprotocol.core.protocol.Direction;
+import org.monora.uprotocol.core.protocol.*;
 import org.monora.uprotocol.core.protocol.communication.CredentialsException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
@@ -280,10 +277,33 @@ public class CommunicationBridge implements Closeable
     }
 
     /**
+     * Request a text-based content transfer.
+     * <p>
+     * This will invoke the {@link TransportSeat#handleClipboardRequest(Client, String, ClipboardType)} method on the
+     * remote.
+     *
+     * @param content To send.
+     * @param type    Of the content.
+     * @return True if the request was successful.
+     * @throws IOException       If an IO error occurs.
+     * @throws JSONException     If something goes wrong when creating JSON object.
+     * @throws ProtocolException When there is a communication error due to misconfiguration.
+     */
+    public boolean requestClipboard(@NotNull String content, @NotNull ClipboardType type) throws JSONException,
+            IOException, ProtocolException
+    {
+        send(true, new JSONObject()
+                .put(Keyword.REQUEST, Keyword.REQUEST_CLIPBOARD)
+                .put(Keyword.CLIPBOARD_CONTENT, content)
+                .put(Keyword.CLIPBOARD_TYPE, type.protocolValue));
+        return receiveResult();
+    }
+
+    /**
      * Request a file transfer operation by informing the remote that you will send files.
      * <p>
      * This request doesn't guarantee that the request will be processed immediately. You should close the connection
-     * after making this request. If everything goes right, the remote will reach you using
+     * after making this request. If everything goes right, the remote will reach out to you using
      * {@link #requestFileTransferStart(long, Direction)}, which will end up in your
      * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Client, long, Direction)} method.
      * <p>
@@ -372,7 +392,7 @@ public class CommunicationBridge implements Closeable
     /**
      * Request a dummy result for testing purposes.
      * <p>
-     * The request will be processed by the server without notifying the responsible {@link TransportSeat} instance.
+     * The request will be processed by the remote without notifying the responsible {@link TransportSeat} instance.
      *
      * @return True if everything is okay.
      * @throws IOException       If an IO error occurs.
@@ -386,26 +406,9 @@ public class CommunicationBridge implements Closeable
     }
 
     /**
-     * Request a text transfer.
-     *
-     * @param text To send.
-     * @return True if the request was processed successfully.
-     * @throws IOException       If an IO error occurs.
-     * @throws JSONException     If something goes wrong when creating JSON object.
-     * @throws ProtocolException When there is a communication error due to misconfiguration.
-     */
-    public boolean requestTextTransfer(@NotNull String text) throws JSONException, IOException, ProtocolException
-    {
-        send(true, new JSONObject()
-                .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER_TEXT)
-                .put(Keyword.TRANSFER_TEXT, text));
-        return receiveResult();
-    }
-
-    /**
      * Receive a response from remote and validate it.
      * <p>
-     * This will throw the appropriate error when something is not right.
+     * This will throw the appropriate {@link ProtocolException} when something is not right.
      * <p>
      * The active connection defaults to {@link #getActiveConnection()}.
      * <p>

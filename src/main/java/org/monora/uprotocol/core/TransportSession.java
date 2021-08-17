@@ -9,10 +9,7 @@ import org.monora.coolsocket.core.session.CancelledException;
 import org.monora.coolsocket.core.session.ClosedException;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
-import org.monora.uprotocol.core.protocol.Client;
-import org.monora.uprotocol.core.protocol.ClientAddress;
-import org.monora.uprotocol.core.protocol.ConnectionFactory;
-import org.monora.uprotocol.core.protocol.Direction;
+import org.monora.uprotocol.core.protocol.*;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
 import org.monora.uprotocol.core.protocol.communication.CredentialsException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
@@ -148,9 +145,11 @@ public class TransportSession extends CoolSocket
                 bridge.send(transportSeat.handleFileTransferRejection(client, groupId));
                 return;
             }
-            case (Keyword.REQUEST_TRANSFER_TEXT): {
-                transportSeat.handleTextTransfer(client, response.getString(Keyword.TRANSFER_TEXT));
-                bridge.send(true);
+            case (Keyword.REQUEST_CLIPBOARD): {
+                String content = response.getString(Keyword.CLIPBOARD_CONTENT);
+                ClipboardType type = ClipboardType.from(response.getString(Keyword.CLIPBOARD_TYPE));
+
+                bridge.send(transportSeat.handleClipboardRequest(client, content, type));
                 return;
             }
             case (Keyword.REQUEST_ACQUAINTANCE): {

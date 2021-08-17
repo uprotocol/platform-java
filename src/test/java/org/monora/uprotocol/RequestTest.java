@@ -1,5 +1,6 @@
 package org.monora.uprotocol;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -8,6 +9,7 @@ import org.monora.coolsocket.core.session.ClosedException;
 import org.monora.uprotocol.core.ClientLoader;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.protocol.Client;
+import org.monora.uprotocol.core.protocol.ClipboardType;
 import org.monora.uprotocol.core.protocol.Direction;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
 import org.monora.uprotocol.core.protocol.communication.CredentialsException;
@@ -17,6 +19,7 @@ import org.monora.uprotocol.core.protocol.communication.client.DifferentRemoteCl
 import org.monora.uprotocol.core.protocol.communication.client.UnauthorizedClientException;
 import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.transfer.Transfers;
+import org.monora.uprotocol.variant.holder.ClipboardHolder;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
 import org.monora.uprotocol.variant.holder.TransferHolder;
 import org.monora.uprotocol.variant.test.DefaultTestBase;
@@ -526,5 +529,27 @@ public class RequestTest extends DefaultTestBase
         }
 
         Assert.assertTrue("Both parties should be warned", primaryPersistence.gotInvalidationRequest());
+    }
+
+    @Test
+    public void requestClipboardTest() throws IOException, InterruptedException, ProtocolException, CertificateException
+    {
+        final String clipboardContent = "https://monora.org/";
+        final ClipboardType clipboardType = ClipboardType.Link;
+
+        primarySession.start();
+
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
+            bridge.requestClipboard(clipboardContent, clipboardType);
+
+            @Nullable ClipboardHolder clipboardHolder = primarySeat.getRequestedClipboard();
+
+            Assert.assertNotNull("The requested clipboard should reach the remote", clipboardHolder);
+            Assert.assertEquals("The clipboard content should match", clipboardHolder.content,
+                    clipboardContent);
+            Assert.assertEquals("The clipboard type should match", clipboardHolder.type, clipboardType);
+        } finally {
+            primarySession.stop();
+        }
     }
 }

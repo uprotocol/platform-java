@@ -7,12 +7,14 @@ import org.monora.uprotocol.core.TransportSeat;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
+import org.monora.uprotocol.core.protocol.ClipboardType;
 import org.monora.uprotocol.core.protocol.Direction;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.transfer.MetaTransferItem;
 import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.transfer.TransferOperation;
 import org.monora.uprotocol.core.transfer.Transfers;
+import org.monora.uprotocol.variant.holder.ClipboardHolder;
 import org.monora.uprotocol.variant.persistence.BasePersistenceProvider;
 
 import java.util.ArrayList;
@@ -30,6 +32,8 @@ public class DefaultTransportSeat implements TransportSeat
 
     private @Nullable Direction requestedAcquaintanceDirection = null;
 
+    private @Nullable ClipboardHolder requestedClipboard = null;
+
     public DefaultTransportSeat(@NotNull BasePersistenceProvider persistenceProvider,
                                 @NotNull TransferOperation transferOperation)
     {
@@ -37,8 +41,14 @@ public class DefaultTransportSeat implements TransportSeat
         this.transferOperation = transferOperation;
     }
 
-    public @Nullable Direction getRequestedAcquaintanceDirection() {
+    public @Nullable Direction getRequestedAcquaintanceDirection()
+    {
         return requestedAcquaintanceDirection;
+    }
+
+    public @Nullable ClipboardHolder getRequestedClipboard()
+    {
+        return requestedClipboard;
     }
 
     @Override
@@ -84,9 +94,10 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public void handleTextTransfer(@NotNull Client client, @NotNull String text)
+    public boolean handleClipboardRequest(@NotNull Client client, @NotNull String content, @NotNull ClipboardType type)
     {
-        System.out.println("Text received: " + text);
+        this.requestedClipboard = new ClipboardHolder(content, type);
+        return true;
     }
 
     @Override

@@ -143,7 +143,7 @@ public class Responses
     /**
      * Receive a response from remote and validate it.
      * <p>
-     * This will throw the appropriate error when something is not right.
+     * This will throw the appropriate {@link ProtocolException} when something is not right.
      * <p>
      * The error messages are sent using {@link #send}.
      *
@@ -154,8 +154,8 @@ public class Responses
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public static JSONObject receiveChecked(@NotNull ActiveConnection activeConnection, Client client) throws IOException,
-            JSONException, ProtocolException
+    public static JSONObject receiveChecked(@NotNull ActiveConnection activeConnection, Client client) throws
+            IOException, JSONException, ProtocolException
     {
         JSONObject jsonObject = activeConnection.receive().getAsJson();
         checkError(client, jsonObject);
