@@ -1,5 +1,6 @@
 package org.monora.uprotocol;
 
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.monora.coolsocket.core.session.CancelledException;
@@ -34,13 +35,22 @@ public class RequestTest extends DefaultTestBase
     {
         primarySession.start();
 
+        primarySeat.replyToAcquaintanceRequest = true;
+
         try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
                 clientAddress)) {
-            Assert.assertTrue("Remote should send a positive message.", bridge.requestTest());
+            final Direction expectedDirection = Direction.Incoming;
+
+            Assert.assertTrue("Remote should send a positive message.",
+                    bridge.requestAcquaintance(expectedDirection));
 
             Client persistentClient = secondaryPersistence.getClientFor(bridge.getRemoteClient().getClientUid());
+            @Nullable Direction directionSuppliedToRemote = primarySeat.getRequestedAcquaintanceDirection();
 
-            Assert.assertNotNull("The client should not be null on the remote db", persistentClient);
+            Assert.assertNotNull("The direction supplied to the remote should not be empty",
+                    directionSuppliedToRemote);
+            Assert.assertEquals("The direction should match.", expectedDirection, directionSuppliedToRemote);
+            Assert.assertNotNull("The client should not be null on the remote db.", persistentClient);
             Assert.assertEquals("Clients should be same.", bridge.getRemoteClient(), persistentClient);
             Assert.assertEquals("Clients should have the same username.", bridge.getRemoteClient().getClientNickname(),
                     persistentClient.getClientNickname());

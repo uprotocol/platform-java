@@ -1,6 +1,7 @@
 package org.monora.uprotocol.variant;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSeat;
 import org.monora.uprotocol.core.persistence.PersistenceException;
@@ -25,11 +26,19 @@ public class DefaultTransportSeat implements TransportSeat
 
     private boolean autoAcceptNewKeys;
 
+    public boolean replyToAcquaintanceRequest = false;
+
+    private @Nullable Direction requestedAcquaintanceDirection = null;
+
     public DefaultTransportSeat(@NotNull BasePersistenceProvider persistenceProvider,
                                 @NotNull TransferOperation transferOperation)
     {
         this.persistenceProvider = persistenceProvider;
         this.transferOperation = transferOperation;
+    }
+
+    public @Nullable Direction getRequestedAcquaintanceDirection() {
+        return requestedAcquaintanceDirection;
     }
 
     @Override
@@ -48,7 +57,8 @@ public class DefaultTransportSeat implements TransportSeat
     public boolean handleAcquaintanceRequest(@NotNull Client client, @NotNull ClientAddress clientAddress,
                                              @NotNull Direction direction)
     {
-        return true;
+        requestedAcquaintanceDirection = direction;
+        return replyToAcquaintanceRequest;
     }
 
     @Override
