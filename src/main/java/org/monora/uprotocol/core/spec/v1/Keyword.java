@@ -59,6 +59,7 @@ public class Keyword
             REQUEST = "request",
             REQUEST_ACQUAINTANCE = "acquaintance",
             REQUEST_NOTIFY_TRANSFER_REJECTION = "notifyTransferRejection",
+            REQUEST_TEST = "test",
             REQUEST_TRANSFER = "transfer",
             REQUEST_TRANSFER_JOB = "transferJob",
             REQUEST_TRANSFER_TEXT = "transferText",

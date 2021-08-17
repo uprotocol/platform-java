@@ -370,6 +370,22 @@ public class CommunicationBridge implements Closeable
     }
 
     /**
+     * Request a dummy result for testing purposes.
+     * <p>
+     * The request will be processed by the server without notifying the responsible {@link TransportSeat} instance.
+     *
+     * @return True if everything is okay.
+     * @throws IOException       If an IO error occurs.
+     * @throws ProtocolException When there is a communication error due to misconfiguration.
+     */
+    public boolean requestTest() throws IOException, ProtocolException
+    {
+        send(true, new JSONObject()
+                .put(Keyword.REQUEST, Keyword.REQUEST_TEST));
+        return receiveResult();
+    }
+
+    /**
      * Request a text transfer.
      *
      * @param text To send.

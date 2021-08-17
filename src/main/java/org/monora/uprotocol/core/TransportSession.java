@@ -127,6 +127,10 @@ public class TransportSession extends CoolSocket
             throws JSONException, IOException, PersistenceException, ProtocolException
     {
         switch (response.getString(Keyword.REQUEST)) {
+            case (Keyword.REQUEST_TEST): {
+                bridge.send(true);
+                return;
+            }
             case (Keyword.REQUEST_TRANSFER): {
                 long groupId = response.getLong(Keyword.TRANSFER_GROUP_ID);
                 String jsonIndex = response.getString(Keyword.INDEX);

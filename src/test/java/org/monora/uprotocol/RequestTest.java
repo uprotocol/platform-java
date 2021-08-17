@@ -36,8 +36,7 @@ public class RequestTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
                 clientAddress)) {
-            Assert.assertTrue("Remote should send a positive message.",
-                    bridge.requestAcquaintance(Direction.Incoming));
+            Assert.assertTrue("Remote should send a positive message.", bridge.requestTest());
 
             Client persistentClient = secondaryPersistence.getClientFor(bridge.getRemoteClient().getClientUid());
 
@@ -270,8 +269,7 @@ public class RequestTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
                 clientAddress)) {
-            Assert.assertTrue("Remote should send a positive message.",
-                    bridge.requestAcquaintance(Direction.Incoming));
+            Assert.assertTrue("Remote should send a positive message.", bridge.requestTest());
         }
 
         Client secondaryOnPrimary = primaryPersistence.getClientFor(secondaryPersistence.getClientUid());
