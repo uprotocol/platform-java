@@ -75,6 +75,8 @@ public interface Client
     /**
      * The persistent revision number the remote sent that changes when the remote changes it is picture, so we can
      * fetch it only when it changes.
+     *
+     * @return The revision number of the client's picture
      */
     long getClientRevisionOfPicture();
 

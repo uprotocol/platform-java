@@ -14,6 +14,7 @@ import org.monora.uprotocol.core.persistence.OnPrepareListener;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
+import org.monora.uprotocol.core.protocol.Direction;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.spec.v1.Keyword;
@@ -69,7 +70,7 @@ public class Transfers
 
     /**
      * Handle the receive process. You can invoke this method in the {@link TransportSeat#beginFileTransfer} method
-     * when the type is {@link TransferItem.Type#Incoming}.
+     * when the direction is {@link Direction#Incoming}.
      * <p>
      * This can also be invoked when using {@link CommunicationBridge#requestFileTransferStart}.
      *
@@ -165,7 +166,7 @@ public class Transfers
 
     /**
      * Handle the sending process. You can invoke this method via {@link TransportSeat#beginFileTransfer} method when
-     * the type is {@link TransferItem.Type#Outgoing}.
+     * the direction is {@link Direction#Outgoing}.
      * <p>
      * This can also be invoked when using {@link CommunicationBridge#requestFileTransferStart}.
      *
@@ -194,7 +195,7 @@ public class Transfers
                 try {
                     final TransferRequest transferRequest = Transfers.getTransferRequest(request);
                     item = persistenceProvider.loadTransferItem(client.getClientUid(), groupId, transferRequest.id,
-                            TransferItem.Type.Outgoing);
+                            Direction.Outgoing);
 
                     operation.setOngoing(item);
                     operation.setBytesOngoing(transferRequest.position, transferRequest.position);

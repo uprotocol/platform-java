@@ -8,6 +8,7 @@ import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.ClientType;
+import org.monora.uprotocol.core.protocol.Direction;
 import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.variant.DefaultClient;
 import org.monora.uprotocol.variant.DefaultClientAddress;
@@ -191,9 +192,9 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     @Override
     public @NotNull TransferItem createTransferItemFor(long groupId, long id, @NotNull String name,
                                                        @NotNull String mimeType, long size, @Nullable String directory,
-                                                       @NotNull TransferItem.Type type)
+                                                       @NotNull Direction direction)
     {
-        return new DefaultTransferItem(groupId, id, name, mimeType, size, directory, type);
+        return new DefaultTransferItem(groupId, id, name, mimeType, size, directory, direction);
     }
 
     @Override
@@ -242,7 +243,7 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     {
         synchronized (transferHolderList) {
             for (TransferHolder holder : transferHolderList) {
-                if (TransferItem.Type.Incoming.equals(holder.item.getItemType())
+                if (Direction.Incoming.equals(holder.item.setItemDirection())
                         && holder.item.getItemGroupId() == groupId
                         && TransferItem.State.Pending.equals(holder.state)) {
                     return holder.item;
@@ -302,12 +303,12 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
 
     @Override
     public @NotNull TransferItem loadTransferItem(@NotNull String clientUid, long groupId, long id,
-                                                  @NotNull TransferItem.Type type) throws PersistenceException
+                                                  @NotNull Direction direction) throws PersistenceException
     {
         synchronized (transferHolderList) {
             for (TransferHolder holder : transferHolderList) {
                 if (holder.item.getItemGroupId() == groupId && holder.item.getItemId() == id
-                        && holder.item.getItemType().equals(type) && holder.clientUid.equals(clientUid))
+                        && holder.item.setItemDirection().equals(direction) && holder.clientUid.equals(clientUid))
                     return holder.item;
             }
         }

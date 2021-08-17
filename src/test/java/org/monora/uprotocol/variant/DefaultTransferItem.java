@@ -2,6 +2,7 @@ package org.monora.uprotocol.variant;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.monora.uprotocol.core.protocol.Direction;
 import org.monora.uprotocol.core.transfer.TransferItem;
 
 public class DefaultTransferItem implements TransferItem
@@ -20,10 +21,10 @@ public class DefaultTransferItem implements TransferItem
 
     private long lastChangeTime;
 
-    private @NotNull Type type;
+    private @NotNull Direction direction;
 
     public DefaultTransferItem(long groupId, long id, @NotNull String name, @NotNull String mimeType, long size,
-                               @Nullable String directory, @NotNull TransferItem.Type type)
+                               @Nullable String directory, @NotNull Direction direction)
     {
         this.groupId = groupId;
         this.id = id;
@@ -31,7 +32,7 @@ public class DefaultTransferItem implements TransferItem
         this.mimeType = mimeType;
         this.size = size;
         this.directory = directory;
-        this.type = type;
+        this.direction = direction;
     }
 
     @Override
@@ -39,7 +40,7 @@ public class DefaultTransferItem implements TransferItem
     {
         if (obj instanceof TransferItem) {
             TransferItem other = (TransferItem) obj;
-            return getItemType().equals(other.getItemType()) && getItemGroupId() == other.getItemGroupId()
+            return setItemDirection().equals(other.setItemDirection()) && getItemGroupId() == other.getItemGroupId()
                     && getItemId() == other.getItemId();
         }
 
@@ -83,9 +84,9 @@ public class DefaultTransferItem implements TransferItem
     }
 
     @Override
-    public @NotNull Type getItemType()
+    public @NotNull Direction setItemDirection()
     {
-        return type;
+        return direction;
     }
 
     @Override
@@ -137,8 +138,8 @@ public class DefaultTransferItem implements TransferItem
     }
 
     @Override
-    public void setItemType(@NotNull Type type)
+    public void setItemDirection(@NotNull Direction direction)
     {
-        this.type = type;
+        this.direction = direction;
     }
 }

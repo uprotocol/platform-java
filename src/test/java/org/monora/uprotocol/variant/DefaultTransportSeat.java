@@ -6,6 +6,7 @@ import org.monora.uprotocol.core.TransportSeat;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
+import org.monora.uprotocol.core.protocol.Direction;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.transfer.MetaTransferItem;
 import org.monora.uprotocol.core.transfer.TransferItem;
@@ -33,12 +34,12 @@ public class DefaultTransportSeat implements TransportSeat
 
     @Override
     public void beginFileTransfer(@NotNull CommunicationBridge bridge, @NotNull Client client, long groupId,
-                                  @NotNull TransferItem.Type type)
+                                  @NotNull Direction direction)
             throws PersistenceException, ProtocolException
     {
-        if (type.equals(TransferItem.Type.Incoming)) {
+        if (direction.equals(Direction.Incoming)) {
             Transfers.receive(bridge, transferOperation, groupId);
-        } else if (type.equals(TransferItem.Type.Outgoing)) {
+        } else if (direction.equals(Direction.Outgoing)) {
             Transfers.send(bridge, transferOperation, groupId);
         }
     }
@@ -58,7 +59,7 @@ public class DefaultTransportSeat implements TransportSeat
 
         for (MetaTransferItem metaItem : metaList) {
             TransferItem item = persistenceProvider.createTransferItemFor(groupId, metaItem.id, metaItem.name,
-                    metaItem.mimeType, metaItem.size, metaItem.directory, TransferItem.Type.Incoming);
+                    metaItem.mimeType, metaItem.size, metaItem.directory, Direction.Incoming);
             transferItemList.add(item);
         }
 
@@ -78,7 +79,7 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public boolean hasOngoingTransferFor(long groupId, @NotNull String clientUid, @NotNull TransferItem.Type type)
+    public boolean hasOngoingTransferFor(long groupId, @NotNull String clientUid, @NotNull Direction direction)
     {
         return false;
     }

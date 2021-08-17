@@ -30,6 +30,7 @@ import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
+import org.monora.uprotocol.core.protocol.Direction;
 import org.monora.uprotocol.core.protocol.communication.CredentialsException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
@@ -278,8 +279,8 @@ public class CommunicationBridge implements Closeable
      * <p>
      * This request doesn't guarantee that the request will be processed immediately. You should close the connection
      * after making this request. If everything goes right, the remote will reach you using
-     * {@link #requestFileTransferStart(long, TransferItem.Type)}, which will end up in your
-     * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Client, long, TransferItem.Type)} method.
+     * {@link #requestFileTransferStart(long, Direction)}, which will end up in your
+     * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Client, long, Direction)} method.
      * <p>
      * If the initial response is positive, the items will be saved to the persistence provider using
      * {@link PersistenceProvider#persist(String, List)}.
@@ -321,10 +322,10 @@ public class CommunicationBridge implements Closeable
      * {@link #requestFileTransfer(long, List, OnPrepareListener)}.
      * <p>
      * After the method returns positive, the rest of the operation can be carried on with {@link Transfers#receive}
-     * or {@link Transfers#send} depending on the type of the transfer.
+     * or {@link Transfers#send} depending on the direction of the transfer.
      *
      * @param groupId That ties a group of {@link TransferItem} as in {@link TransferItem#getItemGroupId()}.
-     * @param type    Of the transfer as in {@link TransferItem#getItemType()}.
+     * @param direction    Of the transfer as in {@link TransferItem#setItemDirection()}.
      * @return True if successful.
      * @throws IOException       If an IO error occurs.
      * @throws JSONException     If something goes wrong when creating JSON object.
@@ -332,13 +333,13 @@ public class CommunicationBridge implements Closeable
      * @see Transfers#receive
      * @see Transfers#send
      */
-    public boolean requestFileTransferStart(long groupId, @NotNull TransferItem.Type type) throws JSONException,
+    public boolean requestFileTransferStart(long groupId, @NotNull Direction direction) throws JSONException,
             IOException, ProtocolException
     {
         send(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER_JOB)
                 .put(Keyword.TRANSFER_GROUP_ID, groupId)
-                .put(Keyword.TRANSFER_TYPE, type.protocolValue));
+                .put(Keyword.DIRECTION, direction.protocolValue));
         return receiveResult();
     }
 

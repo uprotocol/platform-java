@@ -12,13 +12,13 @@ import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
+import org.monora.uprotocol.core.protocol.Direction;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
 import org.monora.uprotocol.core.protocol.communication.CredentialsException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
 import org.monora.uprotocol.core.spec.v1.Config;
 import org.monora.uprotocol.core.spec.v1.Keyword;
-import org.monora.uprotocol.core.transfer.TransferItem;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -106,7 +106,7 @@ public class TransportSession extends CoolSocket
                 transportSeat.notifyClientCredentialsChanged(e.client);
             }
         } catch (SecurityException e) {
-            getLogger().log(Level.INFO, "Security error occurred: " + e.toString());
+            getLogger().log(Level.INFO, "Security error occurred: " + e);
         } catch (ClosedException e) {
             getLogger().log(Level.INFO, "Closed successfully by " + (e.remoteRequested ? "remote" : "you"));
         } catch (CancelledException e) {
@@ -155,24 +155,24 @@ public class TransportSession extends CoolSocket
             }
             case (Keyword.REQUEST_TRANSFER_JOB): {
                 long groupId = response.getLong(Keyword.TRANSFER_GROUP_ID);
-                TransferItem.Type type = TransferItem.Type.from(response.getString(Keyword.TRANSFER_TYPE));
+                Direction direction = Direction.from(response.getString(Keyword.DIRECTION));
 
-                // The type is reversed to match our side
-                if (TransferItem.Type.Incoming.equals(type)) {
-                    type = TransferItem.Type.Outgoing;
-                } else if (TransferItem.Type.Outgoing.equals(type)) {
-                    type = TransferItem.Type.Incoming;
+                // The direction is reversed to match our side
+                if (Direction.Incoming.equals(direction)) {
+                    direction = Direction.Outgoing;
+                } else if (Direction.Outgoing.equals(direction)) {
+                    direction = Direction.Incoming;
                 }
 
-                if (TransferItem.Type.Incoming.equals(type) && !client.isClientTrusted()) {
+                if (Direction.Incoming.equals(direction) && !client.isClientTrusted()) {
                     bridge.send(Keyword.ERROR_NOT_TRUSTED);
-                } else if (transportSeat.hasOngoingTransferFor(groupId, client.getClientUid(), type)) {
+                } else if (transportSeat.hasOngoingTransferFor(groupId, client.getClientUid(), direction)) {
                     throw new ContentException(ContentException.Error.NotAccessible);
                 } else if (!persistenceProvider.containsTransfer(groupId)) {
                     throw new ContentException(ContentException.Error.NotFound);
                 } else {
                     bridge.send(true);
-                    transportSeat.beginFileTransfer(bridge, client, groupId, type);
+                    transportSeat.beginFileTransfer(bridge, client, groupId, direction);
                 }
                 return;
             }

@@ -11,6 +11,7 @@ import org.monora.uprotocol.core.io.StreamDescriptor;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.ClientType;
+import org.monora.uprotocol.core.protocol.Direction;
 import org.monora.uprotocol.core.spec.v1.Keyword;
 import org.monora.uprotocol.core.transfer.TransferItem;
 
@@ -136,11 +137,11 @@ public interface PersistenceProvider
      * @param mimeType  Points to {@link TransferItem#getItemMimeType()}.
      * @param size      Points to {@link TransferItem#getItemSize()}.
      * @param directory Points to {@link TransferItem#getItemDirectory()}.
-     * @param type      Points to {@link TransferItem#getItemType()}
+     * @param direction Points to {@link TransferItem#setItemDirection()}
      * @return The transfer item instance.
      */
     @NotNull TransferItem createTransferItemFor(long groupId, long id, @NotNull String name, @NotNull String mimeType,
-                                                long size, @Nullable String directory, @NotNull TransferItem.Type type);
+                                                long size, @Nullable String directory, @NotNull Direction direction);
 
     /**
      * Returns this client's certificate.
@@ -344,12 +345,12 @@ public interface PersistenceProvider
      * @param clientUid Owning the item.
      * @param groupId   Points to {@link TransferItem#getItemGroupId()}
      * @param id        Points to {@link TransferItem#getItemId()}.
-     * @param type      Specifying whether this is an incoming or outgoing operation.
+     * @param direction Specifying whether this is an incoming or outgoing operation.
      * @return The transfer item that points to the given parameters or null if there is no match.
      * @throws PersistenceException When the given parameters don't point to a valid item.
      */
     @NotNull TransferItem loadTransferItem(@NotNull String clientUid, long groupId, long id,
-                                           @NotNull TransferItem.Type type) throws PersistenceException;
+                                           @NotNull Direction direction) throws PersistenceException;
 
     /**
      * Open the input stream for the given descriptor.
