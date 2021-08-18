@@ -62,10 +62,10 @@ public class TransferTest extends DefaultTestBase
         itemList.add(demoTransferItem2);
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestFileTransfer(groupId, itemList, null);
+            bridge.requestFileTransfer(secondarySeat, groupId, itemList, null);
+        } finally {
+            primarySession.stop();
         }
-
-        primarySession.stop();
     }
 
     @Test
@@ -78,9 +78,9 @@ public class TransferTest extends DefaultTestBase
                     Direction.Incoming));
 
             Transfers.receive(bridge, transferOperation, groupId);
+        } finally {
+            secondarySession.stop();
         }
-
-        secondarySession.stop();
 
         // Compare the received data with the original data.
         List<MemoryStreamDescriptor> primaryList = primaryPersistence.getStreamDescriptorList();
@@ -109,9 +109,9 @@ public class TransferTest extends DefaultTestBase
         try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
             bridge.requestFileTransferStart(groupId, Direction.Incoming);
             Transfers.receive(bridge, transferOperation, groupId);
+        } finally {
+            secondarySession.stop();
         }
-
-        secondarySession.stop();
 
         final List<TransferHolder> itemList = new ArrayList<>();
         itemList.addAll(primaryPersistence.getTransferHolderList());

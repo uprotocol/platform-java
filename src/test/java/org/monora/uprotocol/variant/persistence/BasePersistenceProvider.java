@@ -283,12 +283,17 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         }
     }
 
-    public @NotNull List<MemoryStreamDescriptor> getStreamDescriptorList()
+    public @NotNull Set<@NotNull ClientAddress> getClientAddressList()
+    {
+        return Collections.unmodifiableSet(clientAddressList);
+    }
+
+    public @NotNull List<@NotNull MemoryStreamDescriptor> getStreamDescriptorList()
     {
         return Collections.unmodifiableList(streamDescriptorList);
     }
 
-    public @NotNull List<TransferHolder> getTransferHolderList()
+    public @NotNull List<@NotNull TransferHolder> getTransferHolderList()
     {
         return Collections.unmodifiableList(transferHolderList);
     }

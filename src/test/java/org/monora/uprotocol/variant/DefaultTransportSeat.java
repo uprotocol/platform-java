@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSeat;
-import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.ClipboardType;
@@ -15,8 +14,10 @@ import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.transfer.TransferOperation;
 import org.monora.uprotocol.core.transfer.Transfers;
 import org.monora.uprotocol.variant.holder.ClipboardHolder;
+import org.monora.uprotocol.variant.holder.TransferRequestHolder;
 import org.monora.uprotocol.variant.persistence.BasePersistenceProvider;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,13 +27,13 @@ public class DefaultTransportSeat implements TransportSeat
 
     public final TransferOperation transferOperation;
 
-    private boolean autoAcceptNewKeys;
+    public boolean autoAcceptNewKeys;
 
-    public boolean replyToAcquaintanceRequest = false;
+    public boolean startTransferByDefault = false;
 
-    private @Nullable Direction requestedAcquaintanceDirection = null;
+    public @Nullable TransferRequestHolder transferRequestOnAcquaintance = null;
 
-    private @Nullable ClipboardHolder requestedClipboard = null;
+    public @Nullable ClipboardHolder requestedClipboard = null;
 
     public DefaultTransportSeat(@NotNull BasePersistenceProvider persistenceProvider,
                                 @NotNull TransferOperation transferOperation)
@@ -41,20 +42,9 @@ public class DefaultTransportSeat implements TransportSeat
         this.transferOperation = transferOperation;
     }
 
-    public @Nullable Direction getRequestedAcquaintanceDirection()
-    {
-        return requestedAcquaintanceDirection;
-    }
-
-    public @Nullable ClipboardHolder getRequestedClipboard()
-    {
-        return requestedClipboard;
-    }
-
     @Override
     public void beginFileTransfer(@NotNull CommunicationBridge bridge, @NotNull Client client, long groupId,
                                   @NotNull Direction direction)
-            throws PersistenceException, ProtocolException
     {
         if (direction.equals(Direction.Incoming)) {
             Transfers.receive(bridge, transferOperation, groupId);
@@ -64,16 +54,25 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public boolean handleAcquaintanceRequest(@NotNull Client client, @NotNull ClientAddress clientAddress,
-                                             @NotNull Direction direction)
+    public void handleAcquaintanceRequest(@NotNull CommunicationBridge bridge, @NotNull Client client,
+                                          @NotNull ClientAddress clientAddress, @NotNull Direction direction)
+            throws IOException
     {
-        requestedAcquaintanceDirection = direction;
-        return replyToAcquaintanceRequest;
+        final @Nullable TransferRequestHolder holder = transferRequestOnAcquaintance;
+        if (holder != null) {
+            try {
+                bridge.requestFileTransfer(this, holder.groupId, holder.list, null);
+            } catch (ProtocolException e) {
+                e.printStackTrace();
+            }
+        } else {
+            bridge.send(false);
+        }
     }
 
     @Override
-    public void handleFileTransferRequest(@NotNull Client client, boolean hasPin, long groupId, @NotNull String jsonArray)
-            throws PersistenceException, ProtocolException
+    public boolean handleFileTransferRequest(@NotNull Client client, boolean hasPin, long groupId,
+                                             @NotNull String jsonArray)
     {
         List<MetaTransferItem> metaList = Transfers.toTransferItemList(jsonArray);
         List<TransferItem> transferItemList = new ArrayList<>(metaList.size());
@@ -85,6 +84,8 @@ public class DefaultTransportSeat implements TransportSeat
         }
 
         persistenceProvider.persist(client.getClientUid(), transferItemList);
+
+        return startTransferByDefault;
     }
 
     @Override
@@ -118,10 +119,5 @@ public class DefaultTransportSeat implements TransportSeat
         if (autoAcceptNewKeys) {
             persistenceProvider.approveInvalidationOfCredentials(client);
         }
-    }
-
-    public void setAutoInvalidationOfCredentials(boolean autoAcceptNewKeys)
-    {
-        this.autoAcceptNewKeys = autoAcceptNewKeys;
     }
 }

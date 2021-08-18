@@ -50,7 +50,7 @@ public class Transfers
     /**
      * Request item from the remote.
      *
-     * @param bridge          The bridge that speaks on behalf of you when making requests. A connection wrapper.
+     * @param bridge          The bridge that speaks on behalf of you when making requests.
      * @param itemId          Corresponds to {@link TransferItem#getItemId()}.
      * @param currentPosition To skip if this item has recovered from an error, meaning it already has some bytes transferred
      *                        on your side.
@@ -69,12 +69,12 @@ public class Transfers
     }
 
     /**
-     * Handle the receive process. You can invoke this method in the {@link TransportSeat#beginFileTransfer} method
-     * when the direction is {@link Direction#Incoming}.
+     * Handle the incoming transfer process. You can invoke this method in the {@link TransportSeat#beginFileTransfer}
+     * method when the direction is {@link Direction#Incoming}.
      * <p>
      * This can also be invoked when using {@link CommunicationBridge#requestFileTransferStart}.
      *
-     * @param bridge    The bridge that speaks on behalf of you when making requests. A connection wrapper.
+     * @param bridge    The bridge that speaks on behalf of you when making requests.
      * @param operation The operation object that handles the GUI side of things.
      * @param groupId   As in {@link TransferItem#getItemGroupId()}.
      * @see TransportSeat#beginFileTransfer
@@ -170,7 +170,7 @@ public class Transfers
      * <p>
      * This can also be invoked when using {@link CommunicationBridge#requestFileTransferStart}.
      *
-     * @param bridge    The bridge that speaks on behalf of you when making requests. A connection wrapper.
+     * @param bridge    The bridge that speaks on behalf of you when making requests.
      * @param operation The operation object that handles the GUI side of things.
      * @param groupId   As in {@link TransferItem#getItemGroupId()}.
      * @see TransportSeat#beginFileTransfer
@@ -286,7 +286,8 @@ public class Transfers
      * Transform a given {@link TransferItem} list into its {@link JSONArray} equivalent.
      * <p>
      * The resulting {@link JSONArray} can be fed to
-     * {@link CommunicationBridge#requestFileTransfer(long, List, OnPrepareListener)} to start a file transfer operation.
+     * {@link CommunicationBridge#requestFileTransfer(TransportSeat, long, List, OnPrepareListener)} to start a file
+     * transfer operation.
      * <p>
      * You can have the same JSON data back using {@link #toTransferItemList(String)}.
      *

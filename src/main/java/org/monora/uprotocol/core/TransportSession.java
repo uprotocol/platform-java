@@ -9,8 +9,9 @@ import org.monora.coolsocket.core.session.CancelledException;
 import org.monora.coolsocket.core.session.ClosedException;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
-import org.monora.uprotocol.core.protocol.*;
-import org.monora.uprotocol.core.protocol.communication.ContentException;
+import org.monora.uprotocol.core.protocol.Client;
+import org.monora.uprotocol.core.protocol.ClientAddress;
+import org.monora.uprotocol.core.protocol.ConnectionFactory;
 import org.monora.uprotocol.core.protocol.communication.CredentialsException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
@@ -45,7 +46,7 @@ public class TransportSession extends CoolSocket
      *
      * @param connectionFactory   To start and set up connections with.
      * @param persistenceProvider Where persistent data will be stored.
-     * @param transportSeat       Which will manage the requests and do appropriate actions.
+     * @param transportSeat       That will manage the requests and do appropriate actions.
      */
     public TransportSession(@NotNull ConnectionFactory connectionFactory,
                             @NotNull PersistenceProvider persistenceProvider, @NotNull TransportSeat transportSeat)
@@ -80,9 +81,10 @@ public class TransportSession extends CoolSocket
             }
 
             final String clientUid = response.getString(Keyword.CLIENT_UID);
-            final Client client = ClientLoader.loadAsServer(persistenceProvider, response, clientUid, hasPin);
             final ClientAddress clientAddress = persistenceProvider.createClientAddressFor(
                     activeConnection.getAddress(), clientUid);
+            final Client client = ClientLoader.loadAsServer(persistenceProvider, response, clientUid, clientAddress,
+                    hasPin);
 
             Responses.send(activeConnection, true, clientIndex);
 
@@ -123,65 +125,6 @@ public class TransportSession extends CoolSocket
                                @NotNull ClientAddress clientAddress, boolean hasPin, @NotNull JSONObject response)
             throws JSONException, IOException, PersistenceException, ProtocolException
     {
-        switch (response.getString(Keyword.REQUEST)) {
-            case (Keyword.REQUEST_TEST): {
-                bridge.send(true);
-                return;
-            }
-            case (Keyword.REQUEST_TRANSFER): {
-                long groupId = response.getLong(Keyword.TRANSFER_GROUP_ID);
-                String jsonIndex = response.getString(Keyword.INDEX);
-
-                if (transportSeat.hasOngoingIndexingFor(groupId) || persistenceProvider.containsTransfer(groupId)) {
-                    throw new ContentException(ContentException.Error.AlreadyExists);
-                } else {
-                    transportSeat.handleFileTransferRequest(client, hasPin, groupId, jsonIndex);
-                    bridge.send(true);
-                }
-                return;
-            }
-            case (Keyword.REQUEST_NOTIFY_TRANSFER_REJECTION): {
-                long groupId = response.getLong(Keyword.TRANSFER_GROUP_ID);
-                bridge.send(transportSeat.handleFileTransferRejection(client, groupId));
-                return;
-            }
-            case (Keyword.REQUEST_CLIPBOARD): {
-                String content = response.getString(Keyword.CLIPBOARD_CONTENT);
-                ClipboardType type = ClipboardType.from(response.getString(Keyword.CLIPBOARD_TYPE));
-
-                bridge.send(transportSeat.handleClipboardRequest(client, content, type));
-                return;
-            }
-            case (Keyword.REQUEST_ACQUAINTANCE): {
-                Direction direction = Direction.from(response.getString(Keyword.DIRECTION));
-                bridge.send(transportSeat.handleAcquaintanceRequest(client, clientAddress, direction));
-                return;
-            }
-            case (Keyword.REQUEST_TRANSFER_JOB): {
-                long groupId = response.getLong(Keyword.TRANSFER_GROUP_ID);
-                Direction direction = Direction.from(response.getString(Keyword.DIRECTION));
-
-                // The direction is reversed to match our side
-                if (Direction.Incoming.equals(direction)) {
-                    direction = Direction.Outgoing;
-                } else if (Direction.Outgoing.equals(direction)) {
-                    direction = Direction.Incoming;
-                }
-
-                if (Direction.Incoming.equals(direction) && !client.isClientTrusted()) {
-                    bridge.send(Keyword.ERROR_NOT_TRUSTED);
-                } else if (transportSeat.hasOngoingTransferFor(groupId, client.getClientUid(), direction)) {
-                    throw new ContentException(ContentException.Error.NotAccessible);
-                } else if (!persistenceProvider.containsTransfer(groupId)) {
-                    throw new ContentException(ContentException.Error.NotFound);
-                } else {
-                    bridge.send(true);
-                    transportSeat.beginFileTransfer(bridge, client, groupId, direction);
-                }
-                return;
-            }
-            default:
-                bridge.send(false);
-        }
+        Responses.handleRequest(persistenceProvider, transportSeat, bridge, client, clientAddress, hasPin, response);
     }
 }

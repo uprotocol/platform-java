@@ -5,7 +5,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.session.ActiveConnection;
 import org.monora.uprotocol.core.persistence.PersistenceException;
+import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
+import org.monora.uprotocol.core.protocol.ClientAddress;
+import org.monora.uprotocol.core.protocol.ClipboardType;
+import org.monora.uprotocol.core.protocol.Direction;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.UndefinedErrorCodeException;
@@ -99,6 +103,77 @@ public class Responses
     public static boolean getResult(@NotNull JSONObject jsonObject) throws JSONException
     {
         return jsonObject.getBoolean(Keyword.RESULT);
+    }
+
+    static void handleRequest(@NotNull PersistenceProvider persistenceProvider, @NotNull TransportSeat transportSeat,
+                              @NotNull CommunicationBridge bridge, @NotNull Client client,
+                              @NotNull ClientAddress clientAddress, boolean hasPin, @NotNull JSONObject response)
+            throws JSONException, IOException, PersistenceException, ProtocolException
+    {
+        switch (response.getString(Keyword.REQUEST)) {
+            case (Keyword.REQUEST_TEST): {
+                bridge.send(true);
+                break;
+            }
+            case (Keyword.REQUEST_TRANSFER): {
+                long groupId = response.getLong(Keyword.TRANSFER_GROUP_ID);
+                String jsonIndex = response.getString(Keyword.INDEX);
+
+                if (transportSeat.hasOngoingIndexingFor(groupId) || persistenceProvider.containsTransfer(groupId)) {
+                    throw new ContentException(ContentException.Error.AlreadyExists);
+                } else {
+                    boolean result = transportSeat.handleFileTransferRequest(client, hasPin, groupId, jsonIndex);
+                    bridge.send(result);
+
+                    if (result) {
+                        transportSeat.beginFileTransfer(bridge, client, groupId, Direction.Incoming);
+                    }
+                }
+                break;
+            }
+            case (Keyword.REQUEST_NOTIFY_TRANSFER_REJECTION): {
+                long groupId = response.getLong(Keyword.TRANSFER_GROUP_ID);
+                bridge.send(transportSeat.handleFileTransferRejection(client, groupId));
+                break;
+            }
+            case (Keyword.REQUEST_CLIPBOARD): {
+                String content = response.getString(Keyword.CLIPBOARD_CONTENT);
+                ClipboardType type = ClipboardType.from(response.getString(Keyword.CLIPBOARD_TYPE));
+
+                bridge.send(transportSeat.handleClipboardRequest(client, content, type));
+                break;
+            }
+            case (Keyword.REQUEST_ACQUAINTANCE): {
+                Direction direction = Direction.from(response.getString(Keyword.DIRECTION));
+                transportSeat.handleAcquaintanceRequest(bridge, client, clientAddress, direction);
+                break;
+            }
+            case (Keyword.REQUEST_TRANSFER_JOB): {
+                long groupId = response.getLong(Keyword.TRANSFER_GROUP_ID);
+                Direction direction = Direction.from(response.getString(Keyword.DIRECTION));
+
+                // The direction is reversed to match our side
+                if (Direction.Incoming.equals(direction)) {
+                    direction = Direction.Outgoing;
+                } else if (Direction.Outgoing.equals(direction)) {
+                    direction = Direction.Incoming;
+                }
+
+                if (Direction.Incoming.equals(direction) && !client.isClientTrusted()) {
+                    bridge.send(Keyword.ERROR_NOT_TRUSTED);
+                } else if (transportSeat.hasOngoingTransferFor(groupId, client.getClientUid(), direction)) {
+                    throw new ContentException(ContentException.Error.NotAccessible);
+                } else if (!persistenceProvider.containsTransfer(groupId)) {
+                    throw new ContentException(ContentException.Error.NotFound);
+                } else {
+                    bridge.send(true);
+                    transportSeat.beginFileTransfer(bridge, client, groupId, direction);
+                }
+                break;
+            }
+            default:
+                bridge.send(false);
+        }
     }
 
     /**

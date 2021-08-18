@@ -1,6 +1,5 @@
 package org.monora.uprotocol;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -8,6 +7,7 @@ import org.monora.coolsocket.core.session.CancelledException;
 import org.monora.coolsocket.core.session.ClosedException;
 import org.monora.uprotocol.core.ClientLoader;
 import org.monora.uprotocol.core.CommunicationBridge;
+import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClipboardType;
 import org.monora.uprotocol.core.protocol.Direction;
@@ -33,26 +33,18 @@ import java.util.List;
 public class RequestTest extends DefaultTestBase
 {
     @Test
-    public void requestAcquaintanceTest() throws IOException, InterruptedException, ProtocolException,
-            CertificateException
+    public void requestTest() throws IOException, InterruptedException, ProtocolException,
+            CertificateException, PersistenceException
     {
         primarySession.start();
 
-        primarySeat.replyToAcquaintanceRequest = true;
-
         try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
                 clientAddress)) {
-            final Direction expectedDirection = Direction.Incoming;
-
             Assert.assertTrue("Remote should send a positive message.",
-                    bridge.requestAcquaintance(expectedDirection));
+                    bridge.requestTest());
 
             Client persistentClient = secondaryPersistence.getClientFor(bridge.getRemoteClient().getClientUid());
-            @Nullable Direction directionSuppliedToRemote = primarySeat.getRequestedAcquaintanceDirection();
 
-            Assert.assertNotNull("The direction supplied to the remote should not be empty",
-                    directionSuppliedToRemote);
-            Assert.assertEquals("The direction should match.", expectedDirection, directionSuppliedToRemote);
             Assert.assertNotNull("The client should not be null on the remote db.", persistentClient);
             Assert.assertEquals("Clients should be same.", bridge.getRemoteClient(), persistentClient);
             Assert.assertEquals("Clients should have the same username.", bridge.getRemoteClient().getClientNickname(),
@@ -65,6 +57,26 @@ public class RequestTest extends DefaultTestBase
         } finally {
             primarySession.stop();
         }
+    }
+
+    @Test
+    public void persistenceAfterRequestTest() throws ProtocolException, CertificateException, IOException,
+            InterruptedException
+    {
+        primarySession.start();
+
+        try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
+                clientAddress)) {
+            Assert.assertTrue("Remote should send a positive message.",
+                    bridge.requestTest());
+        } finally {
+            primarySession.stop();
+        }
+
+        Assert.assertTrue("Primary persistence should have one exact address",
+                primaryPersistence.getClientAddressList().size() > 0);
+        Assert.assertTrue("Secondary persistence should have one exact address",
+                secondaryPersistence.getClientAddressList().size() > 0);
     }
 
     @Test
@@ -84,8 +96,7 @@ public class RequestTest extends DefaultTestBase
                 "image/jpeg", 0, "doggos", Direction.Outgoing));
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            Assert.assertTrue("The request should be successful", bridge.requestFileTransfer(groupId,
-                    transferItemList, null));
+            bridge.requestFileTransfer(secondarySeat, groupId, transferItemList, null);
         } finally {
             primarySession.stop();
         }
@@ -122,8 +133,7 @@ public class RequestTest extends DefaultTestBase
                 "video/mp4", MemoryStreamDescriptor.MAX_SIZE, null, Direction.Outgoing));
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            Assert.assertTrue("The request should be successful", bridge.requestFileTransfer(groupId,
-                    transferItemList, null));
+            bridge.requestFileTransfer(secondarySeat, groupId, transferItemList, null);
         } finally {
             primarySession.stop();
         }
@@ -257,7 +267,7 @@ public class RequestTest extends DefaultTestBase
             bridge.send(false);
         }
 
-        primarySeat.setAutoInvalidationOfCredentials(true);
+        primarySeat.autoAcceptNewKeys = true;
         primaryPersistence.regenerateSecrets();
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
@@ -447,8 +457,7 @@ public class RequestTest extends DefaultTestBase
                 "video/mp4", MemoryStreamDescriptor.MAX_SIZE, null, Direction.Outgoing));
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            Assert.assertTrue("The request should be successful", bridge.requestFileTransfer(groupId,
-                    transferItemList, null));
+            bridge.requestFileTransfer(secondarySeat, groupId, transferItemList, null);
         } finally {
             primarySession.stop();
         }
@@ -542,7 +551,7 @@ public class RequestTest extends DefaultTestBase
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestClipboard(clipboardContent, clipboardType);
 
-            @Nullable ClipboardHolder clipboardHolder = primarySeat.getRequestedClipboard();
+            @Nullable ClipboardHolder clipboardHolder = primarySeat.requestedClipboard;
 
             Assert.assertNotNull("The requested clipboard should reach the remote", clipboardHolder);
             Assert.assertEquals("The clipboard content should match", clipboardHolder.content,

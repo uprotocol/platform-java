@@ -5,7 +5,7 @@ package org.monora.uprotocol.core.spec.v1;
  */
 public class Config
 {
-    public static final int TIMEOUT_SOCKET_DEFAULT = 5000;
+    public static final int TIMEOUT_SOCKET_DEFAULT = 7000;
 
     public static final int PORT_UPROTOCOL = 1128;
 

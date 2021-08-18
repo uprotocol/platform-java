@@ -3,6 +3,8 @@ package org.monora.uprotocol.variant.holder;
 import org.jetbrains.annotations.NotNull;
 import org.monora.uprotocol.core.transfer.TransferItem;
 
+import java.util.Objects;
+
 public class TransferHolder
 {
     public @NotNull TransferItem item;

@@ -5,10 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
-import org.monora.uprotocol.core.protocol.Client;
-import org.monora.uprotocol.core.protocol.ClientType;
-import org.monora.uprotocol.core.protocol.Clients;
-import org.monora.uprotocol.core.protocol.ConnectionFactory;
+import org.monora.uprotocol.core.protocol.*;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.client.BlockedRemoteClientException;
 import org.monora.uprotocol.core.spec.v1.Keyword;
@@ -16,8 +13,6 @@ import org.monora.uprotocol.core.spec.v1.Keyword;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.security.cert.CertificateException;
-
-import static org.monora.uprotocol.core.spec.v1.Config.LENGTH_CLIENT_USERNAME;
 
 /**
  * Handles loading details of remote.
@@ -30,6 +25,7 @@ public class ClientLoader
      * @param persistenceProvider That stores persistent data.
      * @param object              To load the details from.
      * @param clientUid           For which this method invocation is being made.
+     * @param clientAddress       To save after saving the client details.
      * @param unblock             True if this should unblock the remote if blocked.
      * @return The client produced from the JSON object and persistence database.
      * @throws JSONException                If something goes wrong when inflating the JSON data.
@@ -37,10 +33,10 @@ public class ClientLoader
      */
     public static @NotNull Client loadAsClient(@NotNull PersistenceProvider persistenceProvider,
                                                @NotNull JSONObject object, @NotNull String clientUid,
-                                               boolean unblock)
+                                               @NotNull ClientAddress clientAddress, boolean unblock)
             throws JSONException, BlockedRemoteClientException
     {
-        Client client = loadFrom(persistenceProvider, object, clientUid, false, true, unblock);
+        Client client = load(persistenceProvider, object, clientUid, clientAddress, false, true, unblock);
 
         if (client.isClientBlocked()) {
             throw new BlockedRemoteClientException(client);
@@ -55,6 +51,7 @@ public class ClientLoader
      * @param persistenceProvider That stores persistent data.
      * @param object              To load the details from.
      * @param clientUid           For which this method invocation is being made.
+     * @param clientAddress       To save after saving the client details.
      * @param hasPin              Whether the request has a valid PIN. When it does, the remote client will be unblocked
      *                            if blocked.
      * @return The client data produced from the JSON object and persistence database.
@@ -63,10 +60,11 @@ public class ClientLoader
      *                                      after this is thrown.
      */
     public static @NotNull Client loadAsServer(@NotNull PersistenceProvider persistenceProvider,
-                                               @NotNull JSONObject object, @NotNull String clientUid, boolean hasPin)
+                                               @NotNull JSONObject object, @NotNull String clientUid,
+                                               @NotNull ClientAddress clientAddress, boolean hasPin)
             throws JSONException, BlockedRemoteClientException
     {
-        Client client = loadFrom(persistenceProvider, object, clientUid, hasPin, false, false);
+        Client client = load(persistenceProvider, object, clientUid, clientAddress, hasPin, false, false);
 
         if (client.isClientBlocked()) {
             throw new BlockedRemoteClientException(client);
@@ -75,9 +73,9 @@ public class ClientLoader
         return client;
     }
 
-    private static @NotNull Client loadFrom(@NotNull PersistenceProvider persistenceProvider,
-                                            @NotNull JSONObject response, @NotNull String clientUid, boolean hasPin,
-                                            boolean asClient, boolean unblockAsClient) throws JSONException
+    private static @NotNull Client load(@NotNull PersistenceProvider persistenceProvider, @NotNull JSONObject response,
+                                        @NotNull String clientUid, @NotNull ClientAddress clientAddress, boolean hasPin,
+                                        boolean asClient, boolean unblockAsClient) throws JSONException
     {
         final String nickname = Clients.cleanNickname(response.getString(Keyword.CLIENT_NICKNAME));
         final String manufacturer = response.getString(Keyword.CLIENT_MANUFACTURER);
@@ -118,6 +116,7 @@ public class ClientLoader
             client.setClientLastUsageTime(lastUsageTime);
             client.setClientLocal(local);
             persistenceProvider.persist(client, updating);
+            persistenceProvider.persist(clientAddress);
 
             if (needsPictureRevision) {
                 String data = response.optString(Keyword.CLIENT_PICTURE);

@@ -23,9 +23,11 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.session.ActiveConnection;
+import org.monora.coolsocket.core.session.CancelledException;
 import org.monora.coolsocket.core.session.ClosedException;
 import org.monora.uprotocol.core.io.DefectiveAddressListException;
 import org.monora.uprotocol.core.persistence.OnPrepareListener;
+import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.*;
 import org.monora.uprotocol.core.protocol.communication.CredentialsException;
@@ -258,22 +260,38 @@ public class CommunicationBridge implements Closeable
      * <p>
      * For instance, the remote is setting up a file transfer request and is about to pick a client. If you make this
      * request in that timespan, this will invoke
-     * {@link TransportSeat#handleAcquaintanceRequest(Client, ClientAddress, Direction)} method on the remote, and it
-     * will choose you.
+     * {@link TransportSeat#handleAcquaintanceRequest(CommunicationBridge, Client, ClientAddress, Direction)} method on
+     * the remote, and it will choose you.
      *
-     * @param direction Of 'yours' (not reversed) that the remote should respond to.
+     * @param transportSeat That will manage the requests and do appropriate actions.
+     * @param direction     Of 'yours' (not reversed) that the remote should respond to.
      * @return True if successful, or false the remote will not satisfy the request. The reason maybe that the remote
      * is expecting the same
      * @throws IOException       If an IO error occurs.
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public boolean requestAcquaintance(Direction direction) throws JSONException, IOException, ProtocolException
+    public boolean requestAcquaintance(TransportSeat transportSeat, Direction direction) throws JSONException,
+            IOException, ProtocolException
     {
         send(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_ACQUAINTANCE)
                 .put(Keyword.DIRECTION, direction.protocolValue));
-        return receiveResult();
+
+        JSONObject response = Responses.receiveChecked(getActiveConnection(), getRemoteClient());
+
+        if (Responses.getResult(response)) {
+            try {
+                Responses.handleRequest(persistenceProvider, transportSeat, this, getRemoteClient(),
+                        getRemoteClientAddress(), true, response);
+                return true;
+            } catch (CancelledException ignored) {
+            } catch (Exception e) {
+                Responses.send(activeConnection, e, persistenceProvider.clientAsJson(0));
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -302,24 +320,32 @@ public class CommunicationBridge implements Closeable
     /**
      * Request a file transfer operation by informing the remote that you will send files.
      * <p>
-     * This request doesn't guarantee that the request will be processed immediately. You should close the connection
-     * after making this request. If everything goes right, the remote will reach out to you using
-     * {@link #requestFileTransferStart(long, Direction)}, which will end up in your
+     * The remote may choose to start the transfer without prompting the user. In that case, the given
+     * {@link TransportSeat} instance will handle the transfer process. Also, it will keep blocking the caller thread
+     * until the operation is done. Still, any notification that the transfer is in progress should be shown inside the
      * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Client, long, Direction)} method.
      * <p>
-     * If the initial response is positive, the items will be saved to the persistence provider using
-     * {@link PersistenceProvider#persist(String, List)}.
+     * The remote may also choose to prompt the user. In that case, it will reach out to you using
+     * {@link #requestFileTransferStart(long, Direction)}, which will end up in your
+     * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Client, long, Direction)} method. That request will
+     * happen separately and will not concern this invocation. In order words, this invocation will exit as soon as that
+     * happens.
+     * <p>
+     * Finally, if the response is positive (that is the remote doesn't report any errors), the items will be saved to
+     * the persistence database using {@link PersistenceProvider#persist(String, List)}, whether or not the transfer
+     * is started immediately.
      *
+     * @param transportSeat    That will manage the transfer process if the remote approves of this request,
      * @param groupId          That ties a group of {@link TransferItem} as in {@link TransferItem#getItemGroupId()}.
      * @param transferItemList That you will send.
      * @param prepareListener  To call on success to prepare dependencies.
-     * @return True if successful.
      * @throws IOException       If an IO error occurs.
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public boolean requestFileTransfer(long groupId, @NotNull List<@NotNull TransferItem> transferItemList,
-                                       @Nullable OnPrepareListener prepareListener)
+    public void requestFileTransfer(@NotNull TransportSeat transportSeat, long groupId,
+                                    @NotNull List<@NotNull TransferItem> transferItemList,
+                                    @Nullable OnPrepareListener prepareListener)
             throws JSONException, IOException, ProtocolException
     {
         send(true, new JSONObject()
@@ -329,22 +355,27 @@ public class CommunicationBridge implements Closeable
 
         boolean result = receiveResult();
 
-        if (result) {
-            if (prepareListener != null) {
-                prepareListener.onPrepare();
-            }
-
-            getPersistenceProvider().persist(getRemoteClient().getClientUid(), transferItemList);
+        if (prepareListener != null) {
+            prepareListener.onPrepare();
         }
 
-        return result;
+        getPersistenceProvider().persist(getRemoteClient().getClientUid(), transferItemList);
+
+        if (result) {
+            try {
+                transportSeat.beginFileTransfer(this, getRemoteClient(), groupId, Direction.Outgoing);
+            } catch (PersistenceException e) {
+                throw new IllegalStateException("This shouldn't throw a persistence error. Did you forget to " +
+                        "persist the data?");
+            }
+        }
     }
 
     /**
      * Ask remote to start file transfer.
      * <p>
      * The transfer request, in this case, has already been sent with
-     * {@link #requestFileTransfer(long, List, OnPrepareListener)}.
+     * {@link #requestFileTransfer(TransportSeat, long, List, OnPrepareListener)}.
      * <p>
      * After the method returns positive, the rest of the operation can be carried on with {@link Transfers#receive}
      * or {@link Transfers#send} depending on the direction of the transfer.
@@ -612,11 +643,9 @@ public class CommunicationBridge implements Closeable
             Responses.send(activeConnection, true, persistenceProvider.clientAsJson(pin));
 
             JSONObject jsonObject = activeConnection.receive().getAsJson();
-            Client client = ClientLoader.loadAsClient(persistenceProvider, jsonObject, remoteClientUid,
-                    clearBlockedStatus);
             ClientAddress clientAddress = persistenceProvider.createClientAddressFor(address, remoteClientUid);
-
-            persistenceProvider.persist(clientAddress);
+            Client client = ClientLoader.loadAsClient(persistenceProvider, jsonObject, remoteClientUid, clientAddress,
+                    clearBlockedStatus);
 
             Responses.checkError(client, jsonObject);
 
