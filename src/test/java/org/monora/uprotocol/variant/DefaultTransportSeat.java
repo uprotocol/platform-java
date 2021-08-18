@@ -23,9 +23,9 @@ import java.util.List;
 
 public class DefaultTransportSeat implements TransportSeat
 {
-    public final BasePersistenceProvider persistenceProvider;
+    public final @NotNull BasePersistenceProvider persistenceProvider;
 
-    public final TransferOperation transferOperation;
+    public final @NotNull TransferOperation transferOperation;
 
     public boolean autoAcceptNewKeys;
 

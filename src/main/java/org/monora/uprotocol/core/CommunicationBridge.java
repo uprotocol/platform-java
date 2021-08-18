@@ -59,13 +59,13 @@ import static org.monora.uprotocol.core.spec.v1.Config.TIMEOUT_SOCKET_DEFAULT;
 
 public class CommunicationBridge implements Closeable
 {
-    private final PersistenceProvider persistenceProvider;
+    private final @NotNull PersistenceProvider persistenceProvider;
 
-    private final ActiveConnection activeConnection;
+    private final @NotNull ActiveConnection activeConnection;
 
-    private final Client client;
+    private final @NotNull Client client;
 
-    private final ClientAddress clientAddress;
+    private final @NotNull ClientAddress clientAddress;
 
     /**
      * Create a new instance.
@@ -271,8 +271,8 @@ public class CommunicationBridge implements Closeable
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public boolean requestAcquaintance(TransportSeat transportSeat, Direction direction) throws JSONException,
-            IOException, ProtocolException
+    public boolean requestAcquaintance(@NotNull TransportSeat transportSeat, @NotNull Direction direction)
+            throws JSONException, IOException, ProtocolException
     {
         send(true, new JSONObject()
                 .put(Keyword.REQUEST, Keyword.REQUEST_ACQUAINTANCE)
@@ -629,7 +629,8 @@ public class CommunicationBridge implements Closeable
          * @throws BlockedRemoteClientException   If the remote is blocked on the side and unblocking is disallowed.
          * @throws CertificateException           If an error related to encryption or authentication occurs.
          */
-        public CommunicationBridge connect() throws IOException, JSONException, ProtocolException, CertificateException
+        public @NotNull CommunicationBridge connect() throws IOException, JSONException, ProtocolException,
+                CertificateException
         {
             ActiveConnection activeConnection = openConnection();
             InetAddress address = activeConnection.getAddress();
@@ -661,7 +662,7 @@ public class CommunicationBridge implements Closeable
             return new CommunicationBridge(persistenceProvider, activeConnection, client, clientAddress);
         }
 
-        private ActiveConnection openConnection() throws IOException
+        private @NotNull ActiveConnection openConnection() throws IOException
         {
             List<IOException> underlyingExceptionList = new ArrayList<>();
 

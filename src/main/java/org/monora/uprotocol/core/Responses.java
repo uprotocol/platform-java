@@ -35,7 +35,8 @@ public class Responses
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException If the response has an error description
      */
-    public static void checkError(Client client, @NotNull JSONObject jsonObject) throws JSONException, ProtocolException
+    public static void checkError(@NotNull Client client, @NotNull JSONObject jsonObject) throws JSONException,
+            ProtocolException
     {
         if (jsonObject.has(Keyword.ERROR)) {
             final String errorCode = jsonObject.getString(Keyword.ERROR);
@@ -229,8 +230,8 @@ public class Responses
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public static JSONObject receiveChecked(@NotNull ActiveConnection activeConnection, Client client) throws
-            IOException, JSONException, ProtocolException
+    public static JSONObject receiveChecked(@NotNull ActiveConnection activeConnection, @NotNull Client client)
+            throws IOException, JSONException, ProtocolException
     {
         JSONObject jsonObject = activeConnection.receive().getAsJson();
         checkError(client, jsonObject);
@@ -281,7 +282,7 @@ public class Responses
      * @throws ProtocolException With the cause exception if the error is undefined.
      * @see #receiveChecked(ActiveConnection, Client)
      */
-    public static void send(@NotNull ActiveConnection activeConnection, Exception exception,
+    public static void send(@NotNull ActiveConnection activeConnection, @NotNull Exception exception,
                             @NotNull JSONObject jsonObject) throws IOException, JSONException, ProtocolException
     {
         send(activeConnection, getError(exception), jsonObject);

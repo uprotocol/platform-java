@@ -1,6 +1,7 @@
 package org.monora.uprotocol.core.protocol;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.monora.uprotocol.core.spec.v1.Keyword;
 
 /**
@@ -33,16 +34,16 @@ public enum ClientType
      */
     Web(Keyword.CLIENT_TYPE_WEB);
 
-    private final String protocolValue;
+    private final @NotNull String protocolValue;
 
-    private String protocolValueCustom;
+    private @Nullable String protocolValueCustom;
 
-    ClientType(String protocolValue)
+    ClientType(@NotNull String protocolValue)
     {
         this.protocolValue = protocolValue;
     }
 
-    public static @NotNull ClientType from(String value)
+    public static @NotNull ClientType from(@NotNull String value)
     {
         for (ClientType type : values()) {
             if (type.protocolValue.equals(value)) {
@@ -60,7 +61,7 @@ public enum ClientType
      *
      * @return The value as defined in the protocol.
      */
-    public String getProtocolValue()
+    public @NotNull String getProtocolValue()
     {
         return equals(Any) && protocolValueCustom != null ? protocolValueCustom : protocolValue;
     }
@@ -72,7 +73,7 @@ public enum ClientType
      *
      * @return The original value that build this client type instance.
      */
-    public String getOriginalValue()
+    public @NotNull String getOriginalValue()
     {
         return protocolValueCustom == null ? name() : protocolValueCustom;
     }
