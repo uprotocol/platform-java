@@ -10,9 +10,7 @@ import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.ClipboardType;
 import org.monora.uprotocol.core.protocol.Direction;
-import org.monora.uprotocol.core.protocol.communication.ContentException;
-import org.monora.uprotocol.core.protocol.communication.ProtocolException;
-import org.monora.uprotocol.core.protocol.communication.UndefinedErrorCodeException;
+import org.monora.uprotocol.core.protocol.communication.*;
 import org.monora.uprotocol.core.protocol.communication.client.BlockedRemoteClientException;
 import org.monora.uprotocol.core.protocol.communication.client.UnauthorizedClientException;
 import org.monora.uprotocol.core.protocol.communication.client.UntrustedClientException;
@@ -51,6 +49,8 @@ public class Responses
                     throw new ContentException(ContentException.Error.AlreadyExists);
                 case Keyword.ERROR_NOT_FOUND:
                     throw new ContentException(ContentException.Error.NotFound);
+                case Keyword.ERROR_UNSUPPORTED:
+                    throw new UnsupportedException(client);
                 case Keyword.ERROR_UNKNOWN:
                     throw new ProtocolException();
                 default:
@@ -74,6 +74,8 @@ public class Responses
             return Keyword.ERROR_NOT_TRUSTED;
         } catch (UnauthorizedClientException | BlockedRemoteClientException e) {
             return Keyword.ERROR_NOT_ALLOWED;
+        } catch (UnsupportedException e) {
+            return Keyword.ERROR_UNSUPPORTED;
         } catch (PersistenceException e) {
             return Keyword.ERROR_NOT_FOUND;
         } catch (ContentException e) {
@@ -111,7 +113,8 @@ public class Responses
                               @NotNull ClientAddress clientAddress, boolean hasPin, @NotNull JSONObject response)
             throws JSONException, IOException, PersistenceException, ProtocolException
     {
-        switch (response.getString(Keyword.REQUEST)) {
+        final String request = response.getString(Keyword.REQUEST);
+        switch (request) {
             case (Keyword.REQUEST_TEST): {
                 bridge.send(true);
                 break;
@@ -149,7 +152,7 @@ public class Responses
                 transportSeat.handleAcquaintanceRequest(bridge, client, clientAddress, direction);
                 break;
             }
-            case (Keyword.REQUEST_TRANSFER_JOB): {
+            case (Keyword.REQUEST_TRANSFER_START): {
                 long groupId = response.getLong(Keyword.TRANSFER_GROUP_ID);
                 Direction direction = Direction.from(response.getString(Keyword.DIRECTION));
 
@@ -173,7 +176,7 @@ public class Responses
                 break;
             }
             default:
-                bridge.send(false);
+                throw new RequestUnsupportedException(client, request);
         }
     }
 

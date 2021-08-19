@@ -220,7 +220,7 @@ public class Transfers
                             byte[] bytes = new byte[8096];
                             int len;
 
-                            // For avoiding Android MediaStore bug where the reported size is different than actual
+                            // For avoiding Android MediaStore bug where the reported size is different from actual
                             // data size.
                             boolean exceedingClose = false;
                             long available;
@@ -286,8 +286,8 @@ public class Transfers
      * Transform a given {@link TransferItem} list into its {@link JSONArray} equivalent.
      * <p>
      * The resulting {@link JSONArray} can be fed to
-     * {@link CommunicationBridge#requestFileTransfer(TransportSeat, long, List, OnPrepareListener)} to start a file
-     * transfer operation.
+     * {@link CommunicationBridge#requestFileTransfer(long, List, OnPrepareListener)} to start a file transfer
+     * operation.
      * <p>
      * You can have the same JSON data back using {@link #toTransferItemList(String)}.
      *

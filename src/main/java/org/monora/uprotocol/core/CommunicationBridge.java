@@ -27,7 +27,6 @@ import org.monora.coolsocket.core.session.CancelledException;
 import org.monora.coolsocket.core.session.ClosedException;
 import org.monora.uprotocol.core.io.DefectiveAddressListException;
 import org.monora.uprotocol.core.persistence.OnPrepareListener;
-import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.*;
 import org.monora.uprotocol.core.protocol.communication.CredentialsException;
@@ -256,12 +255,17 @@ public class CommunicationBridge implements Closeable
     }
 
     /**
-     * Inform the remote that it should choose you (this client) if it's about to choose one.
+     * Request the remote to choose you if it's about to choose pick a client.
      * <p>
      * For instance, the remote is setting up a file transfer request and is about to pick a client. If you make this
      * request in that timespan, this will invoke
      * {@link TransportSeat#handleAcquaintanceRequest(CommunicationBridge, Client, ClientAddress, Direction)} method on
      * the remote, and it will choose you.
+     * <p>
+     * This method will keep blocking until remote completes its request. You should be prepared this run on this on
+     * a background thread.
+     * <p>
+     * Any protocol related request will be performed by the given {@link TransportSeat} instance.
      *
      * @param transportSeat That will manage the requests and do appropriate actions.
      * @param direction     Of 'yours' (not reversed) that the remote should respond to.
@@ -320,32 +324,28 @@ public class CommunicationBridge implements Closeable
     /**
      * Request a file transfer operation by informing the remote that you will send files.
      * <p>
-     * The remote may choose to start the transfer without prompting the user. In that case, the given
-     * {@link TransportSeat} instance will handle the transfer process. Also, it will keep blocking the caller thread
-     * until the operation is done. Still, any notification that the transfer is in progress should be shown inside the
-     * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Client, long, Direction)} method.
+     * The remote may choose to start the transfer without prompting the user. In that case, the return value of this
+     * method call will be true, and should be preceded by a
+     * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Client, long, Direction)} method call.
      * <p>
      * The remote may also choose to prompt the user. In that case, it will reach out to you using
      * {@link #requestFileTransferStart(long, Direction)}, which will end up in your
      * {@link TransportSeat#beginFileTransfer(CommunicationBridge, Client, long, Direction)} method. That request will
-     * happen separately and will not concern this invocation. In order words, this invocation will exit as soon as that
-     * happens.
+     * happen separately and will not concern this invocation.
      * <p>
      * Finally, if the response is positive (that is the remote doesn't report any errors), the items will be saved to
-     * the persistence database using {@link PersistenceProvider#persist(String, List)}, whether or not the transfer
-     * is started immediately.
+     * the persistence database using {@link PersistenceProvider#persist(String, List)}.
      *
-     * @param transportSeat    That will manage the transfer process if the remote approves of this request,
      * @param groupId          That ties a group of {@link TransferItem} as in {@link TransferItem#getItemGroupId()}.
      * @param transferItemList That you will send.
      * @param prepareListener  To call on success to prepare dependencies.
+     * @return True if the transfer should be started now, or false the prompted the user.
      * @throws IOException       If an IO error occurs.
      * @throws JSONException     If something goes wrong when creating JSON object.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
      */
-    public void requestFileTransfer(@NotNull TransportSeat transportSeat, long groupId,
-                                    @NotNull List<@NotNull TransferItem> transferItemList,
-                                    @Nullable OnPrepareListener prepareListener)
+    public boolean requestFileTransfer(long groupId, @NotNull List<@NotNull TransferItem> transferItemList,
+                                       @Nullable OnPrepareListener prepareListener)
             throws JSONException, IOException, ProtocolException
     {
         send(true, new JSONObject()
@@ -361,21 +361,14 @@ public class CommunicationBridge implements Closeable
 
         getPersistenceProvider().persist(getRemoteClient().getClientUid(), transferItemList);
 
-        if (result) {
-            try {
-                transportSeat.beginFileTransfer(this, getRemoteClient(), groupId, Direction.Outgoing);
-            } catch (PersistenceException e) {
-                throw new IllegalStateException("This shouldn't throw a persistence error. Did you forget to " +
-                        "persist the data?");
-            }
-        }
+        return result;
     }
 
     /**
-     * Ask remote to start file transfer.
+     * Request the remote to start file transfer.
      * <p>
      * The transfer request, in this case, has already been sent with
-     * {@link #requestFileTransfer(TransportSeat, long, List, OnPrepareListener)}.
+     * {@link #requestFileTransfer(long, List, OnPrepareListener)}.
      * <p>
      * After the method returns positive, the rest of the operation can be carried on with {@link Transfers#receive}
      * or {@link Transfers#send} depending on the direction of the transfer.
@@ -393,7 +386,7 @@ public class CommunicationBridge implements Closeable
             IOException, ProtocolException
     {
         send(true, new JSONObject()
-                .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER_JOB)
+                .put(Keyword.REQUEST, Keyword.REQUEST_TRANSFER_START)
                 .put(Keyword.TRANSFER_GROUP_ID, groupId)
                 .put(Keyword.DIRECTION, direction.protocolValue));
         return receiveResult();

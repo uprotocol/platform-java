@@ -118,7 +118,7 @@ public interface TransportSeat
 
     /**
      * The remote has rejected the file transfer request we made with
-     * {@link CommunicationBridge#requestFileTransfer(TransportSeat, long, List, OnPrepareListener)}.
+     * {@link CommunicationBridge#requestFileTransfer(long, List, OnPrepareListener)}.
      * <p>
      * You should return the result as soon as possible, so that it can be delivered to the remote.
      * <p>

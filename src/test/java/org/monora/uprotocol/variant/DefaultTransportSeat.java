@@ -2,6 +2,7 @@ package org.monora.uprotocol.variant;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSeat;
 import org.monora.uprotocol.core.protocol.Client;
@@ -61,7 +62,9 @@ public class DefaultTransportSeat implements TransportSeat
         final @Nullable TransferRequestHolder holder = transferRequestOnAcquaintance;
         if (holder != null) {
             try {
-                bridge.requestFileTransfer(this, holder.groupId, holder.list, null);
+                if (bridge.requestFileTransfer(holder.groupId, holder.list, null)) {
+                    beginFileTransfer(bridge, client, holder.groupId, Direction.Outgoing);
+                }
             } catch (ProtocolException e) {
                 e.printStackTrace();
             }

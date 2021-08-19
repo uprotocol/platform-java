@@ -1,6 +1,7 @@
 package org.monora.uprotocol;
 
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 import org.monora.coolsocket.core.session.CancelledException;
@@ -14,11 +15,12 @@ import org.monora.uprotocol.core.protocol.Direction;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
 import org.monora.uprotocol.core.protocol.communication.CredentialsException;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
+import org.monora.uprotocol.core.protocol.communication.UnsupportedException;
 import org.monora.uprotocol.core.protocol.communication.client.BlockedRemoteClientException;
 import org.monora.uprotocol.core.protocol.communication.client.DifferentRemoteClientException;
 import org.monora.uprotocol.core.protocol.communication.client.UnauthorizedClientException;
+import org.monora.uprotocol.core.spec.v1.Keyword;
 import org.monora.uprotocol.core.transfer.TransferItem;
-import org.monora.uprotocol.core.transfer.Transfers;
 import org.monora.uprotocol.variant.holder.ClipboardHolder;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
 import org.monora.uprotocol.variant.holder.TransferHolder;
@@ -96,7 +98,7 @@ public class RequestTest extends DefaultTestBase
                 "image/jpeg", 0, "doggos", Direction.Outgoing));
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestFileTransfer(secondarySeat, groupId, transferItemList, null);
+            bridge.requestFileTransfer(groupId, transferItemList, null);
         } finally {
             primarySession.stop();
         }
@@ -133,7 +135,7 @@ public class RequestTest extends DefaultTestBase
                 "video/mp4", MemoryStreamDescriptor.MAX_SIZE, null, Direction.Outgoing));
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestFileTransfer(secondarySeat, groupId, transferItemList, null);
+            bridge.requestFileTransfer(groupId, transferItemList, null);
         } finally {
             primarySession.stop();
         }
@@ -153,7 +155,8 @@ public class RequestTest extends DefaultTestBase
         try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
             if (bridge.requestFileTransferStart(transferHolder.item.getItemGroupId(),
                     transferHolder.item.getItemDirection())) {
-                Transfers.receive(bridge, transferOperation, transferHolder.item.getItemGroupId());
+                primarySeat.beginFileTransfer(bridge, primaryPersistence.getClient(),
+                        transferHolder.item.getItemGroupId(), transferHolder.item.getItemDirection());
             } else {
                 Assert.fail("Request for start should not fail");
             }
@@ -457,7 +460,7 @@ public class RequestTest extends DefaultTestBase
                 "video/mp4", MemoryStreamDescriptor.MAX_SIZE, null, Direction.Outgoing));
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestFileTransfer(secondarySeat, groupId, transferItemList, null);
+            bridge.requestFileTransfer(groupId, transferItemList, null);
         } finally {
             primarySession.stop();
         }
@@ -557,6 +560,21 @@ public class RequestTest extends DefaultTestBase
             Assert.assertEquals("The clipboard content should match", clipboardHolder.content,
                     clipboardContent);
             Assert.assertEquals("The clipboard type should match", clipboardHolder.type, clipboardType);
+        } finally {
+            primarySession.stop();
+        }
+    }
+
+    @Test(expected = UnsupportedException.class)
+    public void unsupportedRequestsFailsAccordingly() throws IOException, InterruptedException, ProtocolException,
+            CertificateException
+    {
+        primarySession.start();
+
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
+            bridge.send(true, new JSONObject()
+                    .put(Keyword.REQUEST, "randomUnsupportedRequest"));
+            bridge.receiveResult();
         } finally {
             primarySession.stop();
         }

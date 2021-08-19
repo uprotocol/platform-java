@@ -55,7 +55,11 @@ public class TrustBasedTransferTest extends DefaultTestBase
         itemList.add(demoTransferItem2);
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
-            bridge.requestFileTransfer(secondarySeat, groupId, itemList, null);
+            if (bridge.requestFileTransfer(groupId, itemList, null)) {
+                secondarySeat.beginFileTransfer(bridge, primaryPersistence.getClient(), groupId, Direction.Outgoing);
+            } else {
+                Assert.fail("The result should be true.");
+            }
         } finally {
             primarySession.stop();
         }
