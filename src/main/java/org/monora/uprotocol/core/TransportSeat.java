@@ -30,11 +30,8 @@ public interface TransportSeat
      * <p>
      * This is invoked after the checks, meaning you should not check for the validity of the transfer.
      * <p>
-     * If a runtime failure occurs, you should just throw before starting the transfer. Also, additional errors should
-     * be derivatives of {@link ProtocolException}.
-     * <p>
-     * The bridge ownership is transferred and any operation should be carried out on a separate thread, releasing
-     * the caller thread.
+     * If a runtime failure occurs, you should just throw it before starting the transfer. Also, additional errors
+     * should be derivatives of {@link ProtocolException}.
      * <p>
      * Invoke {@link Transfers#receive(CommunicationBridge, TransferOperation, long)} for
      * {@link Direction#Incoming} or {@link Transfers#send(CommunicationBridge, TransferOperation, long)}

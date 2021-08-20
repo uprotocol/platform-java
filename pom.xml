@@ -22,7 +22,7 @@
 
     <groupId>org.monora.uprotocol</groupId>
     <artifactId>core</artifactId>
-    <version>0.1.0-ALPHA34-local06</version>
+    <version>0.1.0-ALPHA35</version>
     <name>UProtocol</name>
     <description>Java implementation of uprotocol, an open specification for p2p content exchange</description>
     <url>https://github.com/uprotocol</url>
@@ -182,7 +182,7 @@
         <dependency>
             <groupId>org.monora.coolsocket</groupId>
             <artifactId>core</artifactId>
-            <version>2.0-rc16</version>
+            <version>2.0-rc17</version>
         </dependency>
         <dependency>
             <groupId>org.junit.vintage</groupId>
