@@ -30,6 +30,7 @@ import org.monora.uprotocol.core.persistence.OnPrepareListener;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.*;
 import org.monora.uprotocol.core.protocol.communication.CredentialsException;
+import org.monora.uprotocol.core.protocol.communication.GuidanceResult;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.SecurityException;
 import org.monora.uprotocol.core.protocol.communication.client.BlockedRemoteClientException;
@@ -255,47 +256,28 @@ public class CommunicationBridge implements Closeable
     }
 
     /**
-     * Request the remote to choose you if it's about to choose pick a client.
+     * Proceed to process an {@link GuidanceResult} generated using {@link #requestGuidance(Direction)} in
+     * which case its {@link GuidanceResult#result} must be 'true'.
      * <p>
-     * For instance, the remote is setting up a file transfer request and is about to pick a client. If you make this
-     * request in that timespan, this will invoke
-     * {@link TransportSeat#handleAcquaintanceRequest(CommunicationBridge, Client, ClientAddress, Direction)} method on
-     * the remote, and it will choose you.
-     * <p>
-     * This method will keep blocking until remote completes its request. You should be prepared this run on this on
-     * a background thread.
-     * <p>
-     * Any protocol related request will be performed by the given {@link TransportSeat} instance.
+     * This invocation may take long to complete as it will behave like a {@link TransportSession}.
      *
-     * @param transportSeat That will manage the requests and do appropriate actions.
-     * @param direction     Of 'yours' (not reversed) that the remote should respond to.
-     * @return True if successful, or false the remote will not satisfy the request. The reason maybe that the remote
-     * is expecting the same
-     * @throws IOException       If an IO error occurs.
-     * @throws JSONException     If something goes wrong when creating JSON object.
+     * @param transportSeat  That will manage the requests and do appropriate actions.
+     * @param guidanceResult That the remote sent and should be processed.
      * @throws ProtocolException When there is a communication error due to misconfiguration.
+     * @throws IOException       If an IO related error occurs.
      */
-    public boolean requestAcquaintance(@NotNull TransportSeat transportSeat, @NotNull Direction direction)
-            throws JSONException, IOException, ProtocolException
+    public void proceed(TransportSeat transportSeat, GuidanceResult guidanceResult) throws ProtocolException,
+            IOException
     {
-        send(true, new JSONObject()
-                .put(Keyword.REQUEST, Keyword.REQUEST_ACQUAINTANCE)
-                .put(Keyword.DIRECTION, direction.protocolValue));
+        if (!guidanceResult.result) throw new IllegalStateException("The result should be true");
 
-        JSONObject response = Responses.receiveChecked(getActiveConnection(), getRemoteClient());
-
-        if (Responses.getResult(response)) {
-            try {
-                Responses.handleRequest(persistenceProvider, transportSeat, this, getRemoteClient(),
-                        getRemoteClientAddress(), true, response);
-                return true;
-            } catch (CancelledException ignored) {
-            } catch (Exception e) {
-                Responses.send(activeConnection, e, persistenceProvider.clientAsJson(0));
-            }
+        try {
+            Responses.handleRequest(persistenceProvider, transportSeat, this, getRemoteClient(),
+                    getRemoteClientAddress(), true, guidanceResult.response);
+        } catch (CancelledException ignored) {
+        } catch (Exception e) {
+            Responses.send(activeConnection, e, persistenceProvider.clientAsJson(0));
         }
-
-        return false;
     }
 
     /**
@@ -390,6 +372,34 @@ public class CommunicationBridge implements Closeable
                 .put(Keyword.TRANSFER_GROUP_ID, groupId)
                 .put(Keyword.DIRECTION, direction.protocolValue));
         return receiveResult();
+    }
+
+    /**
+     * Request the remote to choose you if it's about to choose pick a client.
+     * <p>
+     * For instance, if the remote is setting up a file transfer request and is about to pick a client and if you make
+     * this request in that timespan, this will invoke
+     * {@link TransportSeat#handleGuidanceRequest(CommunicationBridge, Client, ClientAddress, Direction)} method on
+     * the remote, and it will choose you.
+     *
+     * @param direction Of 'yours' (not reversed) that the remote should respond to.
+     * @return The result which also contains the response the remote sent. The actual result will be
+     * {@link GuidanceResult#result} which should be preceded by {@link #proceed(TransportSeat, GuidanceResult)}
+     * in order to complete.
+     * @throws IOException       If an IO error occurs.
+     * @throws JSONException     If something goes wrong when creating JSON object.
+     * @throws ProtocolException When there is a communication error due to misconfiguration.
+     */
+    public GuidanceResult requestGuidance(@NotNull Direction direction) throws JSONException, IOException,
+            ProtocolException
+    {
+        send(true, new JSONObject()
+                .put(Keyword.REQUEST, Keyword.REQUEST_GUIDANCE)
+                .put(Keyword.DIRECTION, direction.protocolValue));
+
+        JSONObject response = Responses.receiveChecked(getActiveConnection(), getRemoteClient());
+
+        return new GuidanceResult(Responses.getResult(response), response);
     }
 
     /**

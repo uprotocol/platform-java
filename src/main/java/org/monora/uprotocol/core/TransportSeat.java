@@ -53,29 +53,6 @@ public interface TransportSeat
             throws PersistenceException, ProtocolException;
 
     /**
-     * The remote wants you to notice it, and if you are about to pick a client, it should be the one you might want to
-     * pick.
-     * <p>
-     * If the request is successful, you should use the bridge to make the request that you were going to do after
-     * picking a client. If it is unsuccessful (e.g., the remote is standing in the same direction as you are), you
-     * should send 'false' using {@link CommunicationBridge#send(boolean)}.
-     * <p>
-     * On a successful request, you can perform any request that you can normally do after connecting using
-     * {@link CommunicationBridge#connect(ConnectionFactory, PersistenceProvider, InetAddress)}.
-     *
-     * @param bridge        The bridge that speaks on behalf of you when making requests.
-     * @param client        That wants to be noticed.
-     * @param clientAddress Where that client resides.
-     * @param direction     Of the remote.
-     * @throws IOException       If an IO error occurs.
-     * @throws ProtocolException If something related to permissions or similar goes wrong.
-     * @see CommunicationBridge#requestAcquaintance(TransportSeat, Direction)
-     */
-    void handleAcquaintanceRequest(@NotNull CommunicationBridge bridge, @NotNull Client client,
-                                   @NotNull ClientAddress clientAddress, @NotNull Direction direction)
-            throws IOException, ProtocolException;
-
-    /**
      * Handle the clipboard request.
      *
      * @param client  That sent the request.
@@ -131,6 +108,29 @@ public interface TransportSeat
      * @see CommunicationBridge#requestNotifyTransferRejection(long)
      */
     boolean handleFileTransferRejection(@NotNull Client client, long groupId);
+
+    /**
+     * The remote wants you to notice it, and if you are about to pick a client, it should be the one you might want to
+     * pick.
+     * <p>
+     * If the request is successful, you should use the bridge to make the request that you were going to do after
+     * picking a client. If it is unsuccessful (e.g., the remote is standing in the same direction as you are), you
+     * should send 'false' using {@link CommunicationBridge#send(boolean)}.
+     * <p>
+     * On a successful request, you can perform any request that you can normally do after connecting using
+     * {@link CommunicationBridge#connect(ConnectionFactory, PersistenceProvider, InetAddress)}.
+     *
+     * @param bridge        The bridge that speaks on behalf of you when making requests.
+     * @param client        That wants to be noticed.
+     * @param clientAddress Where that client resides.
+     * @param direction     Of the remote.
+     * @throws IOException       If an IO error occurs.
+     * @throws ProtocolException If something related to permissions or similar goes wrong.
+     * @see CommunicationBridge#requestGuidance(Direction)
+     */
+    void handleGuidanceRequest(@NotNull CommunicationBridge bridge, @NotNull Client client,
+                               @NotNull ClientAddress clientAddress, @NotNull Direction direction)
+            throws IOException, ProtocolException;
 
     /**
      * Check whether there is an ongoing transfer for the given parameters.

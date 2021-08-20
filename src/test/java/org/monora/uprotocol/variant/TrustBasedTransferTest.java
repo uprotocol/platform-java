@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.io.StreamDescriptor;
 import org.monora.uprotocol.core.protocol.Direction;
+import org.monora.uprotocol.core.protocol.communication.GuidanceResult;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.variant.holder.TransferHolder;
@@ -71,7 +72,7 @@ public class TrustBasedTransferTest extends DefaultTestBase
     }
 
     @Test
-    public void acquaintanceGuidedTransferRequestTest() throws IOException, InterruptedException, ProtocolException,
+    public void guidedTransferRequestTest() throws IOException, InterruptedException, ProtocolException,
             CertificateException
     {
         secondarySession.start();
@@ -80,10 +81,12 @@ public class TrustBasedTransferTest extends DefaultTestBase
         itemList.add(demoTransferItem1);
         itemList.add(demoTransferItem2);
 
-        secondarySeat.transferRequestOnAcquaintance = new TransferRequestHolder(groupId, itemList);
+        secondarySeat.transferRequestOnGuidance = new TransferRequestHolder(groupId, itemList);
 
         try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
-            bridge.requestAcquaintance(primarySeat, Direction.Incoming);
+            GuidanceResult guidanceResult = bridge.requestGuidance(Direction.Incoming);
+            Assert.assertTrue("The result should be true", guidanceResult.result);
+            bridge.proceed(primarySeat, guidanceResult);
         } finally {
             secondarySession.stop();
         }
@@ -100,7 +103,7 @@ public class TrustBasedTransferTest extends DefaultTestBase
     }
 
     @Test
-    public void acquaintanceGuidedTransferTest() throws IOException, InterruptedException, ProtocolException,
+    public void guidedTransferTest() throws IOException, InterruptedException, ProtocolException,
             CertificateException
     {
         secondarySession.start();
@@ -109,11 +112,13 @@ public class TrustBasedTransferTest extends DefaultTestBase
         itemList.add(demoTransferItem1);
         itemList.add(demoTransferItem2);
 
-        secondarySeat.transferRequestOnAcquaintance = new TransferRequestHolder(groupId, itemList);
+        secondarySeat.transferRequestOnGuidance = new TransferRequestHolder(groupId, itemList);
         primarySeat.startTransferByDefault = true;
 
         try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
-            bridge.requestAcquaintance(primarySeat, Direction.Incoming);
+            GuidanceResult guidanceResult = bridge.requestGuidance(Direction.Incoming);
+            Assert.assertTrue("The result should be true", guidanceResult.result);
+            bridge.proceed(primarySeat, guidanceResult);
         } finally {
             secondarySession.stop();
         }

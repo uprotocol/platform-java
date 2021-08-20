@@ -2,7 +2,6 @@ package org.monora.uprotocol.variant;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSeat;
 import org.monora.uprotocol.core.protocol.Client;
@@ -32,7 +31,7 @@ public class DefaultTransportSeat implements TransportSeat
 
     public boolean startTransferByDefault = false;
 
-    public @Nullable TransferRequestHolder transferRequestOnAcquaintance = null;
+    public @Nullable TransferRequestHolder transferRequestOnGuidance = null;
 
     public @Nullable ClipboardHolder requestedClipboard = null;
 
@@ -55,11 +54,11 @@ public class DefaultTransportSeat implements TransportSeat
     }
 
     @Override
-    public void handleAcquaintanceRequest(@NotNull CommunicationBridge bridge, @NotNull Client client,
-                                          @NotNull ClientAddress clientAddress, @NotNull Direction direction)
+    public void handleGuidanceRequest(@NotNull CommunicationBridge bridge, @NotNull Client client,
+                                      @NotNull ClientAddress clientAddress, @NotNull Direction direction)
             throws IOException
     {
-        final @Nullable TransferRequestHolder holder = transferRequestOnAcquaintance;
+        final @Nullable TransferRequestHolder holder = transferRequestOnGuidance;
         if (holder != null) {
             try {
                 if (bridge.requestFileTransfer(holder.groupId, holder.list, null)) {

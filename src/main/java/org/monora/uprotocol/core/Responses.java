@@ -147,9 +147,9 @@ public class Responses
                 bridge.send(transportSeat.handleClipboardRequest(client, content, type));
                 break;
             }
-            case (Keyword.REQUEST_ACQUAINTANCE): {
+            case (Keyword.REQUEST_GUIDANCE): {
                 Direction direction = Direction.from(response.getString(Keyword.DIRECTION));
-                transportSeat.handleAcquaintanceRequest(bridge, client, clientAddress, direction);
+                transportSeat.handleGuidanceRequest(bridge, client, clientAddress, direction);
                 break;
             }
             case (Keyword.REQUEST_TRANSFER_START): {
