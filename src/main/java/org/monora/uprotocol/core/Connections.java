@@ -10,6 +10,17 @@ import java.io.IOException;
 public class Connections
 {
     /**
+     * Checks whether the given integer is an internet port.
+     *
+     * @param port To check.
+     * @return True if the given integer is a possible internet port.
+     */
+    public static boolean isPort(int port)
+    {
+        return port >= 0 && port <= 0xFFFF;
+    }
+
+    /**
      * Check whether an error that occurred when connecting to a remote was related to the connection but not
      * to the remote itself.
      * <p>

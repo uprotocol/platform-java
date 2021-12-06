@@ -21,13 +21,13 @@ package org.monora.uprotocol.core.spec.v1;
 /**
  * uprotocol keywords as constants.
  */
-public class Keyword
-{
+public class Keyword {
     public static final String
             CLIENT_MANUFACTURER = "manufacturer",
             CLIENT_NICKNAME = "nickname",
             CLIENT_PICTURE = "picture",
             CLIENT_PIN = "pin",
+            CLIENT_CUSTOM_PORT = "port",
             CLIENT_PRODUCT = "product",
             CLIENT_PROTOCOL_VERSION = "protocolVersion",
             CLIENT_PROTOCOL_VERSION_MIN = "minimumProtocolVersion",

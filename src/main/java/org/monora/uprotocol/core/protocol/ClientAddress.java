@@ -1,6 +1,7 @@
 package org.monora.uprotocol.core.protocol;
 
 import org.jetbrains.annotations.NotNull;
+import org.monora.uprotocol.core.spec.v1.Config;
 
 import java.net.InetAddress;
 
@@ -37,6 +38,14 @@ public interface ClientAddress
     @NotNull String getClientAddressOwnerUid();
 
     /**
+     * The port that the uprotocol is running on, usually corresponds to {@link Config#PORT_UPROTOCOL}.
+     *
+     * @return The port.
+     * @see #setClientAddressPort(int)
+     */
+    int getClientAddressPort();
+
+    /**
      * Change the address of this instance.
      *
      * @param inetAddress The internet address.
@@ -60,4 +69,12 @@ public interface ClientAddress
      * @see System#currentTimeMillis()
      */
     void setClientAddressOwnerUid(@NotNull String clientUid);
+
+    /**
+     * Change the port of this instance.
+     *
+     * @param port The port.
+     * @see #getClientAddressPort()
+     */
+    void setClientAddressPort(int port);
 }

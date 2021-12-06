@@ -115,7 +115,7 @@ public interface TransportSeat
      * should send 'false' using {@link CommunicationBridge#send(boolean)}.
      * <p>
      * On a successful request, you can perform any request that you can normally do after connecting using
-     * {@link CommunicationBridge#connect(ConnectionFactory, PersistenceProvider, InetAddress)}.
+     * {@link CommunicationBridge#connect(ConnectionFactory, PersistenceProvider, java.net.InetSocketAddress)}.
      *
      * @param bridge        The bridge that speaks on behalf of you when making requests.
      * @param client        That wants to be noticed.

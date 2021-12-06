@@ -6,6 +6,7 @@ import org.monora.uprotocol.core.TransportSession;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
+import org.monora.uprotocol.core.spec.v1.Config;
 import org.monora.uprotocol.variant.DefaultConnectionFactory;
 import org.monora.uprotocol.variant.DefaultTransportSeat;
 import org.monora.uprotocol.variant.persistence.BasePersistenceProvider;
@@ -14,6 +15,7 @@ import org.monora.uprotocol.variant.persistence.SecondaryPersistenceProvider;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.security.cert.CertificateException;
 
@@ -28,19 +30,21 @@ public class DefaultTestBase
             primarySeat);
     protected final TransportSession secondarySession = new TransportSession(connectionFactory, secondaryPersistence,
             secondarySeat);
-    protected final InetAddress clientAddress;
+    protected final InetAddress localHost;
+    protected final InetSocketAddress clientAddress;
 
     public DefaultTestBase()
     {
         try {
-            clientAddress = InetAddress.getByName("127.0.0.1");
+            localHost = InetAddress.getByName("127.0.0.1");
+            clientAddress = new InetSocketAddress(localHost, Config.PORT_UPROTOCOL);
         } catch (UnknownHostException e) {
             throw new RuntimeException("Could not gather the loopback address");
         }
     }
 
     protected @NotNull CommunicationBridge openConnection(@NotNull PersistenceProvider persistenceProvider,
-                                                          @NotNull InetAddress address) throws IOException,
+                                                          @NotNull InetSocketAddress address) throws IOException,
             ProtocolException, CertificateException
     {
         return CommunicationBridge.connect(connectionFactory, persistenceProvider, address);

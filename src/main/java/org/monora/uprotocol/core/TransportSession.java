@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.monora.coolsocket.core.CoolSocket;
-import org.monora.coolsocket.core.server.ConnectionManager;
 import org.monora.coolsocket.core.session.ActiveConnection;
 import org.monora.coolsocket.core.session.CancelledException;
 import org.monora.coolsocket.core.session.ClosedException;
@@ -20,6 +19,8 @@ import org.monora.uprotocol.core.spec.v1.Config;
 import org.monora.uprotocol.core.spec.v1.Keyword;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.logging.Level;
 
 /**
@@ -43,6 +44,30 @@ public class TransportSession extends CoolSocket
     private final @NotNull TransportSeat transportSeat;
 
     /**
+     * Create a new session instance with a custom address. For the default address, use
+     * {@link #TransportSession(ConnectionFactory, PersistenceProvider, TransportSeat)}.
+     * <p>
+     * This should not be preferred for usage other than testing when used with a port that is not
+     * {@link Config#PORT_UPROTOCOL} since most clients will be looking for a default port when network discovery
+     * services are not available.
+     *
+     * @param socketAddress       To run the server on.
+     * @param connectionFactory   To start and set up connections with.
+     * @param persistenceProvider Where persistent data will be stored.
+     * @param transportSeat       That will manage the requests and do appropriate actions.
+     */
+    public TransportSession(@NotNull SocketAddress socketAddress, @NotNull ConnectionFactory connectionFactory,
+                            @NotNull PersistenceProvider persistenceProvider, @NotNull TransportSeat transportSeat)
+    {
+        super(socketAddress);
+
+        getConfigFactory().setReadTimeout(Config.TIMEOUT_SOCKET_DEFAULT);
+        this.connectionFactory = connectionFactory;
+        this.persistenceProvider = persistenceProvider;
+        this.transportSeat = transportSeat;
+    }
+
+    /**
      * Create a new session instance.
      *
      * @param connectionFactory   To start and set up connections with.
@@ -52,18 +77,14 @@ public class TransportSession extends CoolSocket
     public TransportSession(@NotNull ConnectionFactory connectionFactory,
                             @NotNull PersistenceProvider persistenceProvider, @NotNull TransportSeat transportSeat)
     {
-        super(Config.PORT_UPROTOCOL);
-
-        getConfigFactory().setReadTimeout(Config.TIMEOUT_SOCKET_DEFAULT);
-        this.connectionFactory = connectionFactory;
-        this.persistenceProvider = persistenceProvider;
-        this.transportSeat = transportSeat;
+        this(new InetSocketAddress(connectionFactory.getServicePort()), connectionFactory, persistenceProvider,
+                transportSeat);
     }
 
     @Override
     public void onConnected(@NotNull ActiveConnection activeConnection)
     {
-        final JSONObject clientIndex = persistenceProvider.clientAsJson(0);
+        final JSONObject clientIndex = persistenceProvider.clientAsJson(0, getLocalPort());
 
         try {
             activeConnection.reply(persistenceProvider.getClientUid());
@@ -82,8 +103,10 @@ public class TransportSession extends CoolSocket
             }
 
             final String clientUid = response.getString(Keyword.CLIENT_UID);
+            final int port = response.has(Keyword.CLIENT_CUSTOM_PORT)
+                    ? response.getInt(Keyword.CLIENT_CUSTOM_PORT) : Config.PORT_UPROTOCOL;
             final ClientAddress clientAddress = persistenceProvider.createClientAddressFor(
-                    activeConnection.getAddress(), clientUid);
+                    activeConnection.getAddress(), port, clientUid);
             final Client client = ClientLoader.loadAsServer(persistenceProvider, response, clientUid, clientAddress,
                     hasPin);
 
@@ -99,8 +122,9 @@ public class TransportSession extends CoolSocket
                 return;
             }
 
-            handleRequest(new CommunicationBridge(persistenceProvider, activeConnection, client, clientAddress),
-                    client, clientAddress, hasPin, request);
+            CommunicationBridge bridge = new CommunicationBridge(connectionFactory, persistenceProvider,
+                    activeConnection, client, clientAddress);
+            handleRequest(bridge, client, clientAddress, hasPin, request);
         } catch (CredentialsException e) {
             if (e.firstTime) {
                 transportSeat.notifyClientCredentialsChanged(e.client);

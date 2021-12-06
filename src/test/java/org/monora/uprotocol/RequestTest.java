@@ -8,8 +8,10 @@ import org.monora.coolsocket.core.session.CancelledException;
 import org.monora.coolsocket.core.session.ClosedException;
 import org.monora.uprotocol.core.ClientLoader;
 import org.monora.uprotocol.core.CommunicationBridge;
+import org.monora.uprotocol.core.TransportSession;
 import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.protocol.Client;
+import org.monora.uprotocol.core.protocol.ClientAddress;
 import org.monora.uprotocol.core.protocol.ClipboardType;
 import org.monora.uprotocol.core.protocol.Direction;
 import org.monora.uprotocol.core.protocol.communication.ContentException;
@@ -21,16 +23,19 @@ import org.monora.uprotocol.core.protocol.communication.client.DifferentRemoteCl
 import org.monora.uprotocol.core.protocol.communication.client.UnauthorizedClientException;
 import org.monora.uprotocol.core.spec.v1.Keyword;
 import org.monora.uprotocol.core.transfer.TransferItem;
+import org.monora.uprotocol.variant.CustomPortConnectionFactory;
 import org.monora.uprotocol.variant.holder.ClipboardHolder;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
 import org.monora.uprotocol.variant.holder.TransferHolder;
 import org.monora.uprotocol.variant.test.DefaultTestBase;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 public class RequestTest extends DefaultTestBase
 {
@@ -40,8 +45,7 @@ public class RequestTest extends DefaultTestBase
     {
         primarySession.start();
 
-        try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
-                clientAddress)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             Assert.assertTrue("Remote should send a positive message.",
                     bridge.requestTest());
 
@@ -67,8 +71,7 @@ public class RequestTest extends DefaultTestBase
     {
         primarySession.start();
 
-        try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
-                clientAddress)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             Assert.assertTrue("Remote should send a positive message.",
                     bridge.requestTest());
         } finally {
@@ -293,8 +296,7 @@ public class RequestTest extends DefaultTestBase
     {
         primarySession.start();
 
-        try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
-                clientAddress)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             Assert.assertTrue("Remote should send a positive message.", bridge.requestTest());
         }
 
@@ -305,8 +307,7 @@ public class RequestTest extends DefaultTestBase
         secondaryOnPrimary.setClientBlocked(true);
         primaryPersistence.persist(secondaryOnPrimary, true);
 
-        try (CommunicationBridge bridge = CommunicationBridge.connect(connectionFactory, secondaryPersistence,
-                clientAddress)) {
+        try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             Assert.fail("This scope should not get executed as the above scope should fail.");
         } finally {
             primarySession.stop();
@@ -570,6 +571,54 @@ public class RequestTest extends DefaultTestBase
         } finally {
             primarySession.stop();
         }
+    }
+
+    @Test
+    public void serveOnCustomPortTest() throws IOException, InterruptedException, ProtocolException,
+            CertificateException
+    {
+        final int customPort = 56565;
+        final CustomPortConnectionFactory customConnectionFactory = new CustomPortConnectionFactory(customPort);
+        final TransportSession session = new TransportSession(customConnectionFactory, primaryPersistence,
+                primarySeat);
+        final CommunicationBridge.Builder builder = new CommunicationBridge.Builder(connectionFactory,
+                secondaryPersistence, new InetSocketAddress(this.localHost, customPort));
+
+        session.start();
+
+        try (CommunicationBridge bridge = builder.connect()) {
+            Assert.assertTrue("Remote should a send positive result", bridge.requestTest());
+        } finally {
+            session.stop();
+        }
+    }
+
+    @Test
+    public void serverPersistsClientsCustomPort() throws IOException, InterruptedException, ProtocolException,
+            CertificateException
+    {
+        final int customPort = 56565;
+        final CustomPortConnectionFactory customConnectionFactory = new CustomPortConnectionFactory(customPort);
+        final TransportSession session = new TransportSession(connectionFactory, primaryPersistence,
+                primarySeat);
+
+        session.start();
+
+        try (CommunicationBridge bridge = CommunicationBridge.connect(customConnectionFactory, secondaryPersistence,
+                clientAddress)) {
+            Assert.assertTrue("Remote should a send positive result", bridge.requestTest());
+        } finally {
+            session.stop();
+        }
+
+        Set<ClientAddress> addresses = primaryPersistence.getClientAddressList();
+        Assert.assertEquals("There should only be one address", 1, addresses.size());
+
+        ClientAddress address = addresses.iterator().next();
+
+        Assert.assertEquals("Remote client UID should match", address.getClientAddressOwnerUid(),
+                secondaryPersistence.getClientUid());
+        Assert.assertEquals("Ports should match", address.getClientAddressPort(), customPort);
     }
 
     @Test(expected = UnsupportedException.class)

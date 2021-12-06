@@ -47,6 +47,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -54,11 +55,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.monora.uprotocol.core.spec.v1.Config.PORT_UPROTOCOL;
 import static org.monora.uprotocol.core.spec.v1.Config.TIMEOUT_SOCKET_DEFAULT;
 
 public class CommunicationBridge implements Closeable
 {
+    private final @NotNull ConnectionFactory connectionFactory;
+
     private final @NotNull PersistenceProvider persistenceProvider;
 
     private final @NotNull ActiveConnection activeConnection;
@@ -72,15 +74,18 @@ public class CommunicationBridge implements Closeable
      * <p>
      * This assumes the connection is valid and open. If you need to open a connection, use {@link #connect}.
      *
+     * @param connectionFactory   To start and set up connections with.
      * @param persistenceProvider Where the persistent data is stored and queried.
      * @param activeConnection    Represents a valid connection to the remote client.
      * @param client              The remote that this client has connected to.
      * @param clientAddress       Where the remote client resides on the network.
      */
-    public CommunicationBridge(@NotNull PersistenceProvider persistenceProvider,
+    public CommunicationBridge(@NotNull ConnectionFactory connectionFactory,
+                               @NotNull PersistenceProvider persistenceProvider,
                                @NotNull ActiveConnection activeConnection, @NotNull Client client,
                                @NotNull ClientAddress clientAddress)
     {
+        this.connectionFactory = connectionFactory;
         this.persistenceProvider = persistenceProvider;
         this.activeConnection = activeConnection;
         this.client = client;
@@ -121,7 +126,7 @@ public class CommunicationBridge implements Closeable
      *
      * @param connectionFactory   To start and set up connections with.
      * @param persistenceProvider To store and query objects with.
-     * @param inetAddress         To connect to.
+     * @param address             To connect to.
      * @return The communication bridge to communicate with the remote.
      * @throws IOException                    If an IO error occurs.
      * @throws JSONException                  If something goes wrong when creating JSON object.
@@ -133,10 +138,10 @@ public class CommunicationBridge implements Closeable
      */
     public static @NotNull CommunicationBridge connect(@NotNull ConnectionFactory connectionFactory,
                                                        @NotNull PersistenceProvider persistenceProvider,
-                                                       @NotNull InetAddress inetAddress)
+                                                       @NotNull InetSocketAddress address)
             throws IOException, JSONException, ProtocolException, CertificateException
     {
-        return new Builder(connectionFactory, persistenceProvider, inetAddress).connect();
+        return new Builder(connectionFactory, persistenceProvider, address).connect();
     }
 
     static void convertToSSL(@NotNull ConnectionFactory connectionFactory,
@@ -244,15 +249,15 @@ public class CommunicationBridge implements Closeable
     }
 
     /**
-     * Open a CoolSocket connection using the default uprotocol port and timeout.
+     * Open a CoolSocket connection using a custom uprotocol and port.
      *
-     * @param inetAddress To connect to.
+     * @param socketAddress To connect to.
      * @return The object representing a valid connection.
      * @throws IOException If an IO error occurs.
      */
-    public static @NotNull ActiveConnection openConnection(@NotNull InetAddress inetAddress) throws IOException
+    public static @NotNull ActiveConnection openConnection(@NotNull SocketAddress socketAddress) throws IOException
     {
-        return ActiveConnection.connect(new InetSocketAddress(inetAddress, PORT_UPROTOCOL), TIMEOUT_SOCKET_DEFAULT);
+        return ActiveConnection.connect(socketAddress, TIMEOUT_SOCKET_DEFAULT);
     }
 
     /**
@@ -276,7 +281,8 @@ public class CommunicationBridge implements Closeable
                     getRemoteClientAddress(), true, guidanceResult.response);
         } catch (CancelledException ignored) {
         } catch (Exception e) {
-            Responses.send(activeConnection, e, persistenceProvider.clientAsJson(0));
+            Responses.send(activeConnection, e, persistenceProvider.clientAsJson(0,
+                    connectionFactory.getServicePort()));
         }
     }
 
@@ -583,7 +589,7 @@ public class CommunicationBridge implements Closeable
 
         private final @NotNull PersistenceProvider persistenceProvider;
 
-        private final @NotNull List<InetAddress> addressList;
+        private final @NotNull List<InetSocketAddress> addressList;
 
         private @Nullable String clientUid;
 
@@ -600,11 +606,11 @@ public class CommunicationBridge implements Closeable
          */
         public Builder(@NotNull ConnectionFactory connectionFactory,
                        @NotNull PersistenceProvider persistenceProvider,
-                       @NotNull List<InetAddress> addressList)
+                       @NotNull List<InetSocketAddress> addressList)
         {
             this.connectionFactory = connectionFactory;
             this.persistenceProvider = persistenceProvider;
-            this.addressList = addressList;
+            this.addressList = Collections.unmodifiableList(addressList);
         }
 
         /**
@@ -612,13 +618,13 @@ public class CommunicationBridge implements Closeable
          *
          * @param connectionFactory   To start and set up connections with.
          * @param persistenceProvider To store and query objects with.
-         * @param inetAddress         To connect to.
+         * @param address             To connect to.
          */
         public Builder(@NotNull ConnectionFactory connectionFactory,
                        @NotNull PersistenceProvider persistenceProvider,
-                       @NotNull InetAddress inetAddress)
+                       @NotNull InetSocketAddress address)
         {
-            this(connectionFactory, persistenceProvider, Collections.singletonList(inetAddress));
+            this(connectionFactory, persistenceProvider, Collections.singletonList(address));
         }
 
         /**
@@ -637,6 +643,7 @@ public class CommunicationBridge implements Closeable
         {
             ActiveConnection activeConnection = openConnection();
             InetAddress address = activeConnection.getAddress();
+            int port = activeConnection.getSocket().getPort();
             String remoteClientUid = activeConnection.receive().getAsString();
 
             if (clientUid != null && !clientUid.equals(remoteClientUid)) {
@@ -644,10 +651,10 @@ public class CommunicationBridge implements Closeable
                 throw new DifferentRemoteClientException(clientUid, remoteClientUid, address);
             }
 
-            Responses.send(activeConnection, true, persistenceProvider.clientAsJson(pin));
+            Responses.send(activeConnection, true, persistenceProvider.clientAsJson(pin, connectionFactory.getServicePort()));
 
             JSONObject jsonObject = activeConnection.receive().getAsJson();
-            ClientAddress clientAddress = persistenceProvider.createClientAddressFor(address, remoteClientUid);
+            ClientAddress clientAddress = persistenceProvider.createClientAddressFor(address, port, remoteClientUid);
             Client client = ClientLoader.loadAsClient(persistenceProvider, jsonObject, remoteClientUid, clientAddress,
                     clearBlockedStatus);
 
@@ -662,14 +669,15 @@ public class CommunicationBridge implements Closeable
 
                 throw e;
             }
-            return new CommunicationBridge(persistenceProvider, activeConnection, client, clientAddress);
+            return new CommunicationBridge(connectionFactory, persistenceProvider, activeConnection, client,
+                    clientAddress);
         }
 
         private @NotNull ActiveConnection openConnection() throws IOException
         {
             List<IOException> underlyingExceptionList = new ArrayList<>();
 
-            for (InetAddress address : addressList) {
+            for (InetSocketAddress address : addressList) {
                 try {
                     return connectionFactory.openConnection(address);
                 } catch (IOException e) {

@@ -9,13 +9,17 @@ public class DefaultClientAddress implements ClientAddress
 {
     private @NotNull InetAddress inetAddress;
 
+    private int port;
+
     private @NotNull String clientUid;
 
     private long lastUsageTime;
 
-    public DefaultClientAddress(@NotNull InetAddress inetAddress, @NotNull String clientUid, long lastUsageTime)
+    public DefaultClientAddress(@NotNull InetAddress inetAddress, int port, @NotNull String clientUid,
+                                long lastUsageTime)
     {
         this.inetAddress = inetAddress;
+        this.port = port;
         this.clientUid = clientUid;
         this.lastUsageTime = lastUsageTime;
     }
@@ -48,6 +52,11 @@ public class DefaultClientAddress implements ClientAddress
     }
 
     @Override
+    public int getClientAddressPort() {
+        return port;
+    }
+
+    @Override
     public void setClientAddress(@NotNull InetAddress inetAddress)
     {
         this.inetAddress = inetAddress;
@@ -63,5 +72,10 @@ public class DefaultClientAddress implements ClientAddress
     public void setClientAddressOwnerUid(@NotNull String clientUid)
     {
         this.clientUid = clientUid;
+    }
+
+    @Override
+    public void setClientAddressPort(int port) {
+        this.port = port;
     }
 }

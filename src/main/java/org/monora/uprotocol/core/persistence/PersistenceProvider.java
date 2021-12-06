@@ -64,10 +64,11 @@ public interface PersistenceProvider
      * right PIN and consuming it.
      *
      * @param pin The PIN to bypass errors like not matching keys. This will also flag this client as trusted.
+     * @param port That the client is running on and that is reported to the remote enabling it to connect back.
      * @return The JSON object
      * @throws JSONException If the creation of the JSON object fails for some reason.
      */
-    default @NotNull JSONObject clientAsJson(int pin) throws JSONException
+    default @NotNull JSONObject clientAsJson(int pin, int port) throws JSONException
     {
         Client client = getClient();
         byte[] picture = getClientPicture(client);
@@ -85,6 +86,7 @@ public interface PersistenceProvider
                 .put(Keyword.CLIENT_PROTOCOL_VERSION, client.getClientProtocolVersion())
                 .put(Keyword.CLIENT_PROTOCOL_VERSION_MIN, client.getClientProtocolVersionMin())
                 .put(Keyword.CLIENT_REVISION_PICTURE, client.getClientRevisionOfPicture())
+                .put(Keyword.CLIENT_CUSTOM_PORT, port)
                 .put(Keyword.CLIENT_PIN, pin);
     }
 
@@ -100,10 +102,11 @@ public interface PersistenceProvider
      * Create client address instance.
      *
      * @param address   To which this will be pointing.
+     * @param port      That the uprotocol is serving.
      * @param clientUid That owns the address.
      * @return The client address instance.
      */
-    @NotNull ClientAddress createClientAddressFor(@NotNull InetAddress address, @NotNull String clientUid);
+    @NotNull ClientAddress createClientAddressFor(@NotNull InetAddress address, int port, @NotNull String clientUid);
 
     /**
      * Create a client instance for the given input.

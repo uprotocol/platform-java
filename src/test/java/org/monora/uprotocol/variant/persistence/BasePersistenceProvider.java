@@ -172,9 +172,10 @@ public abstract class BasePersistenceProvider implements PersistenceProvider {
     }
 
     @Override
-    public @NotNull ClientAddress createClientAddressFor(@NotNull InetAddress address, @NotNull String clientUid)
+    public @NotNull ClientAddress createClientAddressFor(@NotNull InetAddress address, int port,
+                                                         @NotNull String clientUid)
     {
-        return new DefaultClientAddress(address, clientUid, System.currentTimeMillis());
+        return new DefaultClientAddress(address, port, clientUid, System.currentTimeMillis());
     }
 
     @Override

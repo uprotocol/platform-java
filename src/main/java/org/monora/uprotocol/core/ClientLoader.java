@@ -11,7 +11,7 @@ import org.monora.uprotocol.core.protocol.communication.client.BlockedRemoteClie
 import org.monora.uprotocol.core.spec.v1.Keyword;
 
 import java.io.IOException;
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.security.cert.CertificateException;
 
 /**
@@ -135,7 +135,7 @@ public class ClientLoader
      *
      * @param connectionFactory   That will set up the connection.
      * @param persistenceProvider That stores the persistent data.
-     * @param inetAddress         Where the remote client resides on the network.
+     * @param address             Where the remote client resides on the network.
      * @return The remote client.
      * @throws IOException          If an IO related error occurs.
      * @throws ProtocolException    If a protocol related error occurs.
@@ -143,11 +143,11 @@ public class ClientLoader
      */
     public static @NotNull Client load(@NotNull ConnectionFactory connectionFactory,
                                        @NotNull PersistenceProvider persistenceProvider,
-                                       @NotNull InetAddress inetAddress)
+                                       @NotNull InetSocketAddress address)
             throws IOException, ProtocolException, CertificateException
     {
         CommunicationBridge.Builder builder = new CommunicationBridge.Builder(connectionFactory, persistenceProvider,
-                inetAddress);
+                address);
         builder.setClearBlockedStatus(false);
 
         try (CommunicationBridge bridge = builder.connect()) {

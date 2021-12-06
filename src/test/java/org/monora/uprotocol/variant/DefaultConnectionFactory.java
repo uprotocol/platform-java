@@ -6,13 +6,13 @@ import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
 
 import java.io.IOException;
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.List;
 
 public class DefaultConnectionFactory implements ConnectionFactory
 {
     @Override
-    public @NotNull ActiveConnection openConnection(@NotNull InetAddress address) throws IOException
+    public @NotNull ActiveConnection openConnection(@NotNull InetSocketAddress address) throws IOException
     {
         return CommunicationBridge.openConnection(address);
     }
