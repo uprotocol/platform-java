@@ -1,4 +1,4 @@
-package org.monora.uprotocol.variant;
+package org.monora.uprotocol;
 
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;

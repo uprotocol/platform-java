@@ -1,4 +1,4 @@
-package org.monora.uprotocol.variant.persistence;
+package org.monora.uprotocol.variant.holder;
 
 import org.jetbrains.annotations.NotNull;
 import org.monora.uprotocol.core.protocol.Client;
