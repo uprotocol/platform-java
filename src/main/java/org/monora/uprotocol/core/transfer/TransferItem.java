@@ -2,7 +2,6 @@ package org.monora.uprotocol.core.transfer;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Direction;
 
 /**
@@ -152,7 +151,7 @@ public interface TransferItem
          * In the case of incoming files, if you force set this state, keep the temporary file location as we can later
          * restart this item, resuming from where it was left.
          * <p>
-         * This is the only state that will feed the {@link PersistenceProvider#getFirstReceivableItem(long)}
+         * This is the only state that will feed the {@link TransferOperation#getFirstReceivableItem()}
          * invocations.
          */
         Pending(Constants.PENDING),

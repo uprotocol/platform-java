@@ -3,7 +3,6 @@ package org.monora.uprotocol.variant.persistence;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.monora.uprotocol.core.io.StreamDescriptor;
-import org.monora.uprotocol.core.persistence.PersistenceException;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.Client;
 import org.monora.uprotocol.core.protocol.ClientAddress;
@@ -45,8 +44,7 @@ import java.util.*;
  * <p>
  * This will be slow and is not meant to be used in production.
  */
-public abstract class BasePersistenceProvider implements PersistenceProvider
-{
+public abstract class BasePersistenceProvider implements PersistenceProvider {
     private final Set<@NotNull Client> clientList = new HashSet<>();
     private final Set<@NotNull ClientAddress> clientAddressList = new HashSet<>();
     private final List<@NotNull TransferHolder> transferHolderList = new ArrayList<>();
@@ -224,36 +222,6 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
     }
 
     @Override
-    public @NotNull StreamDescriptor getDescriptorFor(@NotNull TransferItem transferItem)
-    {
-        synchronized (streamDescriptorList) {
-            for (MemoryStreamDescriptor streamDescriptor : streamDescriptorList) {
-                if (streamDescriptor.transferItem.equals(transferItem))
-                    return streamDescriptor;
-            }
-
-            MemoryStreamDescriptor descriptor = MemoryStreamDescriptor.newInstance(transferItem);
-            streamDescriptorList.add(descriptor);
-            return descriptor;
-        }
-    }
-
-    @Override
-    public @Nullable TransferItem getFirstReceivableItem(long groupId)
-    {
-        synchronized (transferHolderList) {
-            for (TransferHolder holder : transferHolderList) {
-                if (Direction.Incoming.equals(holder.item.getItemDirection())
-                        && holder.item.getItemGroupId() == groupId
-                        && TransferItem.State.Pending.equals(holder.state)) {
-                    return holder.item;
-                }
-            }
-        }
-        return null;
-    }
-
-    @Override
     public int getNetworkPin()
     {
         if (networkPin == 0) {
@@ -306,19 +274,17 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         }
     }
 
-    @Override
-    public @NotNull TransferItem loadTransferItem(@NotNull String clientUid, long groupId, long id,
-                                                  @NotNull Direction direction) throws PersistenceException
-    {
-        synchronized (transferHolderList) {
-            for (TransferHolder holder : transferHolderList) {
-                if (holder.item.getItemGroupId() == groupId && holder.item.getItemId() == id
-                        && holder.item.getItemDirection().equals(direction) && holder.clientUid.equals(clientUid))
-                    return holder.item;
+    public MemoryStreamDescriptor getOrInitializeDescriptorFor(@NotNull TransferItem transferItem) {
+        synchronized (streamDescriptorList) {
+            for (MemoryStreamDescriptor streamDescriptor : streamDescriptorList) {
+                if (streamDescriptor.transferItem.equals(transferItem))
+                    return streamDescriptor;
             }
-        }
 
-        throw new PersistenceException("There is no transfer data matching the given parameters.");
+            MemoryStreamDescriptor descriptor = MemoryStreamDescriptor.newInstance(transferItem);
+            streamDescriptorList.add(descriptor);
+            return descriptor;
+        }
     }
 
     @Override
@@ -423,19 +389,6 @@ public abstract class BasePersistenceProvider implements PersistenceProvider
         gotInvalidationRequest = true;
         synchronized (invalidationRequestList) {
             invalidationRequestList.add(clientUid);
-        }
-    }
-
-    @Override
-    public void setState(@NotNull String clientUid, @NotNull TransferItem item, @NotNull TransferItem.State state,
-                         @Nullable Exception e)
-    {
-        synchronized (transferHolderList) {
-            for (TransferHolder holder : transferHolderList) {
-                if (clientUid.equals(holder.clientUid) && item.equals(holder.item)) {
-                    holder.state = state;
-                }
-            }
         }
     }
 }

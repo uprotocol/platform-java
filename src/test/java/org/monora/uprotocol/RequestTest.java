@@ -410,7 +410,8 @@ public class RequestTest extends DefaultTestBase
             primarySession.stop();
         }
 
-        // TODO: 8/7/21 Check if the picture exists first.
+        Assert.assertTrue("The client should have a picture",
+                secondaryPersistence.hasPicture(primaryPersistence.getClient()));
         Client primaryOnSecondary = secondaryPersistence.getClientFor(primaryPersistence.getClientUid());
         Assert.assertNotNull("The primary client should exist on secondary", primaryOnSecondary);
         Assert.assertTrue("The primary client should have a picture",
@@ -517,7 +518,10 @@ public class RequestTest extends DefaultTestBase
             primarySession.stop();
         }
 
-        Assert.assertTrue("Both parties should be warned", primaryPersistence.gotInvalidationRequest());
+        Assert.assertTrue("Primary client should have been warned",
+                primaryPersistence.gotInvalidationRequest());
+        Assert.assertTrue("Secondary client should have been warned",
+                secondaryPersistence.gotInvalidationRequest());
     }
 
     @Test
@@ -540,7 +544,10 @@ public class RequestTest extends DefaultTestBase
             primarySession.stop();
         }
 
-        Assert.assertTrue("Both parties should be warned", primaryPersistence.gotInvalidationRequest());
+        Assert.assertTrue("Primary client should have been warned",
+                primaryPersistence.gotInvalidationRequest());
+        Assert.assertTrue("Secondary client should have been warned",
+                secondaryPersistence.gotInvalidationRequest());
     }
 
     @Test

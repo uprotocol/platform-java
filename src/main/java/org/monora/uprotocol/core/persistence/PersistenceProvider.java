@@ -195,28 +195,6 @@ public interface PersistenceProvider
     @NotNull String getClientUid();
 
     /**
-     * This will return the descriptor that points to the file that is received or sent.
-     * <p>
-     * For instance, this can be a file descriptor or a network stream of which only the name, size and location are
-     * known.
-     *
-     * @param transferItem For which the descriptor will be generated.
-     * @return The generated descriptor.
-     * @throws IOException When this fails to create a descriptor for this transfer item.
-     * @see #openInputStream(StreamDescriptor)
-     * @see #openOutputStream(StreamDescriptor)
-     */
-    @NotNull StreamDescriptor getDescriptorFor(@NotNull TransferItem transferItem) throws IOException;
-
-    /**
-     * This will return the first valid item that that this side can receive.
-     *
-     * @param groupId Points to {@link TransferItem#getItemGroupId()}.
-     * @return The transfer receivable item or null if there are none.
-     */
-    @Nullable TransferItem getFirstReceivableItem(long groupId);
-
-    /**
      * This method is invoked when there is a new connection to the server.
      * <p>
      * This provides the PIN which may be delivered to the remote client via a QR code, or by other
@@ -340,19 +318,6 @@ public interface PersistenceProvider
     boolean hasRequestForInvalidationOfCredentials(@NotNull String clientUid);
 
     /**
-     * Load transfer item for the given parameters.
-     *
-     * @param clientUid Owning the item.
-     * @param groupId   Points to {@link TransferItem#getItemGroupId()}
-     * @param id        Points to {@link TransferItem#getItemId()}.
-     * @param direction Specifying whether this is an incoming or outgoing operation.
-     * @return The transfer item that points to the given parameters or null if there is no match.
-     * @throws PersistenceException When the given parameters don't point to a valid item.
-     */
-    @NotNull TransferItem loadTransferItem(@NotNull String clientUid, long groupId, long id,
-                                           @NotNull Direction direction) throws PersistenceException;
-
-    /**
      * Open the input stream for the given descriptor.
      *
      * @param descriptor Of which the input stream will be opened.
@@ -439,19 +404,4 @@ public interface PersistenceProvider
      * @see #approveInvalidationOfCredentials(Client)
      */
     void saveRequestForInvalidationOfCredentials(@NotNull String clientUid);
-
-    /**
-     * Change the state of the given item.
-     * <p>
-     * Note: this should set the state but should not update it since saving it is spared for
-     * {@link #persist(String, TransferItem)} unless the state is held on a different location.
-     *
-     * @param clientUid That owns the copy of the 'item'.
-     * @param item      Of which the given state will be applied.
-     * @param state     The level of invalidation.
-     * @param e         The nullable additional exception cause this state.
-     * @see TransferItem.State
-     */
-    void setState(@NotNull String clientUid, @NotNull TransferItem item, @NotNull TransferItem.State state,
-                  @Nullable Exception e);
 }
