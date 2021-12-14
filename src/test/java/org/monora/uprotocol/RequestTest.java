@@ -155,7 +155,7 @@ public class RequestTest extends DefaultTestBase
         try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
             if (bridge.requestFileTransferStart(transferHolder.item.getItemGroupId(),
                     transferHolder.item.getItemDirection())) {
-                primarySeat.beginFileTransfer(bridge, primaryPersistence.getClient(),
+                primarySeat.beginFileTransfer(bridge, secondaryPersistence.getClient(),
                         transferHolder.item.getItemGroupId(), transferHolder.item.getItemDirection());
             } else {
                 Assert.fail("Request for start should not fail");
