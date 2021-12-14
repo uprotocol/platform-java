@@ -1,14 +1,12 @@
 package org.monora.uprotocol.variant.test;
 
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
 import org.monora.uprotocol.core.CommunicationBridge;
 import org.monora.uprotocol.core.TransportSession;
 import org.monora.uprotocol.core.persistence.PersistenceProvider;
 import org.monora.uprotocol.core.protocol.ConnectionFactory;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.variant.DefaultConnectionFactory;
-import org.monora.uprotocol.variant.DefaultTransferOperation;
 import org.monora.uprotocol.variant.DefaultTransportSeat;
 import org.monora.uprotocol.variant.persistence.BasePersistenceProvider;
 import org.monora.uprotocol.variant.persistence.PrimaryPersistenceProvider;
@@ -22,12 +20,10 @@ import java.security.cert.CertificateException;
 public class DefaultTestBase
 {
     protected final ConnectionFactory connectionFactory = new DefaultConnectionFactory();
-    protected final DefaultTransferOperation transferOperation = new DefaultTransferOperation();
     protected final BasePersistenceProvider primaryPersistence = new PrimaryPersistenceProvider();
     protected final BasePersistenceProvider secondaryPersistence = new SecondaryPersistenceProvider();
-    protected final DefaultTransportSeat primarySeat = new DefaultTransportSeat(primaryPersistence, transferOperation);
-    protected final DefaultTransportSeat secondarySeat = new DefaultTransportSeat(secondaryPersistence,
-            transferOperation);
+    protected final DefaultTransportSeat primarySeat = new DefaultTransportSeat(primaryPersistence);
+    protected final DefaultTransportSeat secondarySeat = new DefaultTransportSeat(secondaryPersistence);
     protected final TransportSession primarySession = new TransportSession(connectionFactory, primaryPersistence,
             primarySeat);
     protected final TransportSession secondarySession = new TransportSession(connectionFactory, secondaryPersistence,

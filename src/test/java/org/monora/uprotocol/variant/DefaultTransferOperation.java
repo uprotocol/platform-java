@@ -3,11 +3,24 @@ package org.monora.uprotocol.variant;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.monora.uprotocol.core.io.StreamDescriptor;
+import org.monora.uprotocol.core.persistence.PersistenceException;
+import org.monora.uprotocol.core.protocol.Direction;
 import org.monora.uprotocol.core.transfer.TransferItem;
 import org.monora.uprotocol.core.transfer.TransferOperation;
+import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
+import org.monora.uprotocol.variant.holder.TransferHolder;
+import org.monora.uprotocol.variant.persistence.BasePersistenceProvider;
+
+import java.util.List;
 
 public class DefaultTransferOperation implements TransferOperation
 {
+    private final @NotNull BasePersistenceProvider persistenceProvider;
+
+    private final @NotNull String clientUid;
+
+    private final long groupId;
+
     private @Nullable TransferItem transferItem;
 
     private long bytesOngoing;
@@ -16,7 +29,16 @@ public class DefaultTransferOperation implements TransferOperation
 
     private int count;
 
+    // TODO: 12/14/21 Add the test for debugCancelled variable.
     private boolean debugCancelled = false;
+
+    public DefaultTransferOperation(@NotNull BasePersistenceProvider persistenceProvider,
+                                    @NotNull String clientUid, long groupId)
+    {
+        this.persistenceProvider = persistenceProvider;
+        this.clientUid = clientUid;
+        this.groupId = groupId;
+    }
 
     @Override
     public void clearBytesOngoing()
@@ -55,6 +77,27 @@ public class DefaultTransferOperation implements TransferOperation
     }
 
     @Override
+    public @NotNull StreamDescriptor getDescriptorFor(@NotNull TransferItem transferItem)
+    {
+        return persistenceProvider.getOrInitializeDescriptorFor(transferItem);
+    }
+
+    @Override
+    public @Nullable TransferItem getFirstReceivableItem()
+    {
+        List<TransferHolder> holderList = persistenceProvider.getTransferHolderList();
+
+        for (TransferHolder holder : holderList) {
+            if (Direction.Incoming.equals(holder.item.getItemDirection())
+                    && holder.item.getItemGroupId() == groupId
+                    && TransferItem.State.Pending.equals(holder.state)) {
+                return holder.item;
+            }
+        }
+        return null;
+    }
+
+    @Override
     public @Nullable TransferItem getOngoing()
     {
         return transferItem;
@@ -64,6 +107,20 @@ public class DefaultTransferOperation implements TransferOperation
     public void installReceivedContent(@NotNull StreamDescriptor descriptor)
     {
 
+    }
+
+    @Override
+    public @NotNull TransferItem loadTransferItem(long id, @NotNull Direction direction) throws PersistenceException
+    {
+        List<TransferHolder> holderList = persistenceProvider.getTransferHolderList();
+
+        for (TransferHolder holder : holderList) {
+            if (holder.item.getItemGroupId() == groupId && holder.item.getItemId() == id
+                    && holder.item.getItemDirection().equals(direction) && holder.clientUid.equals(clientUid))
+                return holder.item;
+        }
+
+        throw new PersistenceException("There is no transfer data matching the given parameters.");
     }
 
     @Override
@@ -106,5 +163,17 @@ public class DefaultTransferOperation implements TransferOperation
     public void setOngoing(@NotNull TransferItem transferItem)
     {
         this.transferItem = transferItem;
+    }
+
+    @Override
+    public void setState(@NotNull TransferItem item, @NotNull TransferItem.State state, @Nullable Exception e)
+    {
+        List<TransferHolder> holderList = persistenceProvider.getTransferHolderList();
+
+        for (TransferHolder holder : holderList) {
+            if (clientUid.equals(holder.clientUid) && item.equals(holder.item)) {
+                holder.state = state;
+            }
+        }
     }
 }

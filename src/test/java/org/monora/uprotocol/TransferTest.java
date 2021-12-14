@@ -11,7 +11,9 @@ import org.monora.uprotocol.core.protocol.Direction;
 import org.monora.uprotocol.core.protocol.communication.ProtocolException;
 import org.monora.uprotocol.core.protocol.communication.client.UntrustedClientException;
 import org.monora.uprotocol.core.transfer.TransferItem;
+import org.monora.uprotocol.core.transfer.TransferOperation;
 import org.monora.uprotocol.core.transfer.Transfers;
+import org.monora.uprotocol.variant.DefaultTransferOperation;
 import org.monora.uprotocol.variant.holder.MemoryStreamDescriptor;
 import org.monora.uprotocol.variant.holder.TransferHolder;
 import org.monora.uprotocol.variant.test.DefaultTestBase;
@@ -44,8 +46,8 @@ public class TransferTest extends DefaultTestBase
         demoTransferItem2 = secondaryPersistence.createTransferItemFor(groupId, 2, "File2",
                 "text/plain", data2.length, null, Direction.Outgoing);
 
-        StreamDescriptor descriptor1 = secondaryPersistence.getDescriptorFor(demoTransferItem1);
-        StreamDescriptor descriptor2 = secondaryPersistence.getDescriptorFor(demoTransferItem2);
+        StreamDescriptor descriptor1 = secondaryPersistence.getOrInitializeDescriptorFor(demoTransferItem1);
+        StreamDescriptor descriptor2 = secondaryPersistence.getOrInitializeDescriptorFor(demoTransferItem2);
 
         secondaryPersistence.openOutputStream(descriptor1).write(data1);
         secondaryPersistence.openOutputStream(descriptor2).write(data2);
@@ -77,7 +79,10 @@ public class TransferTest extends DefaultTestBase
             Assert.assertTrue("The result should be positive", bridge.requestFileTransferStart(groupId,
                     Direction.Incoming));
 
-            Transfers.receive(bridge, transferOperation, groupId);
+            TransferOperation transferOperation = new DefaultTransferOperation(primaryPersistence,
+                    bridge.getRemoteClient().getClientUid(), groupId);
+
+            Transfers.receive(bridge, transferOperation);
         } finally {
             secondarySession.stop();
         }
@@ -108,7 +113,9 @@ public class TransferTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(primaryPersistence, clientAddress)) {
             bridge.requestFileTransferStart(groupId, Direction.Incoming);
-            Transfers.receive(bridge, transferOperation, groupId);
+            TransferOperation transferOperation = new DefaultTransferOperation(primaryPersistence,
+                    bridge.getRemoteClient().getClientUid(), groupId);
+            Transfers.receive(bridge, transferOperation);
         } finally {
             secondarySession.stop();
         }
@@ -133,7 +140,9 @@ public class TransferTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestFileTransferStart(groupId, Direction.Outgoing);
-            Transfers.receive(bridge, transferOperation, groupId);
+            TransferOperation transferOperation = new DefaultTransferOperation(secondaryPersistence,
+                    bridge.getRemoteClient().getClientUid(), groupId);
+            Transfers.receive(bridge, transferOperation);
         } finally {
             primarySession.stop();
         }
@@ -154,7 +163,9 @@ public class TransferTest extends DefaultTestBase
 
         try (CommunicationBridge bridge = openConnection(secondaryPersistence, clientAddress)) {
             bridge.requestFileTransferStart(groupId, Direction.Outgoing);
-            Transfers.receive(bridge, transferOperation, groupId);
+            TransferOperation transferOperation = new DefaultTransferOperation(secondaryPersistence,
+                    bridge.getRemoteClient().getClientUid(), groupId);
+            Transfers.receive(bridge, transferOperation);
         } finally {
             primarySession.stop();
         }

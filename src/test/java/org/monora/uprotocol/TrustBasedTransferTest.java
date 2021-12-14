@@ -37,8 +37,8 @@ public class TrustBasedTransferTest extends DefaultTestBase
         demoTransferItem2 = secondaryPersistence.createTransferItemFor(groupId, 2, "File2",
                 "text/plain", data2.length, null, Direction.Outgoing);
 
-        StreamDescriptor descriptor1 = secondaryPersistence.getDescriptorFor(demoTransferItem1);
-        StreamDescriptor descriptor2 = secondaryPersistence.getDescriptorFor(demoTransferItem2);
+        StreamDescriptor descriptor1 = secondaryPersistence.getOrInitializeDescriptorFor(demoTransferItem1);
+        StreamDescriptor descriptor2 = secondaryPersistence.getOrInitializeDescriptorFor(demoTransferItem2);
 
         secondaryPersistence.openOutputStream(descriptor1).write(data1);
         secondaryPersistence.openOutputStream(descriptor2).write(data2);

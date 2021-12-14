@@ -76,11 +76,10 @@ public class Transfers
      *
      * @param bridge    The bridge that speaks on behalf of you when making requests.
      * @param operation The operation object that handles the GUI side of things.
-     * @param groupId   As in {@link TransferItem#getItemGroupId()}.
      * @see TransportSeat#beginFileTransfer
      * @see CommunicationBridge#requestFileTransferStart
      */
-    public static void receive(@NotNull CommunicationBridge bridge, @NotNull TransferOperation operation, long groupId)
+    public static void receive(@NotNull CommunicationBridge bridge, @NotNull TransferOperation operation)
     {
         PersistenceProvider persistenceProvider = bridge.getPersistenceProvider();
         ActiveConnection activeConnection = bridge.getActiveConnection();
@@ -88,14 +87,14 @@ public class Transfers
         TransferItem item;
 
         try {
-            while ((item = persistenceProvider.getFirstReceivableItem(groupId)) != null) {
+            while ((item = operation.getFirstReceivableItem()) != null) {
                 operation.setOngoing(item);
                 operation.publishProgress();
 
                 // On the receiver side, we do not recover from permission or file system errors. This is why the
                 // following file operation is not inside a try-catch block. Those types of errors are not recoverable
                 // and there is no point in keeping on going.
-                StreamDescriptor descriptor = persistenceProvider.getDescriptorFor(item);
+                StreamDescriptor descriptor = operation.getDescriptorFor(item);
 
                 // Set the bytes as the size of the file that may have previously been exchanged partially.
                 // This will be '0' for the newly started operations.
@@ -115,7 +114,7 @@ public class Transfers
                         }
 
                         outputStream.flush();
-                        persistenceProvider.setState(client.getClientUid(), item, TransferItem.State.Done, null);
+                        operation.setState(item, TransferItem.State.Done, null);
                         operation.setBytesTotal(operation.getBytesTotal() + operation.getBytesOngoing());
                         operation.setCount(operation.getCount() + 1);
                         operation.installReceivedContent(descriptor);
@@ -123,24 +122,22 @@ public class Transfers
                     }
                 } catch (CancelledException e) {
                     // The task is cancelled. We reset the state of this item to 'pending'.
-                    persistenceProvider.setState(client.getClientUid(), item, TransferItem.State.Pending, e);
+                    operation.setState(item, TransferItem.State.Pending, e);
                     throw e;
                 } catch (FileNotFoundException e) {
                     throw e;
                 } catch (ContentException e) {
                     switch (e.error) {
                         case NotFound:
-                            persistenceProvider.setState(client.getClientUid(), item, TransferItem.State.Invalidated, e);
+                            operation.setState(item, TransferItem.State.Invalidated, e);
                             break;
                         case AlreadyExists:
                         case NotAccessible:
                         default:
-                            persistenceProvider.setState(client.getClientUid(), item,
-                                    TransferItem.State.InvalidatedTemporarily, e);
+                            operation.setState(item, TransferItem.State.InvalidatedTemporarily, e);
                     }
                 } catch (Exception e) {
-                    persistenceProvider.setState(client.getClientUid(), item,
-                            TransferItem.State.InvalidatedTemporarily, e);
+                    operation.setState(item, TransferItem.State.InvalidatedTemporarily, e);
                     throw e;
                 } finally {
                     persistenceProvider.persist(client.getClientUid(), item);
@@ -172,11 +169,10 @@ public class Transfers
      *
      * @param bridge    The bridge that speaks on behalf of you when making requests.
      * @param operation The operation object that handles the GUI side of things.
-     * @param groupId   As in {@link TransferItem#getItemGroupId()}.
      * @see TransportSeat#beginFileTransfer
      * @see CommunicationBridge#requestFileTransferStart
      */
-    public static void send(@NotNull CommunicationBridge bridge, @NotNull TransferOperation operation, long groupId)
+    public static void send(@NotNull CommunicationBridge bridge, @NotNull TransferOperation operation)
     {
         PersistenceProvider persistenceProvider = bridge.getPersistenceProvider();
         ActiveConnection activeConnection = bridge.getActiveConnection();
@@ -194,14 +190,13 @@ public class Transfers
 
                 try {
                     final TransferRequest transferRequest = Transfers.getTransferRequest(request);
-                    item = persistenceProvider.loadTransferItem(client.getClientUid(), groupId, transferRequest.id,
-                            Direction.Outgoing);
+                    item = operation.loadTransferItem(transferRequest.id, Direction.Outgoing);
 
                     operation.setOngoing(item);
                     operation.setBytesOngoing(transferRequest.position, transferRequest.position);
 
                     try {
-                        StreamDescriptor descriptor = persistenceProvider.getDescriptorFor(item);
+                        StreamDescriptor descriptor = operation.getDescriptorFor(item);
                         if (descriptor.length() != item.getItemSize())
                             throw new FileNotFoundException("File size has changed. It is probably a different file.");
 
@@ -249,17 +244,16 @@ public class Transfers
                             operation.setBytesTotal(operation.getBytesTotal() + operation.getBytesOngoing());
                             operation.setCount(operation.getCount() + 1);
                             operation.clearBytesOngoing();
-                            persistenceProvider.setState(client.getClientUid(), item, TransferItem.State.Done, null);
+                            operation.setState(item, TransferItem.State.Done, null);
                         }
                     } catch (CancelledException e) {
-                        persistenceProvider.setState(client.getClientUid(), item, TransferItem.State.Pending, e);
+                        operation.setState(item, TransferItem.State.Pending, e);
                         throw e;
                     } catch (FileNotFoundException e) {
-                        persistenceProvider.setState(client.getClientUid(), item, TransferItem.State.Invalidated, e);
+                        operation.setState(item, TransferItem.State.Invalidated, e);
                         throw e;
                     } catch (Exception e) {
-                        persistenceProvider.setState(client.getClientUid(), item,
-                                TransferItem.State.InvalidatedTemporarily, e);
+                        operation.setState(item, TransferItem.State.InvalidatedTemporarily, e);
                         throw e;
                     } finally {
                         persistenceProvider.persist(client.getClientUid(), item);

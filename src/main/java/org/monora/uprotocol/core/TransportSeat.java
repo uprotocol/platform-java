@@ -33,8 +33,8 @@ public interface TransportSeat
      * If a runtime failure occurs, you should just throw it before starting the transfer. Also, additional errors
      * should be derivatives of {@link ProtocolException}.
      * <p>
-     * Invoke {@link Transfers#receive(CommunicationBridge, TransferOperation, long)} for
-     * {@link Direction#Incoming} or {@link Transfers#send(CommunicationBridge, TransferOperation, long)}
+     * Invoke {@link Transfers#receive(CommunicationBridge, TransferOperation)} for
+     * {@link Direction#Incoming} or {@link Transfers#send(CommunicationBridge, TransferOperation)}
      * for {@link Direction#Outgoing} types.
      *
      * @param bridge    The bridge that speaks on behalf of you when making requests.

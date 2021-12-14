@@ -25,8 +25,6 @@ public class DefaultTransportSeat implements TransportSeat
 {
     public final @NotNull BasePersistenceProvider persistenceProvider;
 
-    public final @NotNull TransferOperation transferOperation;
-
     public boolean autoAcceptNewKeys;
 
     public boolean startTransferByDefault = false;
@@ -35,21 +33,22 @@ public class DefaultTransportSeat implements TransportSeat
 
     public @Nullable ClipboardHolder requestedClipboard = null;
 
-    public DefaultTransportSeat(@NotNull BasePersistenceProvider persistenceProvider,
-                                @NotNull TransferOperation transferOperation)
+    public DefaultTransportSeat(@NotNull BasePersistenceProvider persistenceProvider)
     {
         this.persistenceProvider = persistenceProvider;
-        this.transferOperation = transferOperation;
     }
 
     @Override
     public void beginFileTransfer(@NotNull CommunicationBridge bridge, @NotNull Client client, long groupId,
                                   @NotNull Direction direction)
     {
+        TransferOperation transferOperation = new DefaultTransferOperation(persistenceProvider,
+                client.getClientUid(), groupId);
+
         if (direction.equals(Direction.Incoming)) {
-            Transfers.receive(bridge, transferOperation, groupId);
+            Transfers.receive(bridge, transferOperation);
         } else if (direction.equals(Direction.Outgoing)) {
-            Transfers.send(bridge, transferOperation, groupId);
+            Transfers.send(bridge, transferOperation);
         }
     }
 
